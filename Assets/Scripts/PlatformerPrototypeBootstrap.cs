@@ -24,6 +24,7 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
 
         Camera camera = ConfigureCamera(player.transform);
         CreateCharacterSwitcher(player);
+        CreateDialogueModule();
         CreateInstructionHud(camera.transform);
     }
 
@@ -68,6 +69,18 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         GameObject switcherObject = new GameObject("Character Ability Switcher");
         CharacterSwitcher2D switcher = switcherObject.AddComponent<CharacterSwitcher2D>();
         switcher.Initialize(player);
+    }
+
+    private static void CreateDialogueModule()
+    {
+        GameObject dialogueObject = new GameObject("Dialogue Module");
+        DialogueController dialogue = dialogueObject.AddComponent<DialogueController>();
+        dialogue.SetLines(new[]
+        {
+            new DialogueController.DialogueLine { speaker = "Guide", text = "This is the portrait placeholder on the left. Click to continue." },
+            new DialogueController.DialogueLine { speaker = "Guide", text = "The dialogue box occupies the lower part of the screen. You can replace these lines from code or the Inspector." },
+            new DialogueController.DialogueLine { speaker = "Guide", text = "Press Z to switch the player's ability mode, then try the platform route." }
+        });
     }
 
     private static void CreateMap()
