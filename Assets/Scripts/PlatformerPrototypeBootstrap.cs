@@ -70,8 +70,13 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
 
     private static void CreateDialogueModule()
     {
-        GameObject dialogueObject = new GameObject("Dialogue Module");
-        DialogueController dialogue = dialogueObject.AddComponent<DialogueController>();
+        DialogueController dialogue = FindFirstObjectByType<DialogueController>();
+        if (dialogue == null)
+        {
+            GameObject dialogueObject = new GameObject("Dialogue Module");
+            dialogue = dialogueObject.AddComponent<DialogueController>();
+        }
+
         dialogue.SetLines(new[]
         {
             new DialogueController.DialogueLine { speaker = "Guide", text = "This is the portrait placeholder on the left. Click to continue." },

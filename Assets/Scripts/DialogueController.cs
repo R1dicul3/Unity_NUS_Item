@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
+[ExecuteAlways]
 public class DialogueController : MonoBehaviour
 {
     [System.Serializable]
@@ -15,14 +16,55 @@ public class DialogueController : MonoBehaviour
     [SerializeField] private DialogueLine[] dialogueLines;
     [SerializeField] private bool showOnStart = true;
 
+    [Header("Portrait")]
+    [SerializeField] private Sprite portraitSprite;
+
+    [Header("Hierarchy UI")]
+    [SerializeField] private Canvas dialogueCanvas;
+    [SerializeField] private Image portraitImage;
+    [SerializeField] private Text portraitLabel;
+    [SerializeField] private Text speakerText;
+    [SerializeField] private Text bodyText;
+    [SerializeField] private bool createFallbackUiIfMissing;
+
+    [Header("Editor Preview")]
+    [SerializeField] private bool previewInEditMode = true;
+
+    [Header("Portrait Layout")]
+    [SerializeField] private Vector2 portraitAnchorMin = new Vector2(0f, 0.38f);
+    [SerializeField] private Vector2 portraitAnchorMax = new Vector2(0.5f, 1f);
+    [SerializeField] private Vector2 portraitOffsetMin = Vector2.zero;
+    [SerializeField] private Vector2 portraitOffsetMax = Vector2.zero;
+    [SerializeField] private bool preservePortraitAspect = true;
+
+    [Header("Dialogue Box Layout")]
+    [SerializeField] private Vector2 dialogueBoxAnchorMin = new Vector2(0.04f, 0.04f);
+    [SerializeField] private Vector2 dialogueBoxAnchorMax = new Vector2(0.96f, 0.4f);
+    [SerializeField] private Vector2 dialogueBoxOffsetMin = Vector2.zero;
+    [SerializeField] private Vector2 dialogueBoxOffsetMax = Vector2.zero;
+
+    [Header("Speaker Text Layout")]
+    [SerializeField] private Vector2 speakerAnchorMin = new Vector2(0.04f, 0.72f);
+    [SerializeField] private Vector2 speakerAnchorMax = new Vector2(0.96f, 0.93f);
+    [SerializeField] private Vector2 speakerOffsetMin = Vector2.zero;
+    [SerializeField] private Vector2 speakerOffsetMax = Vector2.zero;
+    [SerializeField] private int speakerFontSize = 40;
+
+    [Header("Dialogue Text Layout")]
+    [SerializeField] private Vector2 bodyAnchorMin = new Vector2(0.04f, 0.16f);
+    [SerializeField] private Vector2 bodyAnchorMax = new Vector2(0.96f, 0.72f);
+    [SerializeField] private Vector2 bodyOffsetMin = Vector2.zero;
+    [SerializeField] private Vector2 bodyOffsetMax = Vector2.zero;
+    [SerializeField] private int bodyFontSize = 34;
+
+    [Header("Portrait Label Layout")]
+    [SerializeField] private int portraitLabelFontSize = 42;
+
     [Header("Placeholder Colors")]
     [SerializeField] private Color portraitColor = new Color(0.12f, 0.18f, 0.24f, 0.88f);
     [SerializeField] private Color dialogueBoxColor = new Color(0.03f, 0.04f, 0.06f, 0.88f);
     [SerializeField] private Color textColor = new Color(0.94f, 0.96f, 1f);
 
-    private Canvas canvas;
-    private Text speakerText;
-    private Text bodyText;
     private int currentLineIndex;
     private bool isShowing;
 
@@ -30,11 +72,42 @@ public class DialogueController : MonoBehaviour
 
     private void Awake()
     {
-        BuildUi();
+        InitializeUiIfNeeded();
+
+        if (!Application.isPlaying)
+        {
+            RefreshEditorPreview();
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (Application.isPlaying)
+        {
+            return;
+        }
+
+        InitializeUiIfNeeded();
+        RefreshEditorPreview();
+    }
+
+    private void OnValidate()
+    {
+        InitializeUiIfNeeded();
+
+        if (!Application.isPlaying)
+        {
+            RefreshEditorPreview();
+        }
     }
 
     private void Start()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
         if (showOnStart && dialogueLines != null && dialogueLines.Length > 0)
         {
             StartDialogue(dialogueLines);
@@ -47,6 +120,11 @@ public class DialogueController : MonoBehaviour
 
     private void Update()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
         if (!isShowing)
         {
             return;
@@ -68,12 +146,22 @@ public class DialogueController : MonoBehaviour
         dialogueLines = lines;
     }
 
+    public void SetPortrait(Sprite sprite)
+    {
+        portraitSprite = sprite;
+        ApplyPortrait();
+    }
+
     public void StartDialogue(DialogueLine[] lines)
     {
         dialogueLines = lines;
         currentLineIndex = 0;
         isShowing = dialogueLines != null && dialogueLines.Length > 0;
-        canvas.gameObject.SetActive(isShowing);
+
+        if (dialogueCanvas != null)
+        {
+            dialogueCanvas.gameObject.SetActive(isShowing);
+        }
 
         if (isShowing)
         {
@@ -112,51 +200,187 @@ public class DialogueController : MonoBehaviour
     public void HideDialogue()
     {
         isShowing = false;
-        if (canvas != null)
+        if (dialogueCanvas != null)
         {
-            canvas.gameObject.SetActive(false);
+            dialogueCanvas.gameObject.SetActive(false);
         }
     }
 
     private void ShowCurrentLine()
     {
+        if (speakerText == null || bodyText == null)
+        {
+            return;
+        }
+
         DialogueLine line = dialogueLines[currentLineIndex];
         speakerText.text = string.IsNullOrWhiteSpace(line.speaker) ? "Character" : line.speaker;
         bodyText.text = line.text;
     }
 
-    private void BuildUi()
+    private void ResolveHierarchyReferences()
     {
-        canvas = new GameObject("Dialogue Canvas").AddComponent<Canvas>();
-        canvas.transform.SetParent(transform, false);
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 20;
+        if (dialogueCanvas == null)
+        {
+            dialogueCanvas = GetComponentInChildren<Canvas>(true);
+        }
 
-        CanvasScaler scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+        Text[] texts = GetComponentsInChildren<Text>(true);
+        foreach (Text text in texts)
+        {
+            if (speakerText == null && text.name == "SpeakerText")
+            {
+                speakerText = text;
+            }
+            else if (bodyText == null && text.name == "DialogueText")
+            {
+                bodyText = text;
+            }
+            else if (portraitLabel == null && text.name == "PortraitLabel")
+            {
+                portraitLabel = text;
+            }
+        }
+
+        Image[] images = GetComponentsInChildren<Image>(true);
+        foreach (Image image in images)
+        {
+            if (portraitImage == null && image.name == "PortraitImage")
+            {
+                portraitImage = image;
+            }
+        }
+    }
+
+    private bool HasRequiredUi()
+    {
+        return dialogueCanvas != null && speakerText != null && bodyText != null;
+    }
+
+    private void InitializeUiIfNeeded()
+    {
+        ResolveHierarchyReferences();
+
+        if (!HasRequiredUi() && createFallbackUiIfMissing)
+        {
+            BuildFallbackUi();
+        }
+
+        ApplyLayout();
+        ApplyPortrait();
+    }
+
+    private void RefreshEditorPreview()
+    {
+        if (dialogueCanvas == null)
+        {
+            return;
+        }
+
+        dialogueCanvas.gameObject.SetActive(previewInEditMode);
+
+        if (!previewInEditMode || speakerText == null || bodyText == null)
+        {
+            return;
+        }
+
+        if (dialogueLines != null && dialogueLines.Length > 0)
+        {
+            currentLineIndex = Mathf.Clamp(currentLineIndex, 0, dialogueLines.Length - 1);
+            ShowCurrentLine();
+        }
+        else
+        {
+            speakerText.text = "Character";
+            bodyText.text = "Dialogue preview text";
+        }
+
+        ApplyLayout();
+        ApplyPortrait();
+    }
+
+    private void BuildFallbackUi()
+    {
+        dialogueCanvas = new GameObject("DialogueCanvas").AddComponent<Canvas>();
+        dialogueCanvas.transform.SetParent(transform, false);
+        dialogueCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        dialogueCanvas.sortingOrder = 20;
+
+        CanvasScaler scaler = dialogueCanvas.gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight = 0.5f;
-        canvas.gameObject.AddComponent<GraphicRaycaster>();
+        dialogueCanvas.gameObject.AddComponent<GraphicRaycaster>();
 
-        RectTransform portrait = CreatePanel("Portrait Placeholder", canvas.transform, new Vector2(0f, 0.38f), new Vector2(0.5f, 1f), portraitColor);
-        Text portraitLabel = CreateText("Portrait Label", portrait, "Portrait Placeholder", 42, TextAnchor.MiddleCenter);
+        RectTransform portrait = CreatePanel("PortraitImage", dialogueCanvas.transform, portraitAnchorMin, portraitAnchorMax, portraitColor);
+        portraitImage = portrait.GetComponent<Image>();
+        portraitImage.preserveAspect = preservePortraitAspect;
+        portraitLabel = CreateText("PortraitLabel", portrait, "Portrait Placeholder", portraitLabelFontSize, TextAnchor.MiddleCenter);
         portraitLabel.color = new Color(0.72f, 0.82f, 0.92f, 0.9f);
+        ApplyPortrait();
 
-        RectTransform dialogueBox = CreatePanel("Dialogue Box Placeholder", canvas.transform, new Vector2(0.04f, 0.04f), new Vector2(0.96f, 0.4f), dialogueBoxColor);
-        speakerText = CreateText("Speaker Text", dialogueBox, "Character", 40, TextAnchor.UpperLeft);
-        bodyText = CreateText("Dialogue Text", dialogueBox, "", 34, TextAnchor.UpperLeft);
+        RectTransform dialogueBox = CreatePanel("DialogueBox", dialogueCanvas.transform, dialogueBoxAnchorMin, dialogueBoxAnchorMax, dialogueBoxColor);
+        speakerText = CreateText("SpeakerText", dialogueBox, "Character", speakerFontSize, TextAnchor.UpperLeft);
+        bodyText = CreateText("DialogueText", dialogueBox, "", bodyFontSize, TextAnchor.UpperLeft);
+        ApplyLayout();
+    }
 
-        RectTransform speakerRect = speakerText.rectTransform;
-        speakerRect.anchorMin = new Vector2(0.04f, 0.72f);
-        speakerRect.anchorMax = new Vector2(0.96f, 0.93f);
-        speakerRect.offsetMin = Vector2.zero;
-        speakerRect.offsetMax = Vector2.zero;
+    private void ApplyLayout()
+    {
+        if (portraitImage != null)
+        {
+            ApplyRect(portraitImage.rectTransform, portraitAnchorMin, portraitAnchorMax, portraitOffsetMin, portraitOffsetMax);
+            portraitImage.preserveAspect = preservePortraitAspect;
+        }
 
-        RectTransform bodyRect = bodyText.rectTransform;
-        bodyRect.anchorMin = new Vector2(0.04f, 0.16f);
-        bodyRect.anchorMax = new Vector2(0.96f, 0.72f);
-        bodyRect.offsetMin = Vector2.zero;
-        bodyRect.offsetMax = Vector2.zero;
+        if (speakerText != null)
+        {
+            ApplyRect(speakerText.rectTransform, speakerAnchorMin, speakerAnchorMax, speakerOffsetMin, speakerOffsetMax);
+            speakerText.fontSize = speakerFontSize;
+        }
+
+        if (bodyText != null)
+        {
+            ApplyRect(bodyText.rectTransform, bodyAnchorMin, bodyAnchorMax, bodyOffsetMin, bodyOffsetMax);
+            bodyText.fontSize = bodyFontSize;
+        }
+
+        if (portraitLabel != null)
+        {
+            portraitLabel.fontSize = portraitLabelFontSize;
+        }
+
+        Transform dialogueBox = dialogueCanvas != null ? dialogueCanvas.transform.Find("DialogueBox") : null;
+        if (dialogueBox is RectTransform dialogueBoxRect)
+        {
+            ApplyRect(dialogueBoxRect, dialogueBoxAnchorMin, dialogueBoxAnchorMax, dialogueBoxOffsetMin, dialogueBoxOffsetMax);
+        }
+    }
+
+    private static void ApplyRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+    {
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+    }
+
+    private void ApplyPortrait()
+    {
+        if (portraitImage == null)
+        {
+            return;
+        }
+
+        bool hasPortrait = portraitSprite != null;
+        portraitImage.sprite = portraitSprite;
+        portraitImage.color = hasPortrait ? Color.white : portraitColor;
+        portraitImage.type = Image.Type.Simple;
+
+        if (portraitLabel != null)
+        {
+            portraitLabel.gameObject.SetActive(!hasPortrait);
+        }
     }
 
     private RectTransform CreatePanel(string objectName, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Color color)
