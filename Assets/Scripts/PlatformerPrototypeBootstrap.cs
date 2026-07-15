@@ -191,7 +191,7 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         GameObject hud = new GameObject("Prototype Controls HUD");
         hud.transform.SetParent(cameraTransform, false);
         TextMesh text = hud.AddComponent<TextMesh>();
-        text.text = "Z: Switch Ability   Yellow: Double Jump   Blue: Dash   A/D: Move   Space: Jump   Left Shift: Dash";
+        text.text = "Z: Switch Ability   Yellow: Double Jump + Dash   Blue: Single Jump Only   A/D: Move   Space: Jump   Left Shift: Dash";
         text.fontSize = 36;
         text.characterSize = 0.08f;
         text.anchor = TextAnchor.UpperLeft;

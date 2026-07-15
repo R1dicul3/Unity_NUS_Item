@@ -4,10 +4,10 @@ using UnityEngine.InputSystem;
 public class CharacterSwitcher2D : MonoBehaviour
 {
     [SerializeField] private PlatformerPlayerController character;
-    [SerializeField] private Color doubleJumpColor = new Color(1f, 0.82f, 0.32f);
-    [SerializeField] private Color dashColor = new Color(0.45f, 0.8f, 1f);
+    [SerializeField] private Color poweredColor = new Color(1f, 0.82f, 0.32f);
+    [SerializeField] private Color basicColor = new Color(0.45f, 0.8f, 1f);
 
-    private bool isDoubleJumpMode = true;
+    private bool isPoweredMode = true;
 
     public void Initialize(PlatformerPlayerController playableCharacter)
     {
@@ -25,7 +25,7 @@ public class CharacterSwitcher2D : MonoBehaviour
 
         if (keyboard.zKey.wasPressedThisFrame)
         {
-            isDoubleJumpMode = !isDoubleJumpMode;
+            isPoweredMode = !isPoweredMode;
             ApplyCurrentMode();
         }
     }
@@ -37,13 +37,13 @@ public class CharacterSwitcher2D : MonoBehaviour
             return;
         }
 
-        if (isDoubleJumpMode)
+        if (isPoweredMode)
         {
-            character.SetAbilities(true, false, doubleJumpColor);
+            character.SetAbilities(true, true, poweredColor);
         }
         else
         {
-            character.SetAbilities(false, true, dashColor);
+            character.SetAbilities(false, false, basicColor);
         }
     }
 }
