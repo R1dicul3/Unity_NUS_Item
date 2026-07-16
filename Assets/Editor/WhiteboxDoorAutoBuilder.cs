@@ -274,13 +274,10 @@ public static class WhiteboxDoorAutoBuilder
         collider.isTrigger = true;
         collider.size = Vector2.one;
 
-        if (sprite != null)
-        {
-            SpriteRenderer renderer = doorObject.AddComponent<SpriteRenderer>();
-            renderer.sprite = sprite;
-            renderer.color = new Color(0.1f, 0.75f, 1f, 0.45f);
-            renderer.sortingOrder = 10;
-        }
+        SpriteRenderer renderer = doorObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = new Color(0.1f, 0.75f, 1f, 0.55f);
+        renderer.sortingOrder = 10;
 
         return doorObject.AddComponent<RoomDoor>();
     }
