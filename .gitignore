@@ -1,3 +1,7 @@
+# Non-Unity project files (keep repo to Assets / ProjectSettings / Packages only)
+Documents/
+README.md
+
 # Unity generated folders
 [Ll]ibrary/
 [Tt]emp/
