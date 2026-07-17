@@ -33,7 +33,11 @@ public class PlatformerPlayerController : MonoBehaviour
     [SerializeField] private LayerMask groundMask;
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.78f, 0.12f);
     [SerializeField] private float groundCheckOffset = 0.53f;
+    [SerializeField] private float groundSurfaceTolerance = 0.08f;
     [SerializeField] private float groundCheckLockoutAfterJump = 0.08f;
+
+    [Header("Physics")]
+    [SerializeField] private bool useFrictionlessMaterial = true;
 
     [Header("Control State")]
     [SerializeField] private bool isControlled = true;
@@ -44,6 +48,7 @@ public class PlatformerPlayerController : MonoBehaviour
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
     private TrailRenderer dashTrail;
+    private PhysicsMaterial2D frictionlessMaterial;
 
     private float moveInput;
     private float facingDirection = 1f;
@@ -129,6 +134,7 @@ public class PlatformerPlayerController : MonoBehaviour
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         dashTrail = GetComponent<TrailRenderer>();
         defaultGravityScale = rb.gravityScale;
+        ApplyFrictionlessMaterial();
     }
 
     private void Update()
@@ -351,13 +357,42 @@ public class PlatformerPlayerController : MonoBehaviour
         Gizmos.DrawWireCube(checkCenter, groundCheckSize);
     }
 
+    private void ApplyFrictionlessMaterial()
+    {
+        if (!useFrictionlessMaterial || boxCollider == null)
+        {
+            return;
+        }
+
+        frictionlessMaterial = new PhysicsMaterial2D("Player Frictionless")
+        {
+            friction = 0f,
+            bounciness = 0f
+        };
+        boxCollider.sharedMaterial = frictionlessMaterial;
+    }
+
     private bool IsGroundCollider(Collider2D hit)
     {
-        if (hit == null || hit == boxCollider)
+        if (hit == null || hit == boxCollider || hit.isTrigger)
         {
             return false;
         }
 
-        return hit.GetComponentInParent<PlatformerPlayerController>() == null;
+        if (hit.GetComponentInParent<PlatformerPlayerController>() != null)
+        {
+            return false;
+        }
+
+        if (boxCollider == null)
+        {
+            return true;
+        }
+
+        Bounds playerBounds = boxCollider.bounds;
+        Bounds hitBounds = hit.bounds;
+        bool hasGroundSurfaceUnderFeet = hitBounds.max.y <= playerBounds.min.y + groundSurfaceTolerance;
+        bool overlapsFeetHorizontally = hitBounds.max.x > playerBounds.min.x && hitBounds.min.x < playerBounds.max.x;
+        return hasGroundSurfaceUnderFeet && overlapsFeetHorizontally;
     }
 }
