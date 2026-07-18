@@ -9,7 +9,6 @@ public class CameraFollow2D : MonoBehaviour
     [SerializeField] private bool clampToCurrentRoom = true;
     [SerializeField] private bool snapOnRoomChange = true;
     [SerializeField] private string whiteboxRootName = "White_Box";
-    [SerializeField] private string initialAreaName = "Room_Start";
 
     private Vector3 velocity;
     private Camera followCamera;
@@ -103,11 +102,6 @@ public class CameraFollow2D : MonoBehaviour
         {
             SetCurrentAreaFromPosition(target.position);
             return;
-        }
-
-        if (!string.IsNullOrEmpty(initialAreaName) && !hasCurrentAreaBounds)
-        {
-            TrySetCurrentArea(initialAreaName);
         }
     }
 

@@ -4,18 +4,10 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public class LevelVariantDemoObject : MonoBehaviour
 {
-    private static readonly Vector3[] VariantPositions =
-    {
-        new Vector3(-11.2f, -1.2f, 0f),
-        new Vector3(-8.3f, -2.3f, 0f),
-        new Vector3(-5.2f, -1.2f, 0f)
-    };
-
     private readonly Color[] variantColors =
     {
-        new Color(0.18f, 0.55f, 1f, 1f),
-        new Color(1f, 0.82f, 0.16f, 1f),
-        new Color(0.16f, 0.88f, 0.48f, 1f)
+        new Color(0.08f, 0.42f, 1f, 1f),
+        new Color(0.95f, 0.1f, 0.12f, 1f)
     };
 
     private LevelVariantSwitcher switcher;
@@ -58,51 +50,6 @@ public class LevelVariantDemoObject : MonoBehaviour
         ApplyVariant(force: false);
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (appliedVariant != 0)
-        {
-            return;
-        }
-
-        PlatformerPlayerController player = collision.collider.GetComponentInParent<PlatformerPlayerController>();
-        if (player == null)
-        {
-            return;
-        }
-
-        Rigidbody2D body = player.GetComponent<Rigidbody2D>();
-        if (body != null && body.linearVelocity.y < 0f)
-        {
-            body.linearVelocity = new Vector2(body.linearVelocity.x, Mathf.Max(body.linearVelocity.y, -2f));
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        PlatformerPlayerController player = other.GetComponentInParent<PlatformerPlayerController>();
-        if (player == null)
-        {
-            return;
-        }
-
-        Rigidbody2D body = player.GetComponent<Rigidbody2D>();
-        if (body == null)
-        {
-            return;
-        }
-
-        if (appliedVariant == 1)
-        {
-            body.linearVelocity = new Vector2(body.linearVelocity.x, 16f);
-        }
-        else if (appliedVariant == 2)
-        {
-            body.position += new Vector2(4f, 1.5f);
-            body.linearVelocity = new Vector2(8f, 6f);
-        }
-    }
-
     private void ApplyVariant(bool force)
     {
         if (switcher == null)
@@ -110,31 +57,17 @@ public class LevelVariantDemoObject : MonoBehaviour
             switcher = FindFirstObjectByType<LevelVariantSwitcher>();
         }
 
-        int variant = switcher != null ? Mathf.Clamp(switcher.CurrentIndex, 0, 2) : 0;
+        int variant = switcher != null ? Mathf.Clamp(switcher.CurrentIndex, 0, 1) : 0;
         if (!force && variant == appliedVariant)
         {
             return;
         }
 
         appliedVariant = variant;
-        transform.localPosition = VariantPositions[variant];
+        transform.localPosition = new Vector3(-11.2f, -1.2f, 0f);
         spriteRenderer.color = variantColors[variant];
-
-        if (variant == 0)
-        {
-            transform.localScale = new Vector3(3.2f, 0.45f, 1f);
-            boxCollider.isTrigger = false;
-        }
-        else if (variant == 1)
-        {
-            transform.localScale = new Vector3(2.4f, 0.35f, 1f);
-            boxCollider.isTrigger = true;
-        }
-        else
-        {
-            transform.localScale = new Vector3(1.1f, 1.1f, 1f);
-            boxCollider.isTrigger = true;
-        }
+        transform.localScale = new Vector3(3.2f, 0.45f, 1f);
+        boxCollider.isTrigger = false;
     }
 
     private void CacheComponents()

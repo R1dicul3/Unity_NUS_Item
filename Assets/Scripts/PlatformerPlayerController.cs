@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[SelectionBase]
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(BoxCollider2D))]
 public class PlatformerPlayerController : MonoBehaviour
@@ -34,6 +35,13 @@ public class PlatformerPlayerController : MonoBehaviour
 
     [Header("Physics")]
     [SerializeField] private bool useFrictionlessMaterial = true;
+
+    [Header("Player Shape")]
+    [SerializeField] private bool autoAlignVisualAndCollider = true;
+    [SerializeField] private Vector2 bodySize = new Vector2(0.75f, 1.05f);
+    [SerializeField] private Vector2 bodyOffset;
+    [SerializeField] private Vector3 visualLocalPosition = Vector3.zero;
+    [SerializeField] private Vector3 visualLocalScale = new Vector3(0.75f, 1.05f, 1f);
 
     [Header("Control State")]
     [SerializeField] private bool isControlled = true;
@@ -131,12 +139,15 @@ public class PlatformerPlayerController : MonoBehaviour
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         dashTrail = GetComponent<TrailRenderer>();
         defaultGravityScale = rb.gravityScale;
+        AdoptSceneVisualPosition();
+        AlignVisualAndCollider();
         EnsureVisualSprite();
         ApplyFrictionlessMaterial();
     }
 
     private void Update()
     {
+        AlignVisualAndCollider();
         UpdateGroundState();
         UpdateTimers();
 
@@ -364,6 +375,53 @@ public class PlatformerPlayerController : MonoBehaviour
         }
     }
 
+    private void AlignVisualAndCollider()
+    {
+        if (!autoAlignVisualAndCollider)
+        {
+            return;
+        }
+
+        if (boxCollider == null)
+        {
+            boxCollider = GetComponent<BoxCollider2D>();
+        }
+
+        if (boxCollider != null)
+        {
+            boxCollider.size = bodySize;
+            boxCollider.offset = bodyOffset;
+        }
+
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.transform.localPosition = visualLocalPosition;
+            spriteRenderer.transform.localScale = visualLocalScale;
+        }
+    }
+
+    private void AdoptSceneVisualPosition()
+    {
+        if (!autoAlignVisualAndCollider || spriteRenderer == null || spriteRenderer.transform == transform)
+        {
+            return;
+        }
+
+        Vector3 localDelta = spriteRenderer.transform.localPosition - visualLocalPosition;
+        if (localDelta.sqrMagnitude <= 0.000001f)
+        {
+            return;
+        }
+
+        transform.position += transform.TransformVector(localDelta);
+        spriteRenderer.transform.localPosition = visualLocalPosition;
+    }
+
     private static Sprite GetFallbackPlayerSprite()
     {
         if (fallbackPlayerSprite != null)
@@ -391,6 +449,15 @@ public class PlatformerPlayerController : MonoBehaviour
         Gizmos.color = Color.green;
         Vector2 checkCenter = (Vector2)transform.position + Vector2.down * groundCheckOffset;
         Gizmos.DrawWireCube(checkCenter, groundCheckSize);
+    }
+
+    private void OnValidate()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        boxCollider = GetComponent<BoxCollider2D>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        AlignVisualAndCollider();
+        EnsureVisualSprite();
     }
 
     private void ApplyFrictionlessMaterial()
