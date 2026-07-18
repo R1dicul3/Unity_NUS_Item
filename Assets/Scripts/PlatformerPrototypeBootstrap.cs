@@ -5,11 +5,6 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreatePrototype()
     {
-        if (FindFirstObjectByType<PlatformerPlayerController>() != null)
-        {
-            return;
-        }
-
         PlatformerPrototypeBootstrap bootstrap = new GameObject("Platformer Prototype Bootstrap").AddComponent<PlatformerPrototypeBootstrap>();
         bootstrap.Build();
     }
@@ -17,7 +12,17 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
     private void Build()
     {
         LayerMask groundMask = LayerMask.GetMask("Default");
-        PlatformerPlayerController player = CreatePlayer("Player", new Vector2(-7f, -0.25f), groundMask, new Color(1f, 0.82f, 0.32f), true, true);
+        Vector2 spawnPosition = GetStartRoomSpawnPosition(new Vector2(-7f, -0.25f));
+        Color playerColor = new Color(1f, 0.05f, 0.72f);
+        PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>();
+        if (player == null)
+        {
+            player = CreatePlayer("Player", spawnPosition, groundMask, playerColor, true, true);
+        }
+        else
+        {
+            player.Initialize(groundMask, playerColor, new Color(0.18f, 0.18f, 0.2f), true, true);
+        }
 
         Camera camera = ConfigureCamera(player.transform);
         CreateCharacterSwitcher(player);
@@ -61,10 +66,53 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         return controller;
     }
 
+    private static Vector2 GetStartRoomSpawnPosition(Vector2 fallbackPosition)
+    {
+        GameObject startRoom = GameObject.Find("Room_Start");
+        if (startRoom == null || !TryGetAreaBounds(startRoom.transform, out Bounds bounds))
+        {
+            return fallbackPosition;
+        }
+
+        return new Vector2(bounds.min.x + 2f, bounds.min.y + 1.4f);
+    }
+
+    private static bool TryGetAreaBounds(Transform area, out Bounds bounds)
+    {
+        bounds = default;
+        bool hasBounds = false;
+        BoxCollider2D[] colliders = area.GetComponentsInChildren<BoxCollider2D>(true);
+
+        foreach (BoxCollider2D collider in colliders)
+        {
+            if (collider.isTrigger || collider.GetComponent<RoomDoor>() != null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = collider.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(collider.bounds);
+            }
+        }
+
+        return hasBounds;
+    }
+
     private static void CreateCharacterSwitcher(PlatformerPlayerController player)
     {
-        GameObject switcherObject = new GameObject("Character Ability Switcher");
-        CharacterSwitcher2D switcher = switcherObject.AddComponent<CharacterSwitcher2D>();
+        CharacterSwitcher2D switcher = FindFirstObjectByType<CharacterSwitcher2D>();
+        if (switcher == null)
+        {
+            GameObject switcherObject = new GameObject("Character Ability Switcher");
+            switcher = switcherObject.AddComponent<CharacterSwitcher2D>();
+        }
+
         switcher.Initialize(player);
     }
 
@@ -116,7 +164,7 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         GameObject hud = new GameObject("Prototype Controls HUD");
         hud.transform.SetParent(cameraTransform, false);
         TextMesh text = hud.AddComponent<TextMesh>();
-        text.text = "Z: Switch Ability   Yellow: Double Jump + Dash   Blue: Single Jump Only   A/D: Move   Space: Jump   Left Shift: Dash";
+        text.text = "Z: Switch Ability   Magenta: Double Jump + Dash   Green: Single Jump Only   A/D: Move   Space: Jump   Left Shift: Dash";
         text.fontSize = 36;
         text.characterSize = 0.08f;
         text.anchor = TextAnchor.UpperLeft;

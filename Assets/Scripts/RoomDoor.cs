@@ -8,7 +8,7 @@ public class RoomDoor : MonoBehaviour
     public static event System.Action<PlatformerPlayerController, RoomDoor, RoomDoor> PlayerTeleported;
 
     [Header("Door State")]
-    [SerializeField] private bool isOpen = true;
+    [SerializeField] private bool isOpen;
     [SerializeField] private bool toggleLinkedDoor = true;
     [SerializeField] private float interactDistance = 2.2f;
 

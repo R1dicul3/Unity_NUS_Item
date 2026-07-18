@@ -53,7 +53,7 @@ public static class WhiteboxDoorAutoBuilder
         }
 
         List<WhiteboxArea> areas = CollectAreas(whiteboxRoot.transform);
-        RemoveExistingDoors(areas);
+        RemoveExistingDoors(whiteboxRoot.transform);
 
         Sprite doorSprite = FindReferenceSprite(areas);
         List<DoorConnection> connections = FindConnections(areas);
@@ -127,15 +127,12 @@ public static class WhiteboxDoorAutoBuilder
         return hasBounds;
     }
 
-    private static void RemoveExistingDoors(List<WhiteboxArea> areas)
+    private static void RemoveExistingDoors(Transform root)
     {
-        foreach (WhiteboxArea area in areas)
+        RoomDoor[] rootDoors = root.GetComponentsInChildren<RoomDoor>(true);
+        foreach (RoomDoor door in rootDoors)
         {
-            RoomDoor[] doors = area.Transform.GetComponentsInChildren<RoomDoor>(true);
-            foreach (RoomDoor door in doors)
-            {
-                Object.DestroyImmediate(door.gameObject);
-            }
+            Object.DestroyImmediate(door.gameObject);
         }
     }
 
@@ -261,7 +258,12 @@ public static class WhiteboxDoorAutoBuilder
 
     private static RoomDoor CreateDoor(Transform root, WhiteboxArea owner, WhiteboxArea target, Vector2 contactCenter, Vector2 ownerOffsetDirection, bool verticalDoor, Sprite sprite)
     {
-        GameObject doorObject = new GameObject($"Door_{owner.Transform.name}_To_{target.Transform.name}");
+        GameObject doorObject = WhiteboxPrefabUtility.CreateDoor(
+            root,
+            $"Door_{owner.Transform.name}_To_{target.Transform.name}",
+            sprite,
+            new Color(0.1f, 0.75f, 1f, 0.55f),
+            10).gameObject;
         Undo.RegisterCreatedObjectUndo(doorObject, "Create whitebox door");
         doorObject.transform.SetParent(root, false);
         doorObject.transform.position = contactCenter + ownerOffsetDirection * DoorInset;
@@ -270,21 +272,22 @@ public static class WhiteboxDoorAutoBuilder
             ? new Vector3(DoorThickness, DoorLength, 1f)
             : new Vector3(DoorLength, DoorThickness, 1f);
 
-        BoxCollider2D collider = doorObject.AddComponent<BoxCollider2D>();
+        BoxCollider2D collider = WhiteboxPrefabUtility.EnsureComponent<BoxCollider2D>(doorObject);
         collider.isTrigger = true;
         collider.size = Vector2.one;
 
-        SpriteRenderer renderer = doorObject.AddComponent<SpriteRenderer>();
+        SpriteRenderer renderer = WhiteboxPrefabUtility.EnsureComponent<SpriteRenderer>(doorObject);
         renderer.sprite = sprite;
         renderer.color = new Color(0.1f, 0.75f, 1f, 0.55f);
         renderer.sortingOrder = 10;
 
-        return doorObject.AddComponent<RoomDoor>();
+        return WhiteboxPrefabUtility.EnsureComponent<RoomDoor>(doorObject);
     }
 
     private static void LinkDoors(RoomDoor sourceDoor, RoomDoor targetDoor)
     {
         SerializedObject serializedDoor = new SerializedObject(sourceDoor);
+        serializedDoor.FindProperty("isOpen").boolValue = false;
         serializedDoor.FindProperty("targetSpawn").objectReferenceValue = targetDoor.transform;
         serializedDoor.FindProperty("autoLinkWhenTargetMissing").boolValue = false;
         serializedDoor.FindProperty("exitOffset").floatValue = ExitOffset;

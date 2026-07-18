@@ -5,13 +5,11 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(BoxCollider2D))]
 public class PlatformerPlayerController : MonoBehaviour
 {
-    //移动速度和加速度
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float acceleration = 70f;
     [SerializeField] private float deceleration = 85f;
 
-    //跳跃
     [Header("Jump")]
     [SerializeField] private float jumpVelocity = 14f;
     [SerializeField] private int maxJumpCount = 2;
@@ -21,14 +19,12 @@ public class PlatformerPlayerController : MonoBehaviour
     [SerializeField] private float fallGravityMultiplier = 1.55f;
     [SerializeField] private float shortHopGravityMultiplier = 2.2f;
 
-    //冲刺
     [Header("Dash")]
     [SerializeField] private bool canDash = true;
     [SerializeField] private float dashSpeed = 18f;
     [SerializeField] private float dashDuration = 0.16f;
     [SerializeField] private float dashCooldown = 0.55f;
 
-    //判断触地
     [Header("Ground Check")]
     [SerializeField] private LayerMask groundMask;
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.78f, 0.12f);
@@ -41,8 +37,8 @@ public class PlatformerPlayerController : MonoBehaviour
 
     [Header("Control State")]
     [SerializeField] private bool isControlled = true;
-    [SerializeField] private Color controlledColor = new Color(1f, 0.82f, 0.32f);
-    [SerializeField] private Color inactiveColor = new Color(0.38f, 0.46f, 0.55f);
+    [SerializeField] private Color controlledColor = new Color(1f, 0.05f, 0.72f);
+    [SerializeField] private Color inactiveColor = new Color(0.18f, 0.18f, 0.2f);
 
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider;
@@ -62,6 +58,7 @@ public class PlatformerPlayerController : MonoBehaviour
     private float dashCooldownTimer;
     private float groundCheckLockoutTimer;
     private float defaultGravityScale;
+    private static Sprite fallbackPlayerSprite;
 
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
@@ -134,6 +131,7 @@ public class PlatformerPlayerController : MonoBehaviour
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         dashTrail = GetComponent<TrailRenderer>();
         defaultGravityScale = rb.gravityScale;
+        EnsureVisualSprite();
         ApplyFrictionlessMaterial();
     }
 
@@ -157,7 +155,6 @@ public class PlatformerPlayerController : MonoBehaviour
         UpdateVisuals();
     }
 
-    //处理物理逻辑
     private void FixedUpdate()
     {
         if (isDashing)
@@ -166,9 +163,7 @@ public class PlatformerPlayerController : MonoBehaviour
             return;
         }
 
-        //左右移动手感优化
         ApplyHorizontalMovement();
-        //跳跃手感优化
         ApplyBetterJumpGravity();
     }
 
@@ -196,7 +191,6 @@ public class PlatformerPlayerController : MonoBehaviour
         }
     }
 
-    //判断触地
     private void UpdateGroundState()
     {
         wasGrounded = isGrounded;
@@ -331,6 +325,8 @@ public class PlatformerPlayerController : MonoBehaviour
 
     private void UpdateVisuals()
     {
+        EnsureVisualSprite();
+
         if (spriteRenderer != null)
         {
             spriteRenderer.flipX = facingDirection < 0f;
@@ -348,6 +344,46 @@ public class PlatformerPlayerController : MonoBehaviour
         {
             dashTrail.emitting = isDashing;
         }
+    }
+
+    private void EnsureVisualSprite()
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        if (spriteRenderer.sprite == null)
+        {
+            spriteRenderer.sprite = GetFallbackPlayerSprite();
+        }
+    }
+
+    private static Sprite GetFallbackPlayerSprite()
+    {
+        if (fallbackPlayerSprite != null)
+        {
+            return fallbackPlayerSprite;
+        }
+
+        Texture2D texture = new Texture2D(1, 1)
+        {
+            name = "Runtime Player Pixel",
+            hideFlags = HideFlags.HideAndDontSave,
+            filterMode = FilterMode.Point
+        };
+        texture.SetPixel(0, 0, Color.white);
+        texture.Apply();
+
+        fallbackPlayerSprite = Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
+        fallbackPlayerSprite.name = "Runtime Player Sprite";
+        fallbackPlayerSprite.hideFlags = HideFlags.HideAndDontSave;
+        return fallbackPlayerSprite;
     }
 
     private void OnDrawGizmosSelected()
