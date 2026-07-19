@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class PlatformerPrototypeBootstrap : MonoBehaviour
 {
-    private const bool ConfigureExistingSceneObjects = false;
-    private const bool CreateFallbackDialogueModule = false;
-    private const bool CreateFallbackInstructionHud = false;
+    private static readonly bool ConfigureExistingSceneObjects = false;
+    private static readonly bool CreateFallbackDialogueModule = false;
+    private static readonly bool CreateFallbackInstructionHud = false;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreatePrototype()

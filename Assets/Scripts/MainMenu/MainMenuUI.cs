@@ -58,8 +58,8 @@ namespace MainMenu
             MenuUIHelper.CreateText(content, "Stopover", logoFontSize, logoColor,
                 EffectiveFont, FontStyle.Bold, 120f);
 
-            // 按钮：New Game（暂未实现）
-            CreateMenuButton(content, "New Game", OnNewGame, false);
+            // 按钮：New Game
+            CreateMenuButton(content, "New Game", OnNewGame, true);
 
             // 按钮：Load Game
             CreateMenuButton(content, "Load Game", OnLoadGame, true);
@@ -88,7 +88,7 @@ namespace MainMenu
 
         void OnNewGame()
         {
-            Debug.Log("New Game clicked - 暂未实现。");
+            SceneManager.LoadScene("Scene_2");
         }
 
         void OnLoadGame()
