@@ -1,7 +1,3 @@
-# Prototypes / build outputs
-prototypes/
-EXE/
-
 # Non-Unity project files (keep repo to Assets / ProjectSettings / Packages only)
 Documents/
 README.md
