@@ -7,7 +7,7 @@ public static class WhiteboxHiddenPathRepair
 {
     private const string WhiteboxRootName = "White_Box";
     private const float DoorInset = 0.55f;
-    private const float DoorThickness = 0.8f;
+    private const float DoorThickness = 0.35f;
     private const float DoorLength = 2.8f;
     private const float WallThickness = 0.32f;
     private const float ExitOffset = 1.25f;

@@ -10,7 +10,7 @@ public static class WhiteboxDoorAutoBuilder
     private const float EdgeTolerance = 4f;
     private const float MinimumDoorSpan = 2.5f;
     private const float DoorInset = 0.6f;
-    private const float DoorThickness = 1f;
+    private const float DoorThickness = 0.35f;
     private const float DoorLength = 3f;
     private const float ExitOffset = 1.25f;
 
