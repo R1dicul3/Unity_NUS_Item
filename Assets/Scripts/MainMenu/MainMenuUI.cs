@@ -91,10 +91,9 @@ namespace MainMenu
             if (SaveSystem.SaveSystem.IsFull())
             {
                 ConfirmDialogUI.Show(
-                    "存档栏位已满。直接开始新游戏将覆盖最早的存档，或者您可以前往存档管理界面。",
+                    "存档栏位已满。开始新游戏后，若进行保存将会覆盖最早的存档。是否继续？",
                     onConfirm: () =>
                     {
-                        SaveSystem.SaveSystem.DeleteOldest();
                         GamePauseManager.Instance?.StartNewGame();
                     },
                     onCancel: () => SceneManager.LoadScene("LoadGame"));
