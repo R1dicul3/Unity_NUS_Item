@@ -1,63 +1,95 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class CharacterSwitcher2D : MonoBehaviour
-{
+// 只负责"切换角色"：能力（二段跳/冲刺）、颜色、动画控制器。
+// 完全独立于世界/平台切换（LevelVariantSwitcher），互不影响。
+public class CharacterSwitcher2D : MonoBehaviour {
     [Header("Target")]
     [SerializeField] private PlatformerPlayerController character;
 
     [Header("Input")]
-    [SerializeField] private Key switchKey = Key.Z;
-    [SerializeField] private bool allowDirectInput;
+    [SerializeField] private bool allowDirectInput = true;
     [SerializeField] private bool startInPoweredMode = true;
 
     [Header("Modes")]
     [SerializeField] private Color poweredColor = new Color(1f, 0.05f, 0.72f);
     [SerializeField] private Color basicColor = new Color(0.05f, 1f, 0.2f);
 
-    private bool isPoweredMode;
+    [Header("Animation Placeholders")]
+    [SerializeField] private Animator characterAnimator;
+    [SerializeField] private RuntimeAnimatorController poweredAnimationPlaceholder;
+    [SerializeField] private RuntimeAnimatorController basicAnimationPlaceholder;
 
-    private void Awake()
-    {
+    private bool isPoweredMode;
+    private PlayerInputActions inputActions;
+
+    public bool IsPoweredMode => isPoweredMode;
+
+    private void Awake() {
+        inputActions = new PlayerInputActions();
         isPoweredMode = startInPoweredMode;
         ApplyCurrentMode();
     }
 
-    public void Initialize(PlatformerPlayerController playableCharacter)
-    {
+    private void OnEnable() {
+        inputActions?.Enable();
+    }
+
+    private void OnDisable() {
+        inputActions?.Disable();
+    }
+
+    public void Initialize(PlatformerPlayerController playableCharacter) {
         character = playableCharacter;
+        ResolveAnimatorIfNeeded();
         ApplyCurrentMode();
     }
 
-    private void Update()
-    {
-        Keyboard keyboard = Keyboard.current;
-        if (!allowDirectInput || keyboard == null || character == null)
-        {
+    private void Update() {
+        if (!allowDirectInput || character == null) {
             return;
         }
 
-        if (keyboard[switchKey].wasPressedThisFrame)
-        {
-            isPoweredMode = !isPoweredMode;
-            ApplyCurrentMode();
+        if (inputActions.Player.SwitchCharacter.WasPressedThisFrame()) {
+            SetPoweredMode(!isPoweredMode);
         }
     }
 
-    private void ApplyCurrentMode()
-    {
-        if (character == null)
-        {
+    public void SetPoweredMode(bool powered) {
+        isPoweredMode = powered;
+        ApplyCurrentMode();
+    }
+
+    public void TogglePoweredMode() {
+        SetPoweredMode(!isPoweredMode);
+    }
+
+    private void ApplyCurrentMode() {
+        if (character == null) {
             return;
         }
 
-        if (isPoweredMode)
-        {
-            character.SetAbilities(true, true, poweredColor);
+        character.SetAbilities(isPoweredMode, isPoweredMode, isPoweredMode ? poweredColor : basicColor);
+        ApplyAnimator();
+    }
+
+    private void ApplyAnimator() {
+        ResolveAnimatorIfNeeded();
+        if (characterAnimator == null) {
+            return;
         }
-        else
-        {
-            character.SetAbilities(false, false, basicColor);
+
+        RuntimeAnimatorController controller = isPoweredMode
+            ? poweredAnimationPlaceholder
+            : basicAnimationPlaceholder;
+        if (characterAnimator.runtimeAnimatorController != controller) {
+            characterAnimator.runtimeAnimatorController = controller;
+        }
+    }
+
+    private void ResolveAnimatorIfNeeded() {
+        if (characterAnimator == null && character != null) {
+            characterAnimator = character.GetComponentInChildren<Animator>(true);
         }
     }
 }

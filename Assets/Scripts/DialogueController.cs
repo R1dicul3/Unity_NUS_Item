@@ -3,11 +3,9 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 [ExecuteAlways]
-public class DialogueController : MonoBehaviour
-{
+public class DialogueController : MonoBehaviour {
     [System.Serializable]
-    public struct DialogueLine
-    {
+    public struct DialogueLine {
         public string speaker;
         [TextArea(2, 4)] public string text;
     }
@@ -67,23 +65,25 @@ public class DialogueController : MonoBehaviour
 
     private int currentLineIndex;
     private bool isShowing;
+    private PlayerInputActions inputActions;
 
     public bool IsShowing => isShowing;
 
-    private void Awake()
-    {
+    private void Awake() {
+        if (Application.isPlaying) {
+            inputActions = new PlayerInputActions();
+        }
+
         InitializeUiIfNeeded();
 
-        if (!Application.isPlaying)
-        {
+        if (!Application.isPlaying) {
             RefreshEditorPreview();
         }
     }
 
-    private void OnEnable()
-    {
-        if (Application.isPlaying)
-        {
+    private void OnEnable() {
+        if (Application.isPlaying) {
+            inputActions?.Enable();
             return;
         }
 
@@ -91,105 +91,86 @@ public class DialogueController : MonoBehaviour
         RefreshEditorPreview();
     }
 
-    private void OnValidate()
-    {
+    private void OnDisable() {
+        if (Application.isPlaying) {
+            inputActions?.Disable();
+        }
+    }
+
+    private void OnValidate() {
         InitializeUiIfNeeded();
 
-        if (!Application.isPlaying)
-        {
+        if (!Application.isPlaying) {
             RefreshEditorPreview();
         }
     }
 
-    private void Start()
-    {
-        if (!Application.isPlaying)
-        {
+    private void Start() {
+        if (!Application.isPlaying) {
             return;
         }
 
-        if (showOnStart && dialogueLines != null && dialogueLines.Length > 0)
-        {
+        if (showOnStart && dialogueLines != null && dialogueLines.Length > 0) {
             StartDialogue(dialogueLines);
         }
-        else
-        {
+        else {
             HideDialogue();
         }
     }
 
-    private void Update()
-    {
-        if (!Application.isPlaying)
-        {
+    private void Update() {
+        if (!Application.isPlaying) {
             return;
         }
 
-        if (!isShowing)
-        {
+        if (!isShowing) {
             return;
         }
 
-        Mouse mouse = Mouse.current;
-        Keyboard keyboard = Keyboard.current;
-        bool clicked = mouse != null && mouse.leftButton.wasPressedThisFrame;
-        bool confirmed = keyboard != null && keyboard.enterKey.wasPressedThisFrame;
-
-        if (clicked || confirmed)
-        {
+        if (inputActions.Player.NextDialogue.WasPressedThisFrame()) {
             Advance();
         }
     }
 
-    public void SetLines(DialogueLine[] lines)
-    {
+    public void SetLines(DialogueLine[] lines) {
         dialogueLines = lines;
     }
 
-    public void SetPortrait(Sprite sprite)
-    {
+    public void SetPortrait(Sprite sprite) {
         portraitSprite = sprite;
         ApplyPortrait();
     }
 
-    public void StartDialogue(DialogueLine[] lines)
-    {
+    public void StartDialogue(DialogueLine[] lines) {
         dialogueLines = lines;
         currentLineIndex = 0;
         isShowing = dialogueLines != null && dialogueLines.Length > 0;
 
-        if (dialogueCanvas != null)
-        {
+        if (dialogueCanvas != null) {
             dialogueCanvas.gameObject.SetActive(isShowing);
         }
 
-        if (isShowing)
-        {
+        if (isShowing) {
             ShowCurrentLine();
         }
     }
 
-    public void StartDialogue(params string[] lines)
-    {
+    public void StartDialogue(params string[] lines) {
         DialogueLine[] convertedLines = new DialogueLine[lines.Length];
-        for (int i = 0; i < lines.Length; i++)
-        {
+        for (int i = 0; i < lines.Length; i++) {
             convertedLines[i] = new DialogueLine { speaker = "Character", text = lines[i] };
         }
 
         StartDialogue(convertedLines);
     }
 
-    public void Advance()
-    {
-        if (!isShowing)
-        {
+    public void Advance() {
+        if (!isShowing) {
             return;
         }
 
         currentLineIndex++;
-        if (currentLineIndex >= dialogueLines.Length)
-        {
+        if (currentLineIndex >= dialogueLines.Length) {
             HideDialogue();
             return;
         }
@@ -197,19 +178,15 @@ public class DialogueController : MonoBehaviour
         ShowCurrentLine();
     }
 
-    public void HideDialogue()
-    {
+    public void HideDialogue() {
         isShowing = false;
-        if (dialogueCanvas != null)
-        {
+        if (dialogueCanvas != null) {
             dialogueCanvas.gameObject.SetActive(false);
         }
     }
 
-    private void ShowCurrentLine()
-    {
-        if (speakerText == null || bodyText == null)
-        {
+    private void ShowCurrentLine() {
+        if (speakerText == null || bodyText == null) {
             return;
         }
 
@@ -218,51 +195,40 @@ public class DialogueController : MonoBehaviour
         bodyText.text = line.text;
     }
 
-    private void ResolveHierarchyReferences()
-    {
-        if (dialogueCanvas == null)
-        {
+    private void ResolveHierarchyReferences() {
+        if (dialogueCanvas == null) {
             dialogueCanvas = GetComponentInChildren<Canvas>(true);
         }
 
         Text[] texts = GetComponentsInChildren<Text>(true);
-        foreach (Text text in texts)
-        {
-            if (speakerText == null && text.name == "SpeakerText")
-            {
+        foreach (Text text in texts) {
+            if (speakerText == null && text.name == "SpeakerText") {
                 speakerText = text;
             }
-            else if (bodyText == null && text.name == "DialogueText")
-            {
+            else if (bodyText == null && text.name == "DialogueText") {
                 bodyText = text;
             }
-            else if (portraitLabel == null && text.name == "PortraitLabel")
-            {
+            else if (portraitLabel == null && text.name == "PortraitLabel") {
                 portraitLabel = text;
             }
         }
 
         Image[] images = GetComponentsInChildren<Image>(true);
-        foreach (Image image in images)
-        {
-            if (portraitImage == null && image.name == "PortraitImage")
-            {
+        foreach (Image image in images) {
+            if (portraitImage == null && image.name == "PortraitImage") {
                 portraitImage = image;
             }
         }
     }
 
-    private bool HasRequiredUi()
-    {
+    private bool HasRequiredUi() {
         return dialogueCanvas != null && speakerText != null && bodyText != null;
     }
 
-    private void InitializeUiIfNeeded()
-    {
+    private void InitializeUiIfNeeded() {
         ResolveHierarchyReferences();
 
-        if (!HasRequiredUi() && createFallbackUiIfMissing)
-        {
+        if (!HasRequiredUi() && createFallbackUiIfMissing) {
             BuildFallbackUi();
         }
 
@@ -270,27 +236,22 @@ public class DialogueController : MonoBehaviour
         ApplyPortrait();
     }
 
-    private void RefreshEditorPreview()
-    {
-        if (dialogueCanvas == null)
-        {
+    private void RefreshEditorPreview() {
+        if (dialogueCanvas == null) {
             return;
         }
 
         dialogueCanvas.gameObject.SetActive(previewInEditMode);
 
-        if (!previewInEditMode || speakerText == null || bodyText == null)
-        {
+        if (!previewInEditMode || speakerText == null || bodyText == null) {
             return;
         }
 
-        if (dialogueLines != null && dialogueLines.Length > 0)
-        {
+        if (dialogueLines != null && dialogueLines.Length > 0) {
             currentLineIndex = Mathf.Clamp(currentLineIndex, 0, dialogueLines.Length - 1);
             ShowCurrentLine();
         }
-        else
-        {
+        else {
             speakerText.text = "Character";
             bodyText.text = "Dialogue preview text";
         }
@@ -299,8 +260,7 @@ public class DialogueController : MonoBehaviour
         ApplyPortrait();
     }
 
-    private void BuildFallbackUi()
-    {
+    private void BuildFallbackUi() {
         dialogueCanvas = new GameObject("DialogueCanvas").AddComponent<Canvas>();
         dialogueCanvas.transform.SetParent(transform, false);
         dialogueCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -325,50 +285,41 @@ public class DialogueController : MonoBehaviour
         ApplyLayout();
     }
 
-    private void ApplyLayout()
-    {
-        if (portraitImage != null)
-        {
+    private void ApplyLayout() {
+        if (portraitImage != null) {
             ApplyRect(portraitImage.rectTransform, portraitAnchorMin, portraitAnchorMax, portraitOffsetMin, portraitOffsetMax);
             portraitImage.preserveAspect = preservePortraitAspect;
         }
 
-        if (speakerText != null)
-        {
+        if (speakerText != null) {
             ApplyRect(speakerText.rectTransform, speakerAnchorMin, speakerAnchorMax, speakerOffsetMin, speakerOffsetMax);
             speakerText.fontSize = speakerFontSize;
         }
 
-        if (bodyText != null)
-        {
+        if (bodyText != null) {
             ApplyRect(bodyText.rectTransform, bodyAnchorMin, bodyAnchorMax, bodyOffsetMin, bodyOffsetMax);
             bodyText.fontSize = bodyFontSize;
         }
 
-        if (portraitLabel != null)
-        {
+        if (portraitLabel != null) {
             portraitLabel.fontSize = portraitLabelFontSize;
         }
 
         Transform dialogueBox = dialogueCanvas != null ? dialogueCanvas.transform.Find("DialogueBox") : null;
-        if (dialogueBox is RectTransform dialogueBoxRect)
-        {
+        if (dialogueBox is RectTransform dialogueBoxRect) {
             ApplyRect(dialogueBoxRect, dialogueBoxAnchorMin, dialogueBoxAnchorMax, dialogueBoxOffsetMin, dialogueBoxOffsetMax);
         }
     }
 
-    private static void ApplyRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
-    {
+    private static void ApplyRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax) {
         rect.anchorMin = anchorMin;
         rect.anchorMax = anchorMax;
         rect.offsetMin = offsetMin;
         rect.offsetMax = offsetMax;
     }
 
-    private void ApplyPortrait()
-    {
-        if (portraitImage == null)
-        {
+    private void ApplyPortrait() {
+        if (portraitImage == null) {
             return;
         }
 
@@ -377,14 +328,12 @@ public class DialogueController : MonoBehaviour
         portraitImage.color = hasPortrait ? Color.white : portraitColor;
         portraitImage.type = Image.Type.Simple;
 
-        if (portraitLabel != null)
-        {
+        if (portraitLabel != null) {
             portraitLabel.gameObject.SetActive(!hasPortrait);
         }
     }
 
-    private RectTransform CreatePanel(string objectName, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Color color)
-    {
+    private RectTransform CreatePanel(string objectName, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Color color) {
         GameObject panelObject = new GameObject(objectName);
         panelObject.transform.SetParent(parent, false);
         RectTransform rect = panelObject.AddComponent<RectTransform>();
@@ -398,8 +347,7 @@ public class DialogueController : MonoBehaviour
         return rect;
     }
 
-    private Text CreateText(string objectName, Transform parent, string value, int fontSize, TextAnchor alignment)
-    {
+    private Text CreateText(string objectName, Transform parent, string value, int fontSize, TextAnchor alignment) {
         GameObject textObject = new GameObject(objectName);
         textObject.transform.SetParent(parent, false);
         RectTransform rect = textObject.AddComponent<RectTransform>();

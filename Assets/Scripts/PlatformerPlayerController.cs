@@ -4,8 +4,7 @@ using UnityEngine.InputSystem;
 [SelectionBase]
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(BoxCollider2D))]
-public class PlatformerPlayerController : MonoBehaviour
-{
+public class PlatformerPlayerController : MonoBehaviour {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float acceleration = 70f;
@@ -68,60 +67,55 @@ public class PlatformerPlayerController : MonoBehaviour
     private float defaultGravityScale;
     private static Sprite fallbackPlayerSprite;
 
+    private PlayerInputActions inputActions;
+
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
     public bool IsControlled => isControlled;
     public bool CanDoubleJump => canDoubleJump;
     public bool CanDash => canDash;
+    public bool IsWeakerCharacter => !canDoubleJump && !canDash;
     public Collider2D BodyCollider => boxCollider;
 
-    public void Initialize(LayerMask platformMask)
-    {
+    public void Initialize(LayerMask platformMask) {
         groundMask = platformMask;
     }
 
-    public void Initialize(LayerMask platformMask, Color activeColor, Color idleColor)
-    {
+    public void Initialize(LayerMask platformMask, Color activeColor, Color idleColor) {
         groundMask = platformMask;
         controlledColor = activeColor;
         inactiveColor = idleColor;
     }
 
-    public void Initialize(LayerMask platformMask, Color activeColor, Color idleColor, bool allowDoubleJump, bool allowDash)
-    {
+    public void Initialize(LayerMask platformMask, Color activeColor, Color idleColor, bool allowDoubleJump, bool allowDash) {
         groundMask = platformMask;
         controlledColor = activeColor;
         inactiveColor = idleColor;
         SetAbilities(allowDoubleJump, allowDash, activeColor);
     }
 
-    public void SetAbilities(bool allowDoubleJump, bool allowDash, Color activeColor)
-    {
+    public void SetAbilities(bool allowDoubleJump, bool allowDash, Color activeColor) {
         canDoubleJump = allowDoubleJump;
         canDash = allowDash;
         controlledColor = activeColor;
         maxJumpCount = canDoubleJump ? 2 : 1;
 
-        if (!canDash && isDashing)
-        {
+        if (!canDash && isDashing) {
             isDashing = false;
             rb.gravityScale = defaultGravityScale;
         }
 
-        if (!canDoubleJump && jumpsUsed > 1)
-        {
+        if (!canDoubleJump && jumpsUsed > 1) {
             jumpsUsed = 1;
         }
 
         UpdateVisuals();
     }
 
-    public void SetControlled(bool value)
-    {
+    public void SetControlled(bool value) {
         isControlled = value;
 
-        if (!isControlled)
-        {
+        if (!isControlled) {
             moveInput = 0f;
             jumpBufferTimer = 0f;
             isDashing = false;
@@ -132,8 +126,9 @@ public class PlatformerPlayerController : MonoBehaviour
         UpdateVisuals();
     }
 
-    private void Awake()
-    {
+    private void Awake() {
+        inputActions = new PlayerInputActions();
+
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -145,20 +140,29 @@ public class PlatformerPlayerController : MonoBehaviour
         ApplyFrictionlessMaterial();
     }
 
-    private void Update()
-    {
+    private void OnEnable() {
+        inputActions?.Enable();
+    }
+
+    private void OnDisable() {
+        inputActions?.Disable();
+    }
+
+    private void OnDestroy() {
+        inputActions?.Dispose();
+    }
+
+    private void Update() {
         AlignVisualAndCollider();
         UpdateGroundState();
         UpdateTimers();
 
-        if (isControlled)
-        {
+        if (isControlled) {
             ReadInput();
             TryJump();
             TryDash();
         }
-        else
-        {
+        else {
             moveInput = 0f;
             jumpBufferTimer = 0f;
         }
@@ -166,10 +170,8 @@ public class PlatformerPlayerController : MonoBehaviour
         UpdateVisuals();
     }
 
-    private void FixedUpdate()
-    {
-        if (isDashing)
-        {
+    private void FixedUpdate() {
+        if (isDashing) {
             rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
             return;
         }
@@ -178,35 +180,22 @@ public class PlatformerPlayerController : MonoBehaviour
         ApplyBetterJumpGravity();
     }
 
-    private void ReadInput()
-    {
-        Keyboard keyboard = Keyboard.current;
-        if (keyboard == null)
-        {
-            moveInput = 0f;
-            return;
-        }
+    private void ReadInput() {
+        // 核心修改：读取 Vector2 类型，并提取 X 轴分量作为水平移动输入
+        moveInput = inputActions.Player.Move.ReadValue<Vector2>().x;
 
-        float left = keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed ? 1f : 0f;
-        float right = keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed ? 1f : 0f;
-        moveInput = right - left;
-
-        if (Mathf.Abs(moveInput) > 0.01f)
-        {
+        if (Mathf.Abs(moveInput) > 0.01f) {
             facingDirection = Mathf.Sign(moveInput);
         }
 
-        if (keyboard.spaceKey.wasPressedThisFrame)
-        {
+        if (inputActions.Player.Jump.WasPressedThisFrame()) {
             jumpBufferTimer = jumpBufferTime;
         }
     }
 
-    private void UpdateGroundState()
-    {
+    private void UpdateGroundState() {
         wasGrounded = isGrounded;
-        if (groundCheckLockoutTimer > 0f || rb.linearVelocity.y > 0.05f)
-        {
+        if (groundCheckLockoutTimer > 0f || rb.linearVelocity.y > 0.05f) {
             isGrounded = false;
             return;
         }
@@ -215,31 +204,25 @@ public class PlatformerPlayerController : MonoBehaviour
         isGrounded = false;
 
         Collider2D[] hits = Physics2D.OverlapBoxAll(checkCenter, groundCheckSize, 0f, groundMask);
-        foreach (Collider2D hit in hits)
-        {
-            if (IsGroundCollider(hit))
-            {
+        foreach (Collider2D hit in hits) {
+            if (IsGroundCollider(hit)) {
                 isGrounded = true;
                 break;
             }
         }
 
-        if (isGrounded)
-        {
+        if (isGrounded) {
             coyoteTimer = coyoteTime;
             jumpsUsed = 0;
         }
 
-        if (!wasGrounded && isGrounded)
-        {
+        if (!wasGrounded && isGrounded) {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Min(rb.linearVelocity.y, 0f));
         }
     }
 
-    private void UpdateTimers()
-    {
-        if (!isGrounded)
-        {
+    private void UpdateTimers() {
+        if (!isGrounded) {
             coyoteTimer -= Time.deltaTime;
         }
 
@@ -247,38 +230,31 @@ public class PlatformerPlayerController : MonoBehaviour
         dashCooldownTimer -= Time.deltaTime;
         groundCheckLockoutTimer -= Time.deltaTime;
 
-        if (isDashing)
-        {
+        if (isDashing) {
             dashTimer -= Time.deltaTime;
-            if (dashTimer <= 0f)
-            {
+            if (dashTimer <= 0f) {
                 isDashing = false;
                 rb.gravityScale = defaultGravityScale;
             }
         }
     }
 
-    private void TryJump()
-    {
-        if (jumpBufferTimer <= 0f || isDashing)
-        {
+    private void TryJump() {
+        if (jumpBufferTimer <= 0f || isDashing) {
             return;
         }
 
         bool canGroundJump = isGrounded || coyoteTimer > 0f;
         bool canAirJump = canDoubleJump && !canGroundJump && jumpsUsed < maxJumpCount;
 
-        if (!canGroundJump && !canAirJump)
-        {
+        if (!canGroundJump && !canAirJump) {
             return;
         }
 
-        if (canGroundJump)
-        {
+        if (canGroundJump) {
             jumpsUsed = 1;
         }
-        else
-        {
+        else {
             jumpsUsed++;
         }
 
@@ -289,11 +265,8 @@ public class PlatformerPlayerController : MonoBehaviour
         groundCheckLockoutTimer = groundCheckLockoutAfterJump;
     }
 
-    private void TryDash()
-    {
-        Keyboard keyboard = Keyboard.current;
-        if (!canDash || keyboard == null || !keyboard.leftShiftKey.wasPressedThisFrame || dashCooldownTimer > 0f || isDashing)
-        {
+    private void TryDash() {
+        if (!canDash || !inputActions.Player.Dash.WasPressedThisFrame() || dashCooldownTimer > 0f || isDashing) {
             return;
         }
 
@@ -303,14 +276,12 @@ public class PlatformerPlayerController : MonoBehaviour
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
 
-        if (dashTrail != null)
-        {
+        if (dashTrail != null) {
             dashTrail.Clear();
         }
     }
 
-    private void ApplyHorizontalMovement()
-    {
+    private void ApplyHorizontalMovement() {
         float targetSpeed = moveInput * moveSpeed;
         float speedDifference = targetSpeed - rb.linearVelocity.x;
         float rate = Mathf.Abs(targetSpeed) > 0.01f ? acceleration : deceleration;
@@ -318,103 +289,81 @@ public class PlatformerPlayerController : MonoBehaviour
         rb.linearVelocity = new Vector2(rb.linearVelocity.x + movement, rb.linearVelocity.y);
     }
 
-    private void ApplyBetterJumpGravity()
-    {
+    private void ApplyBetterJumpGravity() {
         rb.gravityScale = defaultGravityScale;
-        Keyboard keyboard = Keyboard.current;
-        bool jumpHeld = keyboard != null && keyboard.spaceKey.isPressed;
+        bool jumpHeld = inputActions.Player.Jump.IsPressed();
 
-        if (rb.linearVelocity.y < -0.01f)
-        {
+        if (rb.linearVelocity.y < -0.01f) {
             rb.gravityScale = defaultGravityScale * fallGravityMultiplier;
         }
-        else if (rb.linearVelocity.y > 0.01f && !jumpHeld)
-        {
+        else if (rb.linearVelocity.y > 0.01f && !jumpHeld) {
             rb.gravityScale = defaultGravityScale * shortHopGravityMultiplier;
         }
     }
 
-    private void UpdateVisuals()
-    {
+    private void UpdateVisuals() {
         EnsureVisualSprite();
 
-        if (spriteRenderer != null)
-        {
+        if (spriteRenderer != null) {
             spriteRenderer.flipX = facingDirection < 0f;
-            if (isDashing && isControlled)
-            {
+            if (isDashing && isControlled) {
                 spriteRenderer.color = new Color(0.55f, 0.92f, 1f);
             }
-            else
-            {
+            else {
                 spriteRenderer.color = isControlled ? controlledColor : inactiveColor;
             }
         }
 
-        if (dashTrail != null)
-        {
+        if (dashTrail != null) {
             dashTrail.emitting = isDashing;
         }
     }
 
-    private void EnsureVisualSprite()
-    {
-        if (spriteRenderer == null)
-        {
+    private void EnsureVisualSprite() {
+        if (spriteRenderer == null) {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         }
 
-        if (spriteRenderer == null)
-        {
+        if (spriteRenderer == null) {
             return;
         }
 
-        if (spriteRenderer.sprite == null)
-        {
+        if (spriteRenderer.sprite == null) {
             spriteRenderer.sprite = GetFallbackPlayerSprite();
         }
     }
 
-    private void AlignVisualAndCollider()
-    {
-        if (!autoAlignVisualAndCollider)
-        {
+    private void AlignVisualAndCollider() {
+        if (!autoAlignVisualAndCollider) {
             return;
         }
 
-        if (boxCollider == null)
-        {
+        if (boxCollider == null) {
             boxCollider = GetComponent<BoxCollider2D>();
         }
 
-        if (boxCollider != null)
-        {
+        if (boxCollider != null) {
             boxCollider.size = bodySize;
             boxCollider.offset = bodyOffset;
         }
 
-        if (spriteRenderer == null)
-        {
+        if (spriteRenderer == null) {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         }
 
-        if (spriteRenderer != null)
-        {
+        if (spriteRenderer != null) {
             spriteRenderer.transform.localPosition = visualLocalPosition;
             spriteRenderer.transform.localScale = visualLocalScale;
         }
     }
 
-    private void AdoptSceneVisualPosition()
-    {
-        if (!autoAlignVisualAndCollider || spriteRenderer == null || spriteRenderer.transform == transform)
-        {
+    private void AdoptSceneVisualPosition() {
+        if (!autoAlignVisualAndCollider || spriteRenderer == null || spriteRenderer.transform == transform) {
             return;
         }
 
         Vector3 localDelta = spriteRenderer.transform.localPosition - visualLocalPosition;
-        if (localDelta.sqrMagnitude <= 0.000001f)
-        {
+        if (localDelta.sqrMagnitude <= 0.000001f) {
             return;
         }
 
@@ -422,15 +371,12 @@ public class PlatformerPlayerController : MonoBehaviour
         spriteRenderer.transform.localPosition = visualLocalPosition;
     }
 
-    private static Sprite GetFallbackPlayerSprite()
-    {
-        if (fallbackPlayerSprite != null)
-        {
+    private static Sprite GetFallbackPlayerSprite() {
+        if (fallbackPlayerSprite != null) {
             return fallbackPlayerSprite;
         }
 
-        Texture2D texture = new Texture2D(1, 1)
-        {
+        Texture2D texture = new Texture2D(1, 1) {
             name = "Runtime Player Pixel",
             hideFlags = HideFlags.HideAndDontSave,
             filterMode = FilterMode.Point
@@ -444,15 +390,13 @@ public class PlatformerPlayerController : MonoBehaviour
         return fallbackPlayerSprite;
     }
 
-    private void OnDrawGizmosSelected()
-    {
+    private void OnDrawGizmosSelected() {
         Gizmos.color = Color.green;
         Vector2 checkCenter = (Vector2)transform.position + Vector2.down * groundCheckOffset;
         Gizmos.DrawWireCube(checkCenter, groundCheckSize);
     }
 
-    private void OnValidate()
-    {
+    private void OnValidate() {
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -460,35 +404,28 @@ public class PlatformerPlayerController : MonoBehaviour
         EnsureVisualSprite();
     }
 
-    private void ApplyFrictionlessMaterial()
-    {
-        if (!useFrictionlessMaterial || boxCollider == null)
-        {
+    private void ApplyFrictionlessMaterial() {
+        if (!useFrictionlessMaterial || boxCollider == null) {
             return;
         }
 
-        frictionlessMaterial = new PhysicsMaterial2D("Player Frictionless")
-        {
+        frictionlessMaterial = new PhysicsMaterial2D("Player Frictionless") {
             friction = 0f,
             bounciness = 0f
         };
         boxCollider.sharedMaterial = frictionlessMaterial;
     }
 
-    private bool IsGroundCollider(Collider2D hit)
-    {
-        if (hit == null || hit == boxCollider || hit.isTrigger)
-        {
+    private bool IsGroundCollider(Collider2D hit) {
+        if (hit == null || hit == boxCollider || hit.isTrigger) {
             return false;
         }
 
-        if (hit.GetComponentInParent<PlatformerPlayerController>() != null)
-        {
+        if (hit.GetComponentInParent<PlatformerPlayerController>() != null) {
             return false;
         }
 
-        if (boxCollider == null)
-        {
+        if (boxCollider == null) {
             return true;
         }
 

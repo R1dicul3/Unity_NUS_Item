@@ -14,7 +14,7 @@ public static class Map1WhiteboxBuilder
     private const float ImageCenterY = 542f;
     private const float PixelsToWorld = 0.08f;
     private const float DoorInset = 0.55f;
-    private const float DoorThickness = 0.35f;
+    private const float DoorThickness = 0.8f;
     private const float DoorLength = 2.8f;
     private const float LabelZ = -0.2f;
     private const float WallThickness = 0.32f;

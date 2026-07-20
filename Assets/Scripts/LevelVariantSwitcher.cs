@@ -2,27 +2,20 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public class LevelVariantSwitcher : MonoBehaviour
-{
+public class LevelVariantSwitcher : MonoBehaviour {
     [Header("Platform Variants")]
     [Tooltip("Element 0 is the blue platform group. Element 1 is the red platform group.")]
     [SerializeField] private GameObject[] variants;
     [SerializeField] private Color bluePlatformColor = new Color(0.08f, 0.42f, 1f, 1f);
     [SerializeField] private Color redPlatformColor = new Color(0.95f, 0.1f, 0.12f, 1f);
 
-    [Header("Character State")]
-    [SerializeField] private PlatformerPlayerController character;
-    [SerializeField] private Color noAbilityCharacterColor = new Color(0.1f, 0.75f, 1f, 1f);
-    [SerializeField] private Color poweredCharacterColor = new Color(1f, 0.12f, 0.16f, 1f);
-
-    [Header("Animation Placeholders")]
-    [SerializeField] private Animator characterAnimator;
-    [SerializeField] private RuntimeAnimatorController noAbilityAnimationPlaceholder;
-    [SerializeField] private RuntimeAnimatorController poweredAnimationPlaceholder;
-
     [Header("Input")]
-    [SerializeField] private Key switchKey = Key.Tab;
     [SerializeField] private int currentIndex;
+
+    [Header("Character Gate")]
+    [Tooltip("Only the character with no double jump and no dash (the weaker character) is allowed to switch the world/platforms.")]
+    [SerializeField] private bool restrictToWeakerCharacter = true;
+    [SerializeField] private PlatformerPlayerController character;
 
     [Header("Indicator")]
     [SerializeField] private Text variantLabel;
@@ -31,41 +24,77 @@ public class LevelVariantSwitcher : MonoBehaviour
     [SerializeField] private Color labelColor = Color.white;
     [SerializeField] private bool createStartRoomDemoObject;
 
-    private bool switchKeyWasPressed;
+    private PlayerInputActions inputActions;
 
     public int CurrentIndex => currentIndex;
-    public bool IsPoweredVariant => currentIndex == 1;
+    public bool IsRedVariant => currentIndex == 1;
 
-    private void Start()
-    {
-        ResolveCharacterReferences();
+    private void Awake() {
+        inputActions = new PlayerInputActions();
+    }
+
+    private void OnEnable() {
+        inputActions?.Enable();
+    }
+
+    private void OnDisable() {
+        inputActions?.Disable();
+    }
+
+    private void OnDestroy() {
+        inputActions?.Dispose();
+    }
+
+    private void Start() {
+        ResolveCharacterReference();
         EnsureVariantLabel();
         EnsureStartRoomDemoObject();
         ApplyVariant();
     }
 
-    private void Update()
-    {
-        Keyboard keyboard = Keyboard.current;
-        if (keyboard == null || variants == null || variants.Length < 2)
-        {
+    private void Update() {
+        EnforceCharacterGate();
+
+        if (variants == null || variants.Length < 2) {
             return;
         }
 
-        bool switchKeyIsPressed = keyboard[switchKey].isPressed;
-        if (switchKeyIsPressed && !switchKeyWasPressed)
-        {
+        if (inputActions.Player.SwitchVariant.WasPressedThisFrame() && CanSwitchWorld()) {
             currentIndex = currentIndex == 0 ? 1 : 0;
             ApplyVariant();
         }
-
-        switchKeyWasPressed = switchKeyIsPressed;
     }
 
-    public void SetVariant(int index)
-    {
-        if (variants == null || variants.Length < 2)
-        {
+    // 持续校验：只要当前角色不是"较弱角色"，红色（第二）世界必须立刻不可见、不可碰撞。
+    // 不只在按键那一刻判断一次，防止玩家先切进红色世界再切回强角色导致的漏洞。
+    private void EnforceCharacterGate() {
+        if (currentIndex == 1 && !CanSwitchWorld()) {
+            currentIndex = 0;
+            ApplyVariant();
+        }
+    }
+
+    public bool CanSwitchWorld() {
+        if (!restrictToWeakerCharacter) {
+            return true;
+        }
+
+        ResolveCharacterReference();
+        if (character == null) {
+            return true;
+        }
+
+        return character.IsWeakerCharacter;
+    }
+
+    private void ResolveCharacterReference() {
+        if (character == null) {
+            character = FindFirstObjectByType<PlatformerPlayerController>(FindObjectsInactive.Include);
+        }
+    }
+
+    public void SetVariant(int index) {
+        if (variants == null || variants.Length < 2) {
             return;
         }
 
@@ -73,83 +102,35 @@ public class LevelVariantSwitcher : MonoBehaviour
         ApplyVariant();
     }
 
-    private void ApplyVariant()
-    {
-        if (variants == null)
-        {
+    private void ApplyVariant() {
+        if (variants == null) {
             return;
         }
 
         currentIndex = Mathf.Clamp(currentIndex, 0, 1);
-        for (int i = 0; i < variants.Length; i++)
-        {
-            if (variants[i] != null)
-            {
+        for (int i = 0; i < variants.Length; i++) {
+            if (variants[i] != null) {
                 variants[i].SetActive(i == currentIndex);
             }
         }
 
         TintPlatformGroup(variants.Length > 0 ? variants[0] : null, bluePlatformColor);
         TintPlatformGroup(variants.Length > 1 ? variants[1] : null, redPlatformColor);
-        ApplyCharacterState();
         UpdateVariantLabel();
     }
 
-    private void ApplyCharacterState()
-    {
-        ResolveCharacterReferences();
-        if (character == null)
-        {
+    private static void TintPlatformGroup(GameObject root, Color color) {
+        if (root == null) {
             return;
         }
 
-        bool powered = IsPoweredVariant;
-        character.SetAbilities(powered, powered, powered ? poweredCharacterColor : noAbilityCharacterColor);
-
-        if (characterAnimator == null)
-        {
-            return;
-        }
-
-        RuntimeAnimatorController controller = powered
-            ? poweredAnimationPlaceholder
-            : noAbilityAnimationPlaceholder;
-        if (characterAnimator.runtimeAnimatorController != controller)
-        {
-            characterAnimator.runtimeAnimatorController = controller;
-        }
-    }
-
-    private void ResolveCharacterReferences()
-    {
-        if (character == null)
-        {
-            character = FindFirstObjectByType<PlatformerPlayerController>(FindObjectsInactive.Include);
-        }
-
-        if (characterAnimator == null && character != null)
-        {
-            characterAnimator = character.GetComponentInChildren<Animator>(true);
-        }
-    }
-
-    private static void TintPlatformGroup(GameObject root, Color color)
-    {
-        if (root == null)
-        {
-            return;
-        }
-
-        foreach (SpriteRenderer renderer in root.GetComponentsInChildren<SpriteRenderer>(true))
-        {
+        foreach (SpriteRenderer renderer in root.GetComponentsInChildren<SpriteRenderer>(true)) {
             renderer.color = color;
         }
     }
 
-    private void EnsureVariantLabel()
-    {
-        if (variantLabel != null)
-        {
+    private void EnsureVariantLabel() {
+        if (variantLabel != null) {
             ConfigureVariantLabel();
             return;
         }
@@ -172,8 +153,7 @@ public class LevelVariantSwitcher : MonoBehaviour
         ConfigureVariantLabel();
     }
 
-    private void ConfigureVariantLabel()
-    {
+    private void ConfigureVariantLabel() {
         variantLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         variantLabel.fontSize = labelFontSize;
         variantLabel.fontStyle = FontStyle.Bold;
@@ -189,26 +169,21 @@ public class LevelVariantSwitcher : MonoBehaviour
         labelTransform.sizeDelta = new Vector2(420f, 130f);
     }
 
-    private void UpdateVariantLabel()
-    {
-        if (variantLabel == null)
-        {
+    private void UpdateVariantLabel() {
+        if (variantLabel == null) {
             return;
         }
 
-        variantLabel.text = IsPoweredVariant ? "RED" : "BLUE";
+        variantLabel.text = IsRedVariant ? "RED" : "BLUE";
     }
 
-    private void EnsureStartRoomDemoObject()
-    {
-        if (!createStartRoomDemoObject || FindFirstObjectByType<LevelVariantDemoObject>() != null)
-        {
+    private void EnsureStartRoomDemoObject() {
+        if (!createStartRoomDemoObject || FindFirstObjectByType<LevelVariantDemoObject>() != null) {
             return;
         }
 
         GameObject startRoom = GameObject.Find("Room_Start");
-        if (startRoom == null)
-        {
+        if (startRoom == null) {
             return;
         }
 
