@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class RoomPillarPuzzle2D : MonoBehaviour
 {
+    [Header("Save")]
+    [SerializeField] private string saveId;
+
     [Header("Room Source")]
     [SerializeField] private Transform roomTransform;
     [SerializeField] private Vector2 fallbackRoomCenter = new Vector2(-27.04f, -18.92f);
@@ -28,6 +31,8 @@ public class RoomPillarPuzzle2D : MonoBehaviour
 
     private readonly List<SinkingPillar2D> registeredPillars = new List<SinkingPillar2D>();
     private static Sprite fallbackSprite;
+
+    public string SaveId => string.IsNullOrWhiteSpace(saveId) ? GetHierarchyPath(transform) : saveId;
 
     public void ConfigureSprite(Sprite sprite)
     {
@@ -66,9 +71,57 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         steppedPillar.SinkToFinalVisibleSegments();
     }
 
-    private void Awake()
+    public SaveSystem.PillarPuzzleState CaptureState()
     {
         CachePillars();
+        SaveSystem.PillarState[] pillars = new SaveSystem.PillarState[registeredPillars.Count];
+        for (int i = 0; i < registeredPillars.Count; i++)
+        {
+            pillars[i] = registeredPillars[i] != null ? registeredPillars[i].CaptureState() : null;
+        }
+
+        return new SaveSystem.PillarPuzzleState
+        {
+            puzzleId = SaveId,
+            pillars = pillars
+        };
+    }
+
+    public void ApplyState(SaveSystem.PillarPuzzleState state)
+    {
+        if (state == null || state.pillars == null)
+        {
+            return;
+        }
+
+        CachePillars();
+        foreach (SaveSystem.PillarState pillarState in state.pillars)
+        {
+            if (pillarState == null)
+            {
+                continue;
+            }
+
+            foreach (SinkingPillar2D pillar in registeredPillars)
+            {
+                if (pillar != null && pillar.SaveId == pillarState.pillarId)
+                {
+                    pillar.ApplyState(pillarState);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void Awake()
+    {
+        EnsureSaveId();
+        CachePillars();
+    }
+
+    private void OnValidate()
+    {
+        EnsureSaveId();
     }
 
     private void OnEnable()
@@ -255,5 +308,30 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         fallbackSprite.name = "Pillar Puzzle Line Sprite";
         fallbackSprite.hideFlags = HideFlags.HideAndDontSave;
         return fallbackSprite;
+    }
+
+    private void EnsureSaveId()
+    {
+        if (string.IsNullOrWhiteSpace(saveId))
+        {
+            saveId = GetHierarchyPath(transform);
+        }
+    }
+
+    private static string GetHierarchyPath(Transform current)
+    {
+        if (current == null)
+        {
+            return string.Empty;
+        }
+
+        string path = current.name;
+        while (current.parent != null)
+        {
+            current = current.parent;
+            path = current.name + "/" + path;
+        }
+
+        return path;
     }
 }

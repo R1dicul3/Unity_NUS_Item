@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -187,9 +188,33 @@ public class GamePauseManager : MonoBehaviour
     public void StartNewGame()
     {
         HasUnsavedProgress = true;
+        SaveSystem.CollectedStateTracker.Clear();
         SaveSystem.GameTimer.Instance?.ResetTimer();
         SaveSystem.GameTimer.Instance?.StartTimer();
         SceneManager.LoadScene("Scene_2");
+    }
+
+    public SaveSystem.SaveData CreateSaveData()
+    {
+        var player = FindFirstObjectByType<PlatformerPlayerController>();
+        var characterSwitcher = FindFirstObjectByType<CharacterSwitcher2D>();
+        var levelVariantSwitcher = FindFirstObjectByType<LevelVariantSwitcher>();
+        var emotionManager = EmotionManager.Instance;
+        Vector3 position = player != null ? player.transform.position : Vector3.zero;
+
+        return new SaveSystem.SaveData
+        {
+            saveVersion = 2,
+            playerPosition = new SaveSystem.SerializableVector3(position),
+            playTimeSeconds = SaveSystem.GameTimer.Instance?.GetElapsedTime() ?? 0f,
+            saveTimestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            sceneName = SceneManager.GetActiveScene().name,
+            isPoweredMode = characterSwitcher == null || characterSwitcher.IsPoweredMode,
+            levelVariantIndex = levelVariantSwitcher != null ? levelVariantSwitcher.CurrentIndex : 0,
+            currentEmotion = emotionManager != null ? emotionManager.CurrentEmotion.ToString() : EmotionType.Calm.ToString(),
+            collectedObjectIds = SaveSystem.CollectedStateTracker.GetCollectedObjectIds(),
+            pillarPuzzleStates = CapturePillarPuzzleStates()
+        };
     }
 
     public void LoadSaveGame(int slot)
@@ -212,6 +237,7 @@ public class GamePauseManager : MonoBehaviour
         HasUnsavedProgress = false;
         SaveSystem.GameTimer.Instance?.SetElapsedTime(data.playTimeSeconds);
         SaveSystem.GameTimer.Instance?.StartTimer();
+        SaveSystem.CollectedStateTracker.SetCollectedObjectIds(data.collectedObjectIds);
         SceneManager.LoadScene(data.sceneName);
     }
 
@@ -279,6 +305,14 @@ public class GamePauseManager : MonoBehaviour
         }
 
         // 强制相机立即刷新到玩家位置
+        if (data.saveVersion >= 2)
+        {
+            ApplySavedCharacterState(data);
+            ApplySavedWorldState(data);
+            ApplySavedCollectedObjects(data);
+            ApplySavedPillarPuzzleStates(data);
+        }
+
         var cameraFollow = FindFirstObjectByType<CameraFollow2D>();
         if (cameraFollow != null)
         {
@@ -286,5 +320,96 @@ public class GamePauseManager : MonoBehaviour
         }
 
         Debug.Log("[GamePauseManager] 存档数据已应用到场景。");
+    }
+
+    private SaveSystem.PillarPuzzleState[] CapturePillarPuzzleStates()
+    {
+        RoomPillarPuzzle2D[] puzzles = FindObjectsByType<RoomPillarPuzzle2D>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<SaveSystem.PillarPuzzleState> states = new List<SaveSystem.PillarPuzzleState>();
+        foreach (RoomPillarPuzzle2D puzzle in puzzles)
+        {
+            if (puzzle != null)
+            {
+                states.Add(puzzle.CaptureState());
+            }
+        }
+
+        return states.ToArray();
+    }
+
+    private void ApplySavedCharacterState(SaveSystem.SaveData data)
+    {
+        CharacterSwitcher2D characterSwitcher = FindFirstObjectByType<CharacterSwitcher2D>(FindObjectsInactive.Include);
+        if (characterSwitcher != null)
+        {
+            characterSwitcher.SetPoweredMode(data.isPoweredMode);
+        }
+    }
+
+    private void ApplySavedWorldState(SaveSystem.SaveData data)
+    {
+        LevelVariantSwitcher levelVariantSwitcher = FindFirstObjectByType<LevelVariantSwitcher>(FindObjectsInactive.Include);
+        if (levelVariantSwitcher != null)
+        {
+            levelVariantSwitcher.SetVariant(data.levelVariantIndex);
+        }
+
+        if (EmotionManager.Instance != null)
+        {
+            EmotionManager.Instance.SetEmotion(data.currentEmotion);
+        }
+    }
+
+    private void ApplySavedCollectedObjects(SaveSystem.SaveData data)
+    {
+        SaveSystem.CollectedStateTracker.SetCollectedObjectIds(data.collectedObjectIds);
+        if (data.collectedObjectIds == null || data.collectedObjectIds.Length == 0)
+        {
+            return;
+        }
+
+        Coffee[] coffees = FindObjectsByType<Coffee>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Coffee coffee in coffees)
+        {
+            if (coffee == null)
+            {
+                continue;
+            }
+
+            foreach (string collectedId in data.collectedObjectIds)
+            {
+                if (coffee.SaveId == collectedId)
+                {
+                    Destroy(coffee.gameObject);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ApplySavedPillarPuzzleStates(SaveSystem.SaveData data)
+    {
+        if (data.pillarPuzzleStates == null || data.pillarPuzzleStates.Length == 0)
+        {
+            return;
+        }
+
+        RoomPillarPuzzle2D[] puzzles = FindObjectsByType<RoomPillarPuzzle2D>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (SaveSystem.PillarPuzzleState puzzleState in data.pillarPuzzleStates)
+        {
+            if (puzzleState == null)
+            {
+                continue;
+            }
+
+            foreach (RoomPillarPuzzle2D puzzle in puzzles)
+            {
+                if (puzzle != null && puzzle.SaveId == puzzleState.puzzleId)
+                {
+                    puzzle.ApplyState(puzzleState);
+                    break;
+                }
+            }
+        }
     }
 }

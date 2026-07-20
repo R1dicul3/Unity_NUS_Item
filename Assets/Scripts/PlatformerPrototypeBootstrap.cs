@@ -1,7 +1,9 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlatformerPrototypeBootstrap : MonoBehaviour
 {
+    private const string PrototypeScenePathMarker = "/Prototypes/";
     private static readonly bool ConfigureExistingSceneObjects = false;
     private static readonly bool CreateFallbackDialogueModule = false;
     private static readonly bool CreateFallbackInstructionHud = false;
@@ -9,6 +11,12 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreatePrototype()
     {
+        Scene activeScene = SceneManager.GetActiveScene();
+        if (!activeScene.path.Contains(PrototypeScenePathMarker))
+        {
+            return;
+        }
+
         PlatformerPrototypeBootstrap bootstrap = new GameObject("Platformer Prototype Bootstrap").AddComponent<PlatformerPrototypeBootstrap>();
         bootstrap.Build();
     }

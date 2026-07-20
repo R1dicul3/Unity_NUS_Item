@@ -196,16 +196,16 @@ namespace MainMenu
 
         void DoSave(int slot)
         {
-            var player = FindFirstObjectByType<PlatformerPlayerController>();
-            Vector3 pos = player != null ? player.transform.position : Vector3.zero;
-
-            var data = new SaveSystem.SaveData
-            {
-                playerPosition = new SaveSystem.SerializableVector3(pos),
-                playTimeSeconds = SaveSystem.GameTimer.Instance?.GetElapsedTime() ?? 0f,
-                saveTimestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                sceneName = SceneManager.GetActiveScene().name
-            };
+            var data = GamePauseManager.Instance != null
+                ? GamePauseManager.Instance.CreateSaveData()
+                : new SaveSystem.SaveData
+                {
+                    saveVersion = 2,
+                    playerPosition = new SaveSystem.SerializableVector3(Vector3.zero),
+                    playTimeSeconds = SaveSystem.GameTimer.Instance?.GetElapsedTime() ?? 0f,
+                    saveTimestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    sceneName = SceneManager.GetActiveScene().name
+                };
 
             SaveSystem.SaveSystem.Save(slot, data);
             GamePauseManager.Instance?.MarkProgressSaved();

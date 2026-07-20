@@ -34,6 +34,8 @@ namespace SaveSystem
     [Serializable]
     public class SaveData
     {
+        public int saveVersion;
+
         /// <summary>玩家位置</summary>
         public SerializableVector3 playerPosition;
 
@@ -45,5 +47,28 @@ namespace SaveSystem
 
         /// <summary>保存时的场景名</summary>
         public string sceneName;
+
+        public bool isPoweredMode;
+        public int levelVariantIndex;
+        public string currentEmotion;
+        public string[] collectedObjectIds;
+        public PillarPuzzleState[] pillarPuzzleStates;
+    }
+
+    [Serializable]
+    public class PillarPuzzleState
+    {
+        public string puzzleId;
+        public PillarState[] pillars;
+    }
+
+    [Serializable]
+    public class PillarState
+    {
+        public string pillarId;
+        public float currentSinkDistance;
+        public float targetSinkDistance;
+        public int targetVisibleSegmentCount;
+        public bool hasBeenActivated;
     }
 }
