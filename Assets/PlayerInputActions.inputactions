@@ -43,9 +43,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "ChangeCh",
+                    "name": "SwitchCharacter",
                     "type": "Button",
                     "id": "cb30dd9c-ebdc-4b57-954a-eae09f6884a8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SwitchVariant",
+                    "type": "Button",
+                    "id": "df1487b1-faf3-4c1b-8b84-778ed041b95a",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -70,9 +79,9 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "ChangeWorld",
+                    "name": "NextDialogue",
                     "type": "Button",
-                    "id": "df1487b1-faf3-4c1b-8b84-778ed041b95a",
+                    "id": "ec218aee-aad2-4d30-b895-d9e97fc68a4f",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -219,18 +228,18 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "ChangeCh",
+                    "action": "SwitchCharacter",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
                     "id": "aeca0c00-12e7-4bfe-8cbc-942a70eeb697",
-                    "path": "<Gamepad>/leftTrigger",
+                    "path": "<XInputController>/leftTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "ChangeCh",
+                    "action": "SwitchCharacter",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -285,7 +294,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "ChangeWorld",
+                    "action": "SwitchVariant",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -296,7 +305,29 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "ChangeWorld",
+                    "action": "SwitchVariant",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "237dce77-d7e3-4a3d-a235-c8e9ec7d52b0",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextDialogue",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a93907b5-c2fa-40a4-83c4-ecb50dc419cf",
+                    "path": "<XInputController>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextDialogue",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
