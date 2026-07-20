@@ -26,6 +26,23 @@ public class CameraFollow2D : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 强制相机立即跳转到目标位置，重置平滑速度。
+    /// 用于加载存档后立刻刷新摄像机。
+    /// </summary>
+    public void ForceSnapToTarget()
+    {
+        velocity = Vector3.zero;
+        FindTargetIfMissing();
+        if (target == null)
+        {
+            return;
+        }
+        InitializeCurrentArea(forceFromTargetPosition: true);
+        Vector3 desired = GetDesiredCameraPosition();
+        transform.position = clampToCurrentRoom ? ClampToCurrentArea(desired) : desired;
+    }
+
     private void Awake()
     {
         followCamera = GetComponent<Camera>();

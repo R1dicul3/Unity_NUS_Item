@@ -88,7 +88,21 @@ namespace MainMenu
 
         void OnNewGame()
         {
-            SceneManager.LoadScene("Scene_2");
+            if (SaveSystem.SaveSystem.IsFull())
+            {
+                ConfirmDialogUI.Show(
+                    "存档栏位已满。直接开始新游戏将覆盖最早的存档，或者您可以前往存档管理界面。",
+                    onConfirm: () =>
+                    {
+                        SaveSystem.SaveSystem.DeleteOldest();
+                        GamePauseManager.Instance?.StartNewGame();
+                    },
+                    onCancel: () => SceneManager.LoadScene("LoadGame"));
+            }
+            else
+            {
+                GamePauseManager.Instance?.StartNewGame();
+            }
         }
 
         void OnLoadGame()
