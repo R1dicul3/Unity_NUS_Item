@@ -154,7 +154,7 @@ namespace MainMenu
             txt.font = font ?? GetDefaultFont();
             if (txt.font == null)
             {
-                Debug.LogError($"[MenuUIHelper] 无法为文本 \"{text}\" 获取字体。请在对应 UI 脚本的 Inspector 中设置 Override Font。");
+                Debug.LogError($"[MenuUIHelper] Failed to get font for text \"{text}\". Please assign a font in the UI script's Inspector.");
             }
             txt.fontSize = fontSize;
             txt.color = color;
@@ -207,7 +207,7 @@ namespace MainMenu
             btnText.font = font ?? GetDefaultFont();
             if (btnText.font == null)
             {
-                Debug.LogError($"[MenuUIHelper] 无法为按钮 \"{label}\" 获取字体。请在对应 UI 脚本的 Inspector 中设置 Override Font。");
+                Debug.LogError($"[MenuUIHelper] Failed to get font for button \"{label}\". Please assign a font in the UI script's Inspector.");
             }
             btnText.fontSize = fontSize;
             btnText.color = Color.white;
@@ -297,6 +297,8 @@ namespace MainMenu
             if (tmpText != null)
             {
                 tmpText.text = value;
+                tmpText.ForceMeshUpdate(true);
+                tmpText.SetAllDirty();
                 return true;
             }
 
@@ -311,6 +313,8 @@ namespace MainMenu
             if (tmpText != null)
             {
                 tmpText.text = value;
+                tmpText.ForceMeshUpdate(true);
+                tmpText.SetAllDirty();
                 return true;
             }
 
@@ -354,7 +358,7 @@ namespace MainMenu
                 labelText.font = font ?? GetDefaultFont();
                 if (labelText.font == null)
                 {
-                    Debug.LogError($"[MenuUIHelper] 无法为 Slider 标签 \"{label}\" 获取字体。");
+                    Debug.LogError($"[MenuUIHelper] Failed to get font for Slider label \"{label}\".");
                 }
                 labelText.fontSize = 24;
                 labelText.color = textColor;
@@ -469,7 +473,7 @@ namespace MainMenu
             }
             catch { }
 
-            Debug.LogError("[MenuUIHelper] 未能找到任何可用字体。请将字体文件放入 Assets/Resources/Fonts/ 目录，或在各 UI 脚本的 Inspector 中设置 Override Font。");
+            Debug.LogError("[MenuUIHelper] No available font found. Please place a font file in Assets/Resources/Fonts/ or set Override Font in the UI script's Inspector.");
             return null;
         }
     }

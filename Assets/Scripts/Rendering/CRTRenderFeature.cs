@@ -49,7 +49,7 @@ public class CRTRenderFeature : ScriptableRendererFeature
             Shader shader = Shader.Find("Universal Render Pipeline/CRT");
             if (shader == null)
             {
-                Debug.LogError("[CRTRenderFeature] 找不到 Shader 'Universal Render Pipeline/CRT'。请确保 CRTShader.shader 已正确导入。");
+                Debug.LogError("[CRTRenderFeature] Shader 'Universal Render Pipeline/CRT' not found. Please ensure CRTShader.shader is imported correctly.");
                 return;
             }
             m_Material = CoreUtils.CreateEngineMaterial(shader);

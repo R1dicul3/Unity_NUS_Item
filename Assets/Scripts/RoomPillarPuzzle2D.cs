@@ -151,12 +151,12 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         if (CheckCompletion())
         {
             isSolved = true;
-            Debug.Log("Room1 谜题成功！");
+            Debug.Log("Room 1 puzzle succeeded!");
             ShowSuccessDialog();
         }
         else
         {
-            Debug.Log("Room1 谜题未成功");
+            Debug.Log("Room 1 puzzle not solved.");
         }
     }
 
@@ -327,7 +327,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             playerRb.linearVelocity = Vector2.zero;
         }
 
-        Debug.Log("Room1 谜题已重置，玩家已传送。");
+        Debug.Log("Room 1 puzzle reset, player teleported.");
     }
 
     private void RevealPlatformsAndTeleportPlayer()
@@ -433,7 +433,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     {
         Time.timeScale = 0f;
         MainMenu.ConfirmDialogUI.Show(
-            "Room1 谜题成功！",
+            "Room 1 puzzle solved!",
             onConfirm: () =>
             {
                 Time.timeScale = 1f;

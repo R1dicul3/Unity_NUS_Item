@@ -239,7 +239,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.SaveData data = SaveSystem.SaveSystem.Load(slot);
         if (data == null)
         {
-            Debug.LogWarning($"[GamePauseManager] 无法读取存档槽 {slot}。");
+            Debug.LogWarning($"[GamePauseManager] Cannot read save slot {slot}.");
             return;
         }
 
@@ -271,7 +271,7 @@ public class GamePauseManager : MonoBehaviour
         if (HasUnsavedProgress)
         {
             MainMenu.ConfirmDialogUI.Show(
-                "返回主菜单将丢失未保存的游戏进度，确定吗？",
+                "Returning to the main menu will lose unsaved progress. Are you sure?",
                 onConfirm: () => DoReturnToMainMenu(),
                 onCancel: null);
         }
@@ -399,7 +399,7 @@ public class GamePauseManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[GamePauseManager] 加载存档后未找到玩家对象。");
+            Debug.LogWarning("[GamePauseManager] Player object not found after loading save.");
         }
 
         // 强制相机立即刷新到玩家位置
@@ -417,7 +417,7 @@ public class GamePauseManager : MonoBehaviour
             cameraFollow.ForceSnapToTarget();
         }
 
-        Debug.Log("[GamePauseManager] 存档数据已应用到场景。");
+        Debug.Log("[GamePauseManager] Save data applied to scene.");
     }
 
     private SaveSystem.PillarPuzzleState[] CapturePillarPuzzleStates()

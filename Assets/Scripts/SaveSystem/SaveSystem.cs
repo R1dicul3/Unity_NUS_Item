@@ -30,7 +30,7 @@ namespace SaveSystem
             string path = GetSavePath(slot);
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
-            Debug.Log($"[SaveSystem] 存档已保存到 {path}");
+            Debug.Log($"[SaveSystem] Save written to {path}");
         }
 
         /// <summary>从指定槽位读取存档。</summary>
@@ -39,13 +39,13 @@ namespace SaveSystem
             string path = GetSavePath(slot);
             if (!File.Exists(path))
             {
-                Debug.LogWarning($"[SaveSystem] 存档槽 {slot} 不存在。");
+                Debug.LogWarning($"[SaveSystem] Save slot {slot} does not exist.");
                 return null;
             }
 
             string json = File.ReadAllText(path);
             SaveData data = JsonUtility.FromJson<SaveData>(json);
-            Debug.Log($"[SaveSystem] 存档已读取：{path}");
+            Debug.Log($"[SaveSystem] Save loaded: {path}");
             return data;
         }
 
@@ -56,7 +56,7 @@ namespace SaveSystem
             if (File.Exists(path))
             {
                 File.Delete(path);
-                Debug.Log($"[SaveSystem] 存档槽 {slot} 已删除。");
+                Debug.Log($"[SaveSystem] Save slot {slot} deleted.");
             }
         }
 

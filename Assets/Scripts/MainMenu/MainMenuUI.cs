@@ -5,26 +5,26 @@ using UnityEngine.UI;
 namespace MainMenu
 {
     /// <summary>
-    /// 主菜单 UI 构建器。
-    /// 将本脚本挂载到场景中的任意空 GameObject 上，运行后会自动生成居中排列的菜单界面：
-    /// Logo（Stopover）→ New Game → Load Game → Settings → Credits → Exit。
+    /// Main Menu UI builder.
+    /// Attach this script to any empty GameObject in the scene to auto-generate a centered menu:
+    /// Logo (Stopover) → New Game → Load Game → Settings → Credits → Exit.
     /// </summary>
     public class MainMenuUI : MonoBehaviour
     {
-        [Header("外观设置")]
-        [Tooltip("背景颜色")]
+        [Header("Appearance")]
+        [Tooltip("Background color")]
         public Color backgroundColor = Color.white;
 
-        [Tooltip("按钮颜色")]
+        [Tooltip("Button color")]
         public Color buttonColor = new Color(0.25f, 0.35f, 0.55f, 1f);
 
-        [Tooltip("Logo 文字颜色")]
+        [Tooltip("Logo text color")]
         public Color logoColor = Color.black;
 
-        [Tooltip("全局字体覆盖（留空则使用内置默认字体）")]
+        [Tooltip("Global font override (leave empty to use built-in default)")]
         public Font overrideFont;
 
-        [Header("尺寸设置")]
+        [Header("Layout")]
         [Range(30, 150)]
         public int logoFontSize = 72;
 
@@ -165,7 +165,7 @@ namespace MainMenu
 
         void OnPlaceholderClicked(string label)
         {
-            Debug.Log($"[{label}] 功能暂未实现。");
+            Debug.Log($"[{label}] Feature not yet implemented.");
         }
 
         void OnNewGame()
@@ -173,7 +173,7 @@ namespace MainMenu
             if (SaveSystem.SaveSystem.IsFull())
             {
                 ConfirmDialogUI.Show(
-                    "存档栏位已满。开始新游戏后，若进行保存将会覆盖最早的存档。是否继续？",
+                    "Save slots are full. Starting a new game will overwrite the oldest save slot. Continue?",
                     onConfirm: () =>
                     {
                         GamePauseManager.Instance?.StartNewGame();

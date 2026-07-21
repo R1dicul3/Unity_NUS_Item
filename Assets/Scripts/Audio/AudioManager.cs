@@ -131,7 +131,7 @@ public class AudioManager : MonoBehaviour
 #if UNITY_EDITOR
         if (soundLibrary == null)
         {
-            Debug.LogWarning("[AudioManager] 未找到 SoundLibrary 资源。请在 Inspector 中赋值，或在 Assets/Resources/Audio/ 下创建 SoundLibrary.asset。");
+            Debug.LogWarning("[AudioManager] SoundLibrary resource not found. Please assign it in the Inspector, or create SoundLibrary.asset under Assets/Resources/Audio/.");
         }
 #endif
     }

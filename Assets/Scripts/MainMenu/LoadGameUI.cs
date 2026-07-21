@@ -283,13 +283,13 @@ namespace MainMenu
         {
             if (selectedSlot < 1)
             {
-                Debug.Log("[LoadGameUI] 请先选择一个存档栏位。");
+                Debug.Log("[LoadGameUI] Please select a save slot first.");
                 return;
             }
 
             if (!SaveSystem.SaveSystem.HasSave(selectedSlot))
             {
-                Debug.Log("[LoadGameUI] 选中的栏位为空，无法读取。");
+                Debug.Log("[LoadGameUI] Selected slot is empty, cannot load.");
                 return;
             }
 
@@ -300,17 +300,17 @@ namespace MainMenu
         {
             if (selectedSlot < 1)
             {
-                Debug.Log("[LoadGameUI] 请先选择一个存档栏位。");
+                Debug.Log("[LoadGameUI] Please select a save slot first.");
                 return;
             }
 
             if (!SaveSystem.SaveSystem.HasSave(selectedSlot))
             {
-                Debug.Log("[LoadGameUI] 选中的栏位为空，无法删除。");
+                Debug.Log("[LoadGameUI] Selected slot is empty, cannot delete.");
                 return;
             }
 
-            ConfirmDialogUI.Show($"确定要删除存档槽 {selectedSlot} 吗？此操作不可撤销。",
+            ConfirmDialogUI.Show($"Are you sure you want to delete save slot {selectedSlot}? This action cannot be undone.",
                 onConfirm: () =>
                 {
                     SaveSystem.SaveSystem.Delete(selectedSlot);

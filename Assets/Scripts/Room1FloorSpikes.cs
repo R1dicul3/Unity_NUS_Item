@@ -3,7 +3,7 @@ using UnityEngine;
 public class Room1FloorSpikes : MonoBehaviour
 {
     [Header("Messages")]
-    [SerializeField] private string failMessage = "你踩到了尖刺！是否重试？";
+    [SerializeField] private string failMessage = "You stepped on spikes! Try again?";
 
     private bool isDialogShowing;
 
