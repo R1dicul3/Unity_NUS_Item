@@ -6,13 +6,20 @@ public class EmotionManager : MonoBehaviour {
     public EmotionType CurrentEmotion = EmotionType.Calm;
 
     private void Awake() {
-        if (Instance == null)
+        if (Instance == null) {
             Instance = this;
+        }
     }
 
     public void SetEmotion(EmotionType emotion) {
         CurrentEmotion = emotion;
 
         Debug.Log("Emotion : " + emotion);
+    }
+
+    public void SetEmotion(string emotionName) {
+        if (System.Enum.TryParse(emotionName, out EmotionType emotion)) {
+            SetEmotion(emotion);
+        }
     }
 }

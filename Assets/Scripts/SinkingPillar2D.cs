@@ -58,6 +58,35 @@ public class SinkingPillar2D : MonoBehaviour
 
     public bool HasBeenActivated => hasBeenActivated;
 
+    public string SaveId => name;
+
+    public SaveSystem.PillarState CaptureState()
+    {
+        return new SaveSystem.PillarState
+        {
+            pillarId = SaveId,
+            currentSinkDistance = currentSinkDistance,
+            targetSinkDistance = targetSinkDistance,
+            targetVisibleSegmentCount = targetVisibleSegmentCount,
+            hasBeenActivated = hasBeenActivated
+        };
+    }
+
+    public void ApplyState(SaveSystem.PillarState state)
+    {
+        if (state == null)
+        {
+            return;
+        }
+
+        currentSinkDistance = state.currentSinkDistance;
+        targetSinkDistance = state.targetSinkDistance;
+        targetVisibleSegmentCount = state.targetVisibleSegmentCount;
+        hasBeenActivated = state.hasBeenActivated;
+        activationArmed = true;
+        UpdateSegmentPositions();
+    }
+
     public void ConfigurePuzzle(RoomPillarPuzzle2D owningPuzzle)
     {
         puzzle = owningPuzzle;

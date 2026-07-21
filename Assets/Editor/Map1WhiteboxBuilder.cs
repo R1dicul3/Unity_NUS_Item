@@ -6,7 +6,7 @@ using UnityEngine;
 
 public static class Map1WhiteboxBuilder
 {
-    private const string ScenePath = "Assets/Scenes/SampleScene.unity";
+    private const string ScenePath = "Assets/Scenes/Prototypes/SampleScene.unity";
     private const string WhiteboxRootName = "White_Box";
     private const string PixelSpritePath = "Assets/Art/whitebox_pixel.png";
 

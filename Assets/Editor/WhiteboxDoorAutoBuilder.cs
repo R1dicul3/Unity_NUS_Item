@@ -5,7 +5,7 @@ using UnityEngine;
 
 public static class WhiteboxDoorAutoBuilder
 {
-    private const string ScenePath = "Assets/Scenes/SampleScene.unity";
+    private const string ScenePath = "Assets/Scenes/Prototypes/SampleScene.unity";
     private const string WhiteboxRootName = "White_Box";
     private const float EdgeTolerance = 4f;
     private const float MinimumDoorSpan = 2.5f;
