@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -362,3 +363,4 @@ public class PlatformerPlayerController : MonoBehaviour {
         return true;
     }
 }
+#endif
