@@ -47,11 +47,16 @@ namespace MainMenu
 
         public string saveFileExtension = ".json";
 
+        [Header("Prefab UI")]
+        [SerializeField] private GameObject canvasPrefab;
+
         private Font EffectiveFont => overrideFont ?? MenuUIHelper.GetDefaultFont();
         private PlayerInputActions inputActions;
         private int selectedSlot = -1;
         private Button[] slotButtons;
         private Image[] slotButtonImages;
+        private Button loadButton;
+        private Button deleteButton;
 
         void Awake()
         {
@@ -78,11 +83,21 @@ namespace MainMenu
 
         void OnMenuPerformed(InputAction.CallbackContext context)
         {
+            if (FindFirstObjectByType<ConfirmDialogUI>() != null)
+            {
+                return;
+            }
+
             OnBackClicked();
         }
 
         void BuildUI()
         {
+            if (TryBuildPrefabUI())
+            {
+                return;
+            }
+
             Canvas canvas = MenuUIHelper.CreateCanvas();
             canvas.transform.SetParent(transform, false);
             MenuUIHelper.EnsureEventSystem();
@@ -131,6 +146,7 @@ namespace MainMenu
             // Load 按钮
             Button loadBtn = MenuUIHelper.CreateButton(actionContainer.transform, "Load", actionButtonFontSize, 55f,
                 new Color(0.2f, 0.55f, 0.3f, 1f), OnLoadClicked, EffectiveFont, true);
+            loadButton = loadBtn;
             RectTransform loadRect = loadBtn.GetComponent<RectTransform>();
             loadRect.anchorMin = new Vector2(0f, 0.5f);
             loadRect.anchorMax = new Vector2(0f, 0.5f);
@@ -141,6 +157,7 @@ namespace MainMenu
             // Delete 按钮
             Button deleteBtn = MenuUIHelper.CreateButton(actionContainer.transform, "Delete", actionButtonFontSize, 55f,
                 new Color(0.55f, 0.2f, 0.2f, 1f), OnDeleteClicked, EffectiveFont, true);
+            deleteButton = deleteBtn;
             RectTransform deleteRect = deleteBtn.GetComponent<RectTransform>();
             deleteRect.anchorMin = new Vector2(0.5f, 0.5f);
             deleteRect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -157,6 +174,55 @@ namespace MainMenu
             backRect.pivot = new Vector2(1f, 0.5f);
             backRect.anchoredPosition = Vector2.zero;
             backRect.sizeDelta = new Vector2(170f, 55f);
+
+            RefreshSlotHighlight();
+        }
+
+        bool TryBuildPrefabUI()
+        {
+            GameObject prefab = canvasPrefab != null
+                ? canvasPrefab
+                : Resources.Load<GameObject>("UI/LoadGamePanelCanvas");
+
+            if (prefab == null)
+            {
+                return false;
+            }
+
+            GameObject canvas = Instantiate(prefab, transform);
+            canvas.name = prefab.name;
+            MenuUIHelper.EnsureEventSystem();
+
+            Canvas canvasComponent = canvas.GetComponent<Canvas>();
+            if (canvasComponent != null)
+            {
+                canvasComponent.sortingOrder = 200;
+            }
+
+            slotButtons = new Button[saveSlotCount];
+            slotButtonImages = new Image[saveSlotCount];
+
+            bool hasRequiredControls = true;
+            for (int i = 0; i < saveSlotCount; i++)
+            {
+                int slot = i + 1;
+                hasRequiredControls &= MenuUIHelper.TryBindButton(canvas.transform, $"SlotButton_{slot}", () => OnSlotClicked(slot), out slotButtons[i]);
+                slotButtonImages[i] = slotButtons[i] != null ? slotButtons[i].GetComponent<Image>() : null;
+            }
+
+            hasRequiredControls &= MenuUIHelper.TryBindButton(canvas.transform, "LoadButton", OnLoadClicked, out loadButton);
+            hasRequiredControls &= MenuUIHelper.TryBindButton(canvas.transform, "DeleteButton", OnDeleteClicked, out deleteButton);
+            hasRequiredControls &= MenuUIHelper.TryBindButton(canvas.transform, "BackButton", OnBackClicked, out _);
+
+            if (!hasRequiredControls)
+            {
+                Debug.LogWarning("[LoadGameUI] Load game prefab is missing one or more expected controls. Falling back to generated UI.");
+                Destroy(canvas);
+                return false;
+            }
+
+            RefreshUI();
+            return true;
         }
 
         string GetSlotLabel(int slot)
@@ -198,6 +264,17 @@ namespace MainMenu
                 {
                     slotButtonImages[i].color = buttonColor;
                 }
+            }
+
+            bool selectedHasSave = selectedSlot >= 1 && SaveSystem.SaveSystem.HasSave(selectedSlot);
+            if (loadButton != null)
+            {
+                loadButton.interactable = selectedHasSave;
+            }
+
+            if (deleteButton != null)
+            {
+                deleteButton.interactable = selectedHasSave;
             }
         }
 
@@ -259,9 +336,7 @@ namespace MainMenu
             for (int i = 0; i < slotButtons.Length; i++)
             {
                 int slot = i + 1;
-                Text txt = slotButtons[i].GetComponentInChildren<Text>();
-                if (txt != null)
-                    txt.text = GetSlotLabel(slot);
+                MenuUIHelper.TrySetText(slotButtons[i].transform, GetSlotLabel(slot));
             }
             RefreshSlotHighlight();
         }

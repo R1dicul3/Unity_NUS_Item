@@ -65,6 +65,7 @@ public class DialogueController : MonoBehaviour {
 
     private int currentLineIndex;
     private bool isShowing;
+    private bool uiSuppressed;
     private PlayerInputActions inputActions;
 
     public bool IsShowing => isShowing;
@@ -123,13 +124,22 @@ public class DialogueController : MonoBehaviour {
             return;
         }
 
-        if (!isShowing) {
+        if (!isShowing || uiSuppressed) {
             return;
         }
 
-        if (inputActions.Player.NextDialogue.WasPressedThisFrame()) {
+        if (ShouldAdvanceDialogue()) {
             Advance();
         }
+    }
+
+    private bool ShouldAdvanceDialogue() {
+        Keyboard keyboard = Keyboard.current;
+        Mouse mouse = Mouse.current;
+
+        return inputActions.Player.NextDialogue.WasPressedThisFrame()
+            || (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            || (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame));
     }
 
     public void SetLines(DialogueLine[] lines) {
@@ -147,7 +157,7 @@ public class DialogueController : MonoBehaviour {
         isShowing = dialogueLines != null && dialogueLines.Length > 0;
 
         if (dialogueCanvas != null) {
-            dialogueCanvas.gameObject.SetActive(isShowing);
+            dialogueCanvas.gameObject.SetActive(isShowing && !uiSuppressed);
         }
 
         if (isShowing) {
@@ -182,6 +192,13 @@ public class DialogueController : MonoBehaviour {
         isShowing = false;
         if (dialogueCanvas != null) {
             dialogueCanvas.gameObject.SetActive(false);
+        }
+    }
+
+    public void SetUiSuppressed(bool value) {
+        uiSuppressed = value;
+        if (dialogueCanvas != null) {
+            dialogueCanvas.gameObject.SetActive(isShowing && !uiSuppressed);
         }
     }
 

@@ -17,6 +17,7 @@ public class GamePauseManager : MonoBehaviour
     private bool isPaused = false;
     private GameObject pauseMenuObject;
     private bool isSaveGameUIOpen = false;
+    private bool isLoadGameUIOpen = false;
     private SaveSystem.SaveData pendingLoadData;
 
     public string PreviousGameplayScene { get; private set; }
@@ -84,9 +85,7 @@ public class GamePauseManager : MonoBehaviour
             return;
 
         // 如果保存界面或确认对话框打开，不处理 ESC（由它们自己处理）
-        if (FindFirstObjectByType<MainMenu.SaveGameUI>() != null)
-            return;
-        if (FindFirstObjectByType<MainMenu.ConfirmDialogUI>() != null)
+        if (IsBlockingUiOpen())
             return;
 
         if (isPaused)
@@ -113,6 +112,7 @@ public class GamePauseManager : MonoBehaviour
 
         isPaused = true;
         Time.timeScale = 0f;
+        SuppressDialogueUi(true);
 
         if (pauseMenuObject == null)
         {
@@ -132,6 +132,7 @@ public class GamePauseManager : MonoBehaviour
 
         isPaused = false;
         Time.timeScale = 1f;
+        SuppressDialogueUi(false);
 
         if (pauseMenuObject != null)
         {
@@ -141,8 +142,13 @@ public class GamePauseManager : MonoBehaviour
 
     public void LoadGame()
     {
+        if (isLoadGameUIOpen || isSaveGameUIOpen)
+            return;
+
         PreviousGameplayScene = SceneManager.GetActiveScene().name;
         CameFromPauseMenu = true;
+        isLoadGameUIOpen = true;
+        SuppressDialogueUi(true);
         if (pauseMenuObject != null)
         {
             pauseMenuObject.SetActive(false);
@@ -160,8 +166,11 @@ public class GamePauseManager : MonoBehaviour
     {
         if (isSaveGameUIOpen)
             return;
+        if (isLoadGameUIOpen)
+            return;
 
         isSaveGameUIOpen = true;
+        SuppressDialogueUi(true);
         if (pauseMenuObject != null)
         {
             pauseMenuObject.SetActive(false);
@@ -174,9 +183,13 @@ public class GamePauseManager : MonoBehaviour
     public void OnSaveGameUIClosed()
     {
         isSaveGameUIOpen = false;
-        if (pauseMenuObject != null)
+        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen)
         {
             pauseMenuObject.SetActive(true);
+        }
+        else if (!isPaused && !isLoadGameUIOpen)
+        {
+            SuppressDialogueUi(false);
         }
     }
 
@@ -232,10 +245,12 @@ public class GamePauseManager : MonoBehaviour
             SceneManager.UnloadSceneAsync("LoadGame");
             CameFromPauseMenu = false;
         }
+        isLoadGameUIOpen = false;
 
         // 重置暂停状态，防止加载后游戏冻结
         isPaused = false;
         Time.timeScale = 1f;
+        SuppressDialogueUi(false);
         pauseMenuObject = null;
 
         pendingLoadData = data;
@@ -265,18 +280,50 @@ public class GamePauseManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         isPaused = false;
+        isSaveGameUIOpen = false;
+        isLoadGameUIOpen = false;
         HasUnsavedProgress = false;
         CameFromPauseMenu = false;
         PreviousGameplayScene = null;
         pauseMenuObject = null;
+        SuppressDialogueUi(false);
         SceneManager.LoadScene("MainMenu");
     }
 
     public void ReturnToGameFromLoadGame()
     {
+        isLoadGameUIOpen = false;
         CameFromPauseMenu = false;
         SceneManager.UnloadSceneAsync("LoadGame");
-        PauseGame();
+        if (isPaused && pauseMenuObject != null)
+        {
+            pauseMenuObject.SetActive(true);
+        }
+        else if (!isPaused)
+        {
+            SuppressDialogueUi(false);
+        }
+    }
+
+    private bool IsBlockingUiOpen()
+    {
+        return isSaveGameUIOpen
+            || isLoadGameUIOpen
+            || FindFirstObjectByType<MainMenu.SaveGameUI>() != null
+            || FindFirstObjectByType<MainMenu.LoadGameUI>() != null
+            || FindFirstObjectByType<MainMenu.ConfirmDialogUI>() != null;
+    }
+
+    private void SuppressDialogueUi(bool value)
+    {
+        DialogueController[] dialogues = FindObjectsByType<DialogueController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (DialogueController dialogue in dialogues)
+        {
+            if (dialogue != null)
+            {
+                dialogue.SetUiSuppressed(value);
+            }
+        }
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

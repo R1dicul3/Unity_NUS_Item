@@ -157,6 +157,7 @@ MonoBehaviour:
   buttonWidth: 300
   buttonHeight: 60
   spacing: 20
+  canvasPrefab: {fileID: 1309473488367369969, guid: 9b0a4b439a131954491a03bb117e7064, type: 3}
 --- !u!4 &1795868361
 Transform:
   m_ObjectHideFlags: 0

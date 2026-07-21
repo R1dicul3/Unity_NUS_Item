@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem.UI;
 #endif
@@ -205,6 +206,100 @@ namespace MainMenu
             textRect.offsetMax = Vector2.zero;
 
             return btn;
+        }
+
+        public static Transform FindChildRecursive(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            foreach (Transform child in root)
+            {
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                Transform match = FindChildRecursive(child, childName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
+        }
+
+        public static bool TryBindButton(Transform root, string buttonName, UnityEngine.Events.UnityAction onClick, out Button button)
+        {
+            button = null;
+            Transform buttonTransform = FindChildRecursive(root, buttonName);
+            if (buttonTransform == null)
+            {
+                Debug.LogWarning($"[MenuUIHelper] Missing prefab child: {buttonName}");
+                return false;
+            }
+
+            button = buttonTransform.GetComponent<Button>();
+            if (button == null)
+            {
+                Debug.LogWarning($"[MenuUIHelper] Prefab child has no Button component: {buttonName}");
+                return false;
+            }
+
+            button.onClick.RemoveAllListeners();
+            if (onClick != null)
+            {
+                button.onClick.AddListener(onClick);
+            }
+
+            return true;
+        }
+
+        public static bool TrySetText(Transform root, string objectName, string value)
+        {
+            Transform textTransform = FindChildRecursive(root, objectName);
+            if (textTransform == null)
+            {
+                return false;
+            }
+
+            return TrySetText(textTransform, value);
+        }
+
+        public static bool TrySetText(Transform textRoot, string value)
+        {
+            Text legacyText = textRoot.GetComponent<Text>();
+            if (legacyText != null)
+            {
+                legacyText.text = value;
+                return true;
+            }
+
+            TextMeshProUGUI tmpText = textRoot.GetComponent<TextMeshProUGUI>();
+            if (tmpText != null)
+            {
+                tmpText.text = value;
+                return true;
+            }
+
+            legacyText = textRoot.GetComponentInChildren<Text>(true);
+            if (legacyText != null)
+            {
+                legacyText.text = value;
+                return true;
+            }
+
+            tmpText = textRoot.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (tmpText != null)
+            {
+                tmpText.text = value;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>

@@ -40,6 +40,9 @@ namespace MainMenu
         [Range(0, 60)]
         public float spacing = 20f;
 
+        [Header("Prefab UI")]
+        [SerializeField] private GameObject canvasPrefab;
+
         private Font EffectiveFont => overrideFont ?? MenuUIHelper.GetDefaultFont();
 
         void Awake()
@@ -49,6 +52,11 @@ namespace MainMenu
 
         void BuildUI()
         {
+            if (TryBuildPrefabUI())
+            {
+                return;
+            }
+
             Canvas canvas = MenuUIHelper.CreateCanvas();
             MenuUIHelper.EnsureEventSystem();
             MenuUIHelper.CreateFullScreenBackground(canvas.transform, backgroundColor);
@@ -72,6 +80,79 @@ namespace MainMenu
 
             // 按钮：Exit
             CreateMenuButton(content, "Exit", OnExit, true);
+        }
+
+        bool TryBuildPrefabUI()
+        {
+            if (canvasPrefab == null)
+            {
+                return false;
+            }
+
+            GameObject canvas = Instantiate(canvasPrefab);
+            canvas.name = canvasPrefab.name;
+            MenuUIHelper.EnsureEventSystem();
+
+            bool hasRequiredButtons =
+                TryBindButton(canvas.transform, "NewGameButton", OnNewGame)
+                & TryBindButton(canvas.transform, "LoadGameButton", OnLoadGame)
+                & TryBindButton(canvas.transform, "SettingsButton", OnSettings)
+                & TryBindButton(canvas.transform, "CreditsButton", OnCredits)
+                & TryBindButton(canvas.transform, "ExitButton", OnExit);
+
+            if (!hasRequiredButtons)
+            {
+                Debug.LogWarning("[MainMenuUI] Main menu prefab is missing one or more expected buttons. Falling back to generated UI.");
+                Destroy(canvas);
+                return false;
+            }
+
+            return true;
+        }
+
+        bool TryBindButton(Transform root, string buttonName, UnityEngine.Events.UnityAction onClick)
+        {
+            Transform buttonTransform = FindChildRecursive(root, buttonName);
+            if (buttonTransform == null)
+            {
+                Debug.LogWarning($"[MainMenuUI] Missing prefab child: {buttonName}");
+                return false;
+            }
+
+            Button button = buttonTransform.GetComponent<Button>();
+            if (button == null)
+            {
+                Debug.LogWarning($"[MainMenuUI] Prefab child has no Button component: {buttonName}");
+                return false;
+            }
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(onClick);
+            return true;
+        }
+
+        static Transform FindChildRecursive(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            foreach (Transform child in root)
+            {
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                Transform match = FindChildRecursive(child, childName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
         }
 
         void CreateMenuButton(RectTransform parent, string label, UnityEngine.Events.UnityAction onClick, bool isImplemented)

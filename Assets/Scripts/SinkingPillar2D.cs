@@ -53,6 +53,7 @@ public class SinkingPillar2D : MonoBehaviour
     private readonly List<SpriteRenderer> segmentRenderers = new List<SpriteRenderer>();
     private readonly List<BoxCollider2D> segmentColliders = new List<BoxCollider2D>();
     private readonly List<SpriteRenderer> wrapRenderers = new List<SpriteRenderer>();
+    private readonly List<BoxCollider2D> wrapColliders = new List<BoxCollider2D>();
     private float lastStandingTime = float.NegativeInfinity;
     private static Sprite fallbackSprite;
 
@@ -278,6 +279,7 @@ public class SinkingPillar2D : MonoBehaviour
         segmentRenderers.Clear();
         segmentColliders.Clear();
         wrapRenderers.Clear();
+        wrapColliders.Clear();
 
         List<Transform> children = new List<Transform>();
         foreach (Transform child in transform)
@@ -303,7 +305,9 @@ public class SinkingPillar2D : MonoBehaviour
             }
 
             segmentRenderers.Add(renderer);
-            wrapRenderers.Add(showWrappedPreview ? EnsureWrapRenderer(child, renderer) : null);
+            SpriteRenderer wrapRenderer = showWrappedPreview ? EnsureWrapRenderer(child, renderer) : null;
+            wrapRenderers.Add(wrapRenderer);
+            wrapColliders.Add(wrapRenderer != null ? wrapRenderer.GetComponent<BoxCollider2D>() : null);
 
             BoxCollider2D collider = child.GetComponent<BoxCollider2D>();
             if (collider == null)
@@ -336,6 +340,7 @@ public class SinkingPillar2D : MonoBehaviour
         segmentRenderers.Clear();
         segmentColliders.Clear();
         wrapRenderers.Clear();
+        wrapColliders.Clear();
 
         for (int i = 0; i < segments.Length; i++)
         {
@@ -353,7 +358,9 @@ public class SinkingPillar2D : MonoBehaviour
             renderer.color = GetColor(segments[i]);
             renderer.sortingOrder = 6;
             segmentRenderers.Add(renderer);
-            wrapRenderers.Add(showWrappedPreview ? EnsureWrapRenderer(segment.transform, renderer) : null);
+            SpriteRenderer wrapRenderer = showWrappedPreview ? EnsureWrapRenderer(segment.transform, renderer) : null;
+            wrapRenderers.Add(wrapRenderer);
+            wrapColliders.Add(wrapRenderer != null ? wrapRenderer.GetComponent<BoxCollider2D>() : null);
 
             BoxCollider2D collider = segment.AddComponent<BoxCollider2D>();
             collider.size = Vector2.one;
@@ -403,7 +410,8 @@ public class SinkingPillar2D : MonoBehaviour
 
             if (visibleIndex < wrapRenderers.Count)
             {
-                UpdateWrapRenderer(wrapRenderers[visibleIndex], segments[i], baseY, roomHeight);
+                BoxCollider2D wrapCollider = visibleIndex < wrapColliders.Count ? wrapColliders[visibleIndex] : null;
+                UpdateWrapPreview(wrapRenderers[visibleIndex], wrapCollider, segments[i], baseY, roomHeight);
             }
 
             visibleIndex++;
@@ -427,13 +435,35 @@ public class SinkingPillar2D : MonoBehaviour
         preview.sprite = sourceRenderer != null && sourceRenderer.sprite != null ? sourceRenderer.sprite : GetBlockSprite();
         preview.sortingOrder = sourceRenderer != null ? sourceRenderer.sortingOrder : 6;
         preview.enabled = false;
+
+        BoxCollider2D collider = previewObject.GetComponent<BoxCollider2D>();
+        if (collider == null)
+        {
+            collider = previewObject.AddComponent<BoxCollider2D>();
+        }
+
+        collider.size = Vector2.one;
+        collider.enabled = false;
+
+        SinkingPillarSegment2D sensor = previewObject.GetComponent<SinkingPillarSegment2D>();
+        if (sensor == null)
+        {
+            sensor = previewObject.AddComponent<SinkingPillarSegment2D>();
+        }
+
+        sensor.Initialize(this);
         return preview;
     }
 
-    private void UpdateWrapRenderer(SpriteRenderer preview, SegmentKind kind, float baseY, float roomHeight)
+    private void UpdateWrapPreview(SpriteRenderer preview, BoxCollider2D collider, SegmentKind kind, float baseY, float roomHeight)
     {
         if (preview == null)
         {
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
             return;
         }
 
@@ -451,6 +481,11 @@ public class SinkingPillar2D : MonoBehaviour
             && visibleHeight > 0.001f;
 
         preview.enabled = showPreview;
+        if (collider != null)
+        {
+            collider.enabled = showPreview;
+        }
+
         if (!showPreview)
         {
             return;
@@ -481,28 +516,42 @@ public class SinkingPillar2D : MonoBehaviour
     {
         for (int i = 0; i < segmentColliders.Count; i++)
         {
-            BoxCollider2D segmentCollider = segmentColliders[i];
-            if (segmentCollider == null || !segmentCollider.enabled)
+            if (IsPlayerStandingOnCollider(segmentColliders[i]))
+            {
+                return true;
+            }
+
+            if (i < wrapColliders.Count && IsPlayerStandingOnCollider(wrapColliders[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsPlayerStandingOnCollider(Collider2D pillarCollider)
+    {
+        if (pillarCollider == null || !pillarCollider.enabled)
+        {
+            return false;
+        }
+
+        Bounds bounds = pillarCollider.bounds;
+        Vector2 probeCenter = new Vector2(bounds.center.x, bounds.max.y + standingProbeHeight * 0.5f);
+        Vector2 probeSize = new Vector2(Mathf.Max(0.1f, bounds.size.x * 0.92f), standingProbeHeight);
+        Collider2D[] hits = Physics2D.OverlapBoxAll(probeCenter, probeSize, 0f);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit == null || hit == pillarCollider || hit.isTrigger)
             {
                 continue;
             }
 
-            Bounds bounds = segmentCollider.bounds;
-            Vector2 probeCenter = new Vector2(bounds.center.x, bounds.max.y + standingProbeHeight * 0.5f);
-            Vector2 probeSize = new Vector2(Mathf.Max(0.1f, bounds.size.x * 0.92f), standingProbeHeight);
-            Collider2D[] hits = Physics2D.OverlapBoxAll(probeCenter, probeSize, 0f);
-
-            foreach (Collider2D hit in hits)
+            if (IsPlayerStandingOnSegment(hit, pillarCollider, standingProbeHeight))
             {
-                if (hit == null || hit == segmentCollider || hit.isTrigger)
-                {
-                    continue;
-                }
-
-                if (IsPlayerStandingOnSegment(hit, segmentCollider, standingProbeHeight))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
