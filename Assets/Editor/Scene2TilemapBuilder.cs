@@ -10,39 +10,22 @@ public static class Scene2TilemapBuilder
     private const string ScenePath = "Assets/Scenes/Gameplay/Scene_2.unity";
     private const string AutoRunFlagPath = "Assets/Editor/RunScene2TilemapConversion.flag";
     private const string TilemapRootName = "Tilemap_Scene_2";
-    private const string LegacyRootName = "White_Box";
+    private const string RoomsRootName = "Rooms";
     private const string TileFolder = "Assets/Art/Tiles";
     private const string PixelSpritePath = "Assets/Art/whitebox_pixel.png";
-    private const float CellSize = 1f;
+    private const string RoomTilePath = TileFolder + "/Scene2_Room.asset";
 
-    private static readonly Color DefaultStaticColor = new Color(0.1f, 0.12f, 0.14f, 1f);
-    private static readonly Color RoomFillColor = new Color(0.16f, 0.19f, 0.24f, 0.35f);
-    private static readonly HashSet<string> ExcludedNames = new HashSet<string>
-    {
-        "Player",
-        "Visual",
-        "Main Camera",
-        "Global Light 2D",
-        "DialogueCanvas",
-        "Dialogue Module",
-        "CoffeeManager",
-        "EmotionManager",
-        "Background_Color_Lines",
-        "LevelVariantSwitcher",
-        "Character Ability Switcher"
-    };
-
-    [MenuItem("Tools/Tilemap/Convert Scene_2 Rooms And Mechanics To Tilemap")]
+    [MenuItem("Tools/Tilemap/Convert Scene_2 Rooms To Tilemap")]
     public static void ConvertCurrentScene()
     {
-        ConvertSceneToTilemap(saveScene: false);
+        ConvertSceneToRoomTilemap(saveScene: false);
     }
 
-    [MenuItem("Tools/Tilemap/Convert Scene_2 Rooms And Mechanics To Tilemap And Save")]
+    [MenuItem("Tools/Tilemap/Convert Scene_2 Rooms To Tilemap And Save")]
     public static void ConvertScene2AndSave()
     {
         EditorSceneManager.OpenScene(ScenePath);
-        ConvertSceneToTilemap(saveScene: true);
+        ConvertSceneToRoomTilemap(saveScene: true);
     }
 
     [InitializeOnLoadMethod]
@@ -67,67 +50,21 @@ public static class Scene2TilemapBuilder
         };
     }
 
-    private static void ConvertSceneToTilemap(bool saveScene)
+    private static void ConvertSceneToRoomTilemap(bool saveScene)
     {
-        EnsurePixelSprite();
+        Tile roomTile = EnsureRoomTile();
         RemoveExistingTilemapRoot();
 
         GameObject root = new GameObject(TilemapRootName);
-        Grid grid = root.AddComponent<Grid>();
-        grid.cellSize = Vector3.one * CellSize;
-        grid.cellGap = Vector3.zero;
-        grid.cellLayout = GridLayout.CellLayout.Rectangle;
+        Transform roomsRoot = CreateChild(root.transform, RoomsRootName).transform;
 
-        Tilemap staticMap = CreateTilemap(root.transform, "Static_Rooms_And_Platforms", 0, true);
-        Tilemap roomMap = CreateTilemap(root.transform, "Room_Fills", -2, false);
-        Transform dynamicRoot = CreateChild(root.transform, "Dynamic_Mechanism_Tilemaps").transform;
-
-        Dictionary<Color32, Tile> tileCache = new Dictionary<Color32, Tile>();
-        int staticCount = 0;
-        int dynamicCount = 0;
-        int roomFillCount = 0;
-
-        foreach (SpriteRenderer renderer in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        int roomCount = 0;
+        foreach (SpriteRenderer roomRenderer in FindRoomRenderers())
         {
-            if (ShouldSkip(renderer))
-            {
-                continue;
-            }
-
-            if (IsRoomMarker(renderer))
-            {
-                PaintRendererBounds(roomMap, renderer, GetTile(tileCache, "Scene2_RoomFill", RoomFillColor, Tile.ColliderType.None));
-                renderer.enabled = false;
-                roomFillCount++;
-                continue;
-            }
-
-            BoxCollider2D box = renderer.GetComponent<BoxCollider2D>();
-            if (box == null)
-            {
-                continue;
-            }
-
-            bool dynamic = HasMechanicBehaviour(renderer.gameObject);
-            Color color = renderer.color;
-            Tile tile = GetTile(tileCache, $"Scene2_{GetColorName(color)}", color, dynamic ? Tile.ColliderType.None : Tile.ColliderType.Grid);
-
-            if (dynamic)
-            {
-                CreateDynamicTilemap(dynamicRoot, renderer, box, tile);
-                renderer.enabled = false;
-                dynamicCount++;
-            }
-            else
-            {
-                PaintRendererBounds(staticMap, renderer, tile);
-                renderer.enabled = false;
-                box.enabled = false;
-                staticCount++;
-            }
+            CreateRoomTilemap(roomsRoot, roomRenderer, roomTile);
+            roomRenderer.enabled = false;
+            roomCount++;
         }
-
-        RebindCameraToTilemap();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         if (saveScene)
@@ -135,153 +72,88 @@ public static class Scene2TilemapBuilder
             EditorSceneManager.SaveOpenScenes();
         }
 
-        Debug.Log($"Scene_2 tilemap conversion complete: {staticCount} static blocks, {roomFillCount} room fills, {dynamicCount} mechanism visuals.");
+        Debug.Log($"Scene_2 room tilemap conversion complete: {roomCount} rooms converted. Platforms and mechanics were not modified.");
     }
 
-    private static bool ShouldSkip(SpriteRenderer renderer)
+    private static IEnumerable<SpriteRenderer> FindRoomRenderers()
     {
-        if (renderer == null || renderer.gameObject == null)
+        foreach (SpriteRenderer renderer in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            return true;
-        }
+            if (renderer == null || renderer.gameObject == null)
+            {
+                continue;
+            }
 
-        if (ExcludedNames.Contains(renderer.gameObject.name))
-        {
-            return true;
-        }
+            if (!renderer.gameObject.name.StartsWith("Room_"))
+            {
+                continue;
+            }
 
-        if (renderer.GetComponentInParent<Canvas>() != null ||
-            renderer.GetComponentInParent<RoomDoor>() != null ||
-            renderer.GetComponentInParent<PlatformerPlayerController>() != null ||
-            renderer.GetComponentInParent<Coffee>() != null)
-        {
-            return true;
-        }
+            if (renderer.transform.IsChildOfName(TilemapRootName))
+            {
+                continue;
+            }
 
-        return renderer.transform.IsChildOfName(TilemapRootName);
+            yield return renderer;
+        }
     }
 
-    private static bool IsRoomMarker(SpriteRenderer renderer)
+    private static void CreateRoomTilemap(Transform parent, SpriteRenderer source, TileBase roomTile)
     {
-        string name = renderer.gameObject.name;
-        return name.StartsWith("Room_");
-    }
+        Bounds bounds = source.bounds;
+        int cellsX = Mathf.Max(1, Mathf.CeilToInt(bounds.size.x));
+        int cellsY = Mathf.Max(1, Mathf.CeilToInt(bounds.size.y));
+        Vector3 tilemapScale = new Vector3(bounds.size.x / cellsX, bounds.size.y / cellsY, 1f);
 
-    private static bool HasMechanicBehaviour(GameObject gameObject)
-    {
-        return gameObject.GetComponent<MovingPlatform>() != null ||
-               gameObject.GetComponent<SinkingPillarSegment2D>() != null ||
-               gameObject.GetComponent<SharedPlatformsReveal>() != null ||
-               gameObject.GetComponentInParent<SinkingPillar2D>() != null ||
-               gameObject.GetComponentInParent<RoomPillarPuzzle2D>() != null;
-    }
+        GameObject roomObject = new GameObject(source.gameObject.name);
+        roomObject.transform.SetParent(parent, false);
+        roomObject.transform.position = new Vector3(bounds.min.x, bounds.min.y, source.transform.position.z);
+        roomObject.transform.localScale = tilemapScale;
 
-    private static void CreateDynamicTilemap(Transform parent, SpriteRenderer source, BoxCollider2D sourceBox, TileBase tile)
-    {
-        GameObject container = new GameObject(source.gameObject.name + "_Tilemap");
-        container.transform.SetParent(parent, true);
-        container.transform.position = source.transform.position;
-        container.transform.rotation = source.transform.rotation;
-        container.transform.localScale = source.transform.lossyScale;
-
-        Grid grid = container.AddComponent<Grid>();
+        Grid grid = roomObject.AddComponent<Grid>();
         grid.cellSize = Vector3.one;
+        grid.cellGap = Vector3.zero;
+        grid.cellLayout = GridLayout.CellLayout.Rectangle;
 
-        Tilemap tilemap = CreateTilemap(container.transform, "Tiles", source.sortingOrder, false);
-        Vector2 size = sourceBox.size;
-        Vector2 offset = sourceBox.offset;
-        int width = Mathf.Max(1, Mathf.RoundToInt(size.x));
-        int height = Mathf.Max(1, Mathf.RoundToInt(size.y));
-        int xMin = Mathf.FloorToInt(offset.x - width * 0.5f);
-        int yMin = Mathf.FloorToInt(offset.y - height * 0.5f);
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                tilemap.SetTile(new Vector3Int(xMin + x, yMin + y, 0), tile);
-            }
-        }
-    }
-
-    private static void PaintRendererBounds(Tilemap tilemap, SpriteRenderer renderer, TileBase tile)
-    {
-        Bounds bounds = renderer.bounds;
-        int xMin = Mathf.FloorToInt(bounds.min.x / CellSize);
-        int xMax = Mathf.CeilToInt(bounds.max.x / CellSize);
-        int yMin = Mathf.FloorToInt(bounds.min.y / CellSize);
-        int yMax = Mathf.CeilToInt(bounds.max.y / CellSize);
-
-        for (int x = xMin; x < xMax; x++)
-        {
-            for (int y = yMin; y < yMax; y++)
-            {
-                tilemap.SetTile(new Vector3Int(x, y, 0), tile);
-            }
-        }
-    }
-
-    private static Tilemap CreateTilemap(Transform parent, string name, int sortingOrder, bool collider)
-    {
-        GameObject tilemapObject = new GameObject(name);
-        tilemapObject.transform.SetParent(parent, false);
+        GameObject tilemapObject = new GameObject("Tilemap");
+        tilemapObject.transform.SetParent(roomObject.transform, false);
 
         Tilemap tilemap = tilemapObject.AddComponent<Tilemap>();
+        tilemap.tileAnchor = new Vector3(0.5f, 0.5f, 0f);
+        for (int x = 0; x < cellsX; x++)
+        {
+            for (int y = 0; y < cellsY; y++)
+            {
+                Vector3Int cell = new Vector3Int(x, y, 0);
+                tilemap.SetTile(cell, roomTile);
+                tilemap.SetTileFlags(cell, TileFlags.None);
+                tilemap.SetColor(cell, source.color);
+            }
+        }
+
         TilemapRenderer renderer = tilemapObject.AddComponent<TilemapRenderer>();
-        renderer.sortingOrder = sortingOrder;
-
-        if (collider)
-        {
-            Rigidbody2D body = tilemapObject.AddComponent<Rigidbody2D>();
-            body.bodyType = RigidbodyType2D.Static;
-
-            TilemapCollider2D tilemapCollider = tilemapObject.AddComponent<TilemapCollider2D>();
-            tilemapCollider.usedByComposite = true;
-
-            CompositeCollider2D composite = tilemapObject.AddComponent<CompositeCollider2D>();
-            composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
-        }
-
-        return tilemap;
+        renderer.sortingLayerID = source.sortingLayerID;
+        renderer.sortingOrder = source.sortingOrder;
     }
 
-    private static GameObject CreateChild(Transform parent, string name)
-    {
-        GameObject child = new GameObject(name);
-        child.transform.SetParent(parent, false);
-        return child;
-    }
-
-    private static Tile GetTile(Dictionary<Color32, Tile> cache, string name, Color color, Tile.ColliderType colliderType)
-    {
-        Color32 key = color;
-        if (cache.TryGetValue(key, out Tile cached))
-        {
-            return cached;
-        }
-
-        Tile tile = EnsureTile(name + ".asset", color, colliderType);
-        cache.Add(key, tile);
-        return tile;
-    }
-
-    private static Tile EnsureTile(string assetName, Color color, Tile.ColliderType colliderType)
+    private static Tile EnsureRoomTile()
     {
         EnsureFolder("Assets", "Art");
         EnsureFolder("Assets/Art", "Tiles");
 
-        string path = $"{TileFolder}/{assetName}";
-        Tile tile = AssetDatabase.LoadAssetAtPath<Tile>(path);
+        Tile tile = AssetDatabase.LoadAssetAtPath<Tile>(RoomTilePath);
         if (tile == null)
         {
             tile = ScriptableObject.CreateInstance<Tile>();
-            AssetDatabase.CreateAsset(tile, path);
+            AssetDatabase.CreateAsset(tile, RoomTilePath);
         }
 
         tile.sprite = EnsurePixelSprite();
-        tile.color = color;
-        tile.colliderType = colliderType;
+        tile.color = Color.white;
+        tile.colliderType = Tile.ColliderType.None;
+        tile.flags = TileFlags.None;
         EditorUtility.SetDirty(tile);
+        AssetDatabase.SaveAssets();
         return tile;
     }
 
@@ -314,6 +186,18 @@ public static class Scene2TilemapBuilder
                 changed = true;
             }
 
+            if (importer.mipmapEnabled)
+            {
+                importer.mipmapEnabled = false;
+                changed = true;
+            }
+
+            if (importer.filterMode != FilterMode.Point)
+            {
+                importer.filterMode = FilterMode.Point;
+                changed = true;
+            }
+
             if (changed)
             {
                 importer.SaveAndReimport();
@@ -323,29 +207,11 @@ public static class Scene2TilemapBuilder
         return AssetDatabase.LoadAssetAtPath<Sprite>(PixelSpritePath);
     }
 
-    private static string GetColorName(Color color)
+    private static GameObject CreateChild(Transform parent, string name)
     {
-        Color32 c = color;
-        return $"{c.r:X2}{c.g:X2}{c.b:X2}{c.a:X2}";
-    }
-
-    private static void RebindCameraToTilemap()
-    {
-        CameraFollow2D cameraFollow = Object.FindFirstObjectByType<CameraFollow2D>(FindObjectsInactive.Include);
-        if (cameraFollow == null)
-        {
-            return;
-        }
-
-        SerializedObject serializedCamera = new SerializedObject(cameraFollow);
-        SerializedProperty whiteboxName = serializedCamera.FindProperty("whiteboxRootName");
-        if (whiteboxName != null)
-        {
-            whiteboxName.stringValue = TilemapRootName;
-        }
-
-        serializedCamera.ApplyModifiedPropertiesWithoutUndo();
-        EditorUtility.SetDirty(cameraFollow);
+        GameObject child = new GameObject(name);
+        child.transform.SetParent(parent, false);
+        return child;
     }
 
     private static void RemoveExistingTilemapRoot()
