@@ -58,6 +58,8 @@ public class SinkingPillar2D : MonoBehaviour
 
     public bool HasBeenActivated => hasBeenActivated;
 
+    public bool IsStationary => Mathf.Abs(currentSinkDistance - targetSinkDistance) < 0.001f;
+
     public string SaveId => name;
 
     public SaveSystem.PillarState CaptureState()
@@ -137,6 +139,46 @@ public class SinkingPillar2D : MonoBehaviour
                 preview.enabled = false;
             }
         }
+    }
+
+    public IEnumerable<(SegmentKind kind, float worldY)> GetVisibleSegments()
+    {
+        int visibleIndex = 0;
+        for (int i = 0; i < segments.Length; i++)
+        {
+            if (segments[i] == SegmentKind.Empty)
+            {
+                continue;
+            }
+
+            if (visibleIndex >= segmentObjects.Count)
+            {
+                break;
+            }
+
+            Transform segment = segmentObjects[visibleIndex];
+            float baseY = ceilingY - segmentHeight * (i + 0.5f);
+            float mainY = baseY - currentSinkDistance;
+            float mainVisibleHeight = GetVisibleHeight(mainY);
+            bool mainInRoom = mainVisibleHeight > 0.001f;
+
+            if (mainInRoom)
+            {
+                yield return (segments[i], segment.position.y);
+            }
+
+            visibleIndex++;
+        }
+    }
+
+    public void ResetPillar()
+    {
+        hasBeenActivated = false;
+        activationArmed = true;
+        currentSinkDistance = 0f;
+        targetSinkDistance = 0f;
+        RefreshTargetState();
+        UpdateSegmentPositions();
     }
 
     public void RebuildConfiguredSegments()
