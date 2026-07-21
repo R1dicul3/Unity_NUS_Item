@@ -7,6 +7,11 @@ public class Room1FloorSpikes : MonoBehaviour
 
     private bool isDialogShowing;
 
+    private void Awake()
+    {
+        failMessage = "You stepped on spikes! Try again?";
+    }
+
     private void OnCollisionStay2D(Collision2D collision)
     {
         if (isDialogShowing)

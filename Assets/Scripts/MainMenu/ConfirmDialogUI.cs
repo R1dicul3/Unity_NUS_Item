@@ -114,39 +114,9 @@ namespace MainMenu
 
         private bool TryBuildPrefabUI(string message, UnityAction onConfirm, UnityAction onCancel)
         {
-            GameObject prefab = Resources.Load<GameObject>("UI/ConfirmDialogCanvas");
-            if (prefab == null)
-            {
-                return false;
-            }
-
-            GameObject canvas = Instantiate(prefab, transform);
-            canvas.name = prefab.name;
-            MenuUIHelper.EnsureCamera();
-            MenuUIHelper.EnsureEventSystem();
-
-            Canvas canvasComponent = canvas.GetComponent<Canvas>();
-            if (canvasComponent != null)
-            {
-                canvasComponent.sortingOrder = 999;
-            }
-
-            MenuUIHelper.TrySetText(canvas.transform, "MessageText", message);
-
-            bool hasRequiredControls =
-                MenuUIHelper.TryBindButton(canvas.transform, "ConfirmButton",
-                    () => { onConfirm?.Invoke(); Destroy(gameObject); }, out _)
-                & MenuUIHelper.TryBindButton(canvas.transform, "CancelButton",
-                    () => { onCancel?.Invoke(); Destroy(gameObject); }, out _);
-
-            if (!hasRequiredControls)
-            {
-                Debug.LogWarning("[ConfirmDialogUI] Confirm dialog prefab is missing expected controls. Falling back to generated UI.");
-                Destroy(canvas);
-                return false;
-            }
-
-            return true;
+            // 暂时禁用 prefab 路径：MessageText 的 TMP 组件在运行时存在渲染问题，
+            // fallback 生成的 UI 使用 legacy Text，显示正常。
+            return false;
         }
     }
 }
