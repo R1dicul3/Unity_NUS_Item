@@ -303,6 +303,129 @@ namespace MainMenu
         }
 
         /// <summary>
+        /// 创建 Slider 组件，包含标签、填充条和滑块。
+        /// 标签嵌套在 slider 内部上方，通过显式 RectTransform 定位。
+        /// </summary>
+        public static Slider CreateSlider(Transform parent, string label, float width, float height,
+            float minValue, float maxValue, float defaultValue,
+            UnityEngine.Events.UnityAction<float> onValueChanged, Font font = null, Color? labelColor = null)
+        {
+            Color textColor = labelColor ?? Color.white;
+
+            // Slider 根对象
+            GameObject sliderGO = new GameObject(label + " Slider");
+            sliderGO.transform.SetParent(parent, false);
+
+            Slider slider = sliderGO.AddComponent<Slider>();
+            slider.minValue = minValue;
+            slider.maxValue = maxValue;
+            slider.value = defaultValue;
+            slider.direction = Slider.Direction.LeftToRight;
+
+            RectTransform sliderRect = sliderGO.GetComponent<RectTransform>();
+            sliderRect.sizeDelta = new Vector2(width, height);
+
+            LayoutElement layoutElement = sliderGO.AddComponent<LayoutElement>();
+            layoutElement.preferredWidth = width;
+            layoutElement.preferredHeight = height;
+
+            // Label（在 Slider 上方）
+            if (!string.IsNullOrEmpty(label))
+            {
+                GameObject labelGO = new GameObject("Label");
+                labelGO.transform.SetParent(sliderGO.transform, false);
+                Text labelText = labelGO.AddComponent<Text>();
+                labelText.text = label;
+                labelText.font = font ?? GetDefaultFont();
+                if (labelText.font == null)
+                {
+                    Debug.LogError($"[MenuUIHelper] 无法为 Slider 标签 \"{label}\" 获取字体。");
+                }
+                labelText.fontSize = 24;
+                labelText.color = textColor;
+                labelText.alignment = TextAnchor.MiddleLeft;
+
+                RectTransform labelRect = labelGO.GetComponent<RectTransform>();
+                labelRect.anchorMin = new Vector2(0f, 1f);
+                labelRect.anchorMax = new Vector2(1f, 1f);
+                labelRect.pivot = new Vector2(0.5f, 1f);
+                labelRect.anchoredPosition = Vector2.zero;
+                labelRect.sizeDelta = new Vector2(0f, 28f);
+            }
+
+            // Slider 实际区域（Label 下方）
+            GameObject trackGO = new GameObject("Track");
+            trackGO.transform.SetParent(sliderGO.transform, false);
+            RectTransform trackRect = trackGO.AddComponent<RectTransform>();
+            trackRect.anchorMin = new Vector2(0f, 0f);
+            trackRect.anchorMax = new Vector2(1f, 0f);
+            trackRect.pivot = new Vector2(0.5f, 0f);
+            trackRect.anchoredPosition = new Vector2(0f, 4f);
+            trackRect.sizeDelta = new Vector2(0f, height - 32f);
+
+            // Background（Slider 底图）
+            GameObject bgGO = new GameObject("Background");
+            bgGO.transform.SetParent(trackGO.transform, false);
+            RectTransform bgRect = bgGO.AddComponent<RectTransform>();
+            bgRect.anchorMin = Vector2.zero;
+            bgRect.anchorMax = Vector2.one;
+            bgRect.offsetMin = Vector2.zero;
+            bgRect.offsetMax = Vector2.zero;
+            Image bgImg = bgGO.AddComponent<Image>();
+            bgImg.color = new Color(0.15f, 0.15f, 0.15f, 0.6f);
+
+            // Fill Area
+            GameObject fillAreaGO = new GameObject("Fill Area");
+            fillAreaGO.transform.SetParent(trackGO.transform, false);
+            RectTransform fillAreaRect = fillAreaGO.AddComponent<RectTransform>();
+            fillAreaRect.anchorMin = Vector2.zero;
+            fillAreaRect.anchorMax = Vector2.one;
+            fillAreaRect.offsetMin = new Vector2(4f, 4f);
+            fillAreaRect.offsetMax = new Vector2(-4f, -4f);
+
+            // Fill
+            GameObject fillGO = new GameObject("Fill");
+            fillGO.transform.SetParent(fillAreaGO.transform, false);
+            RectTransform fillRect = fillGO.AddComponent<RectTransform>();
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.zero;
+            fillRect.pivot = new Vector2(0f, 0.5f);
+            fillRect.sizeDelta = Vector2.zero;
+            Image fillImg = fillGO.AddComponent<Image>();
+            fillImg.color = new Color(0.25f, 0.35f, 0.55f, 1f);
+
+            // Handle Slide Area
+            GameObject handleAreaGO = new GameObject("Handle Slide Area");
+            handleAreaGO.transform.SetParent(trackGO.transform, false);
+            RectTransform handleAreaRect = handleAreaGO.AddComponent<RectTransform>();
+            handleAreaRect.anchorMin = Vector2.zero;
+            handleAreaRect.anchorMax = Vector2.one;
+            handleAreaRect.offsetMin = new Vector2(4f, 0f);
+            handleAreaRect.offsetMax = new Vector2(-4f, 0f);
+
+            // Handle
+            GameObject handleGO = new GameObject("Handle");
+            handleGO.transform.SetParent(handleAreaGO.transform, false);
+            RectTransform handleRect = handleGO.AddComponent<RectTransform>();
+            handleRect.anchorMin = new Vector2(0f, 0.5f);
+            handleRect.anchorMax = new Vector2(0f, 0.5f);
+            handleRect.pivot = new Vector2(0.5f, 0.5f);
+            handleRect.sizeDelta = new Vector2(20f, height - 36f);
+            Image handleImg = handleGO.AddComponent<Image>();
+            handleImg.color = Color.white;
+
+            // 绑定 Slider
+            slider.fillRect = fillRect;
+            slider.handleRect = handleRect;
+            slider.targetGraphic = handleImg;
+
+            if (onValueChanged != null)
+                slider.onValueChanged.AddListener(onValueChanged);
+
+            return slider;
+        }
+
+        /// <summary>
         /// 获取默认字体。优先从 Resources/Fonts/Roboto-Regular 加载，
         /// 失败时回退到项目中已有的任意字体资产。
         /// </summary>
@@ -322,6 +445,14 @@ namespace MainMenu
             {
                 if (f != null) return f;
             }
+
+            // 3. 最终兜底：从操作系统加载 Arial 动态字体
+            try
+            {
+                Font systemFont = Font.CreateDynamicFontFromOSFont("Arial", 16);
+                if (systemFont != null) return systemFont;
+            }
+            catch { }
 
             Debug.LogError("[MenuUIHelper] 未能找到任何可用字体。请将字体文件放入 Assets/Resources/Fonts/ 目录，或在各 UI 脚本的 Inspector 中设置 Override Font。");
             return null;
