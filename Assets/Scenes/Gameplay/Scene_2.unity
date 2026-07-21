@@ -24723,9 +24723,6 @@ MonoBehaviour:
   startInPoweredMode: 1
   poweredColor: {r: 1, g: 0.05, b: 0.72, a: 1}
   basicColor: {r: 0.05, g: 1, b: 0.2, a: 1}
-  characterAnimator: {fileID: 0}
-  poweredAnimationPlaceholder: {fileID: 0}
-  basicAnimationPlaceholder: {fileID: 0}
 --- !u!1 &9300000215
 GameObject:
   m_ObjectHideFlags: 0

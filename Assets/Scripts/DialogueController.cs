@@ -98,6 +98,12 @@ public class DialogueController : MonoBehaviour {
         }
     }
 
+    private void OnDestroy() {
+        if (Application.isPlaying) {
+            inputActions?.Dispose();
+        }
+    }
+
     private void OnValidate() {
         InitializeUiIfNeeded();
 

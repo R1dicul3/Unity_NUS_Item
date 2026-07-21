@@ -74,6 +74,8 @@ namespace MainMenu
 
         private void BuildUI()
         {
+            ClampSaveSlotCount();
+
             if (TryBuildPrefabUI())
             {
                 return;
@@ -134,6 +136,8 @@ namespace MainMenu
 
         private bool TryBuildPrefabUI()
         {
+            ClampSaveSlotCount();
+
             GameObject prefab = canvasPrefab != null
                 ? canvasPrefab
                 : Resources.Load<GameObject>("UI/SaveGamePanelCanvas");
@@ -356,6 +360,11 @@ namespace MainMenu
 
             GamePauseManager.Instance?.OnSaveGameUIClosed();
             Destroy(gameObject);
+        }
+
+        private void ClampSaveSlotCount()
+        {
+            saveSlotCount = Mathf.Clamp(saveSlotCount, 1, SaveSystem.SaveSystem.GetMaxSlots());
         }
     }
 }
