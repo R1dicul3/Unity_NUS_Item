@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class RoomPillarPuzzle2D : MonoBehaviour
 {
@@ -29,8 +30,15 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     [SerializeField] private Color green = new Color(0.1f, 0.9f, 0.38f, 1f);
     [SerializeField] private Color gray = new Color(0.55f, 0.58f, 0.62f, 1f);
 
+    [Header("Completion")]
+    [SerializeField] private float alignmentTolerance = 0.5f;
+
+    [Header("Restart")]
+    [SerializeField] private string restartPlatformName = "Shared_Platform_01 (2)";
+
     private readonly List<SinkingPillar2D> registeredPillars = new List<SinkingPillar2D>();
     private static Sprite fallbackSprite;
+    private bool isSolved;
 
     public string SaveId => string.IsNullOrWhiteSpace(saveId) ? GetHierarchyPath(transform) : saveId;
 
@@ -83,7 +91,8 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         return new SaveSystem.PillarPuzzleState
         {
             puzzleId = SaveId,
-            pillars = pillars
+            pillars = pillars,
+            isSolved = isSolved
         };
     }
 
@@ -111,12 +120,337 @@ public class RoomPillarPuzzle2D : MonoBehaviour
                 }
             }
         }
+
+        isSolved = state.isSolved;
+        SyncPlatformsWithSolvedState();
+    }
+
+    private void Update()
+    {
+        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            RestartPuzzle();
+            return;
+        }
+
+        if (isSolved)
+        {
+            return;
+        }
+
+        if (!AreAllPillarsStationary())
+        {
+            return;
+        }
+
+        if (!HasAnyPillarBeenActivated())
+        {
+            return;
+        }
+
+        if (CheckCompletion())
+        {
+            isSolved = true;
+            Debug.Log("Room1 谜题成功！");
+            ShowSuccessDialog();
+        }
+        else
+        {
+            Debug.Log("Room1 谜题未成功");
+        }
+    }
+
+    private bool AreAllPillarsStationary()
+    {
+        CachePillars();
+        foreach (SinkingPillar2D pillar in registeredPillars)
+        {
+            if (pillar == null)
+            {
+                continue;
+            }
+
+            if (!pillar.IsStationary)
+            {
+                return false;
+            }
+        }
+
+        return registeredPillars.Count > 0;
+    }
+
+    private bool HasAnyPillarBeenActivated()
+    {
+        CachePillars();
+        foreach (SinkingPillar2D pillar in registeredPillars)
+        {
+            if (pillar != null && pillar.HasBeenActivated)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CheckCompletion()
+    {
+        Transform linesParent = transform.Find("Background_Color_Lines");
+        if (linesParent == null)
+        {
+            return false;
+        }
+
+        Dictionary<SinkingPillar2D.SegmentKind, float> lineYByColor = new Dictionary<SinkingPillar2D.SegmentKind, float>();
+        foreach (Transform line in linesParent)
+        {
+            SinkingPillar2D.SegmentKind? kind = ParseLineColor(line.name);
+            if (kind.HasValue)
+            {
+                lineYByColor[kind.Value] = line.position.y;
+            }
+        }
+
+        SinkingPillar2D.SegmentKind[] requiredColors =
+        {
+            SinkingPillar2D.SegmentKind.Yellow,
+            SinkingPillar2D.SegmentKind.Pink,
+            SinkingPillar2D.SegmentKind.Green,
+            SinkingPillar2D.SegmentKind.Gray
+        };
+
+        foreach (SinkingPillar2D.SegmentKind color in requiredColors)
+        {
+            if (!lineYByColor.TryGetValue(color, out float lineY))
+            {
+                return false;
+            }
+
+            bool found = false;
+            foreach (SinkingPillar2D pillar in registeredPillars)
+            {
+                if (pillar == null)
+                {
+                    continue;
+                }
+
+                foreach ((SinkingPillar2D.SegmentKind kind, float worldY) in pillar.GetVisibleSegments())
+                {
+                    if (kind == color && Mathf.Abs(worldY - lineY) <= alignmentTolerance)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static SinkingPillar2D.SegmentKind? ParseLineColor(string lineName)
+    {
+        if (lineName.Contains("Yellow"))
+        {
+            return SinkingPillar2D.SegmentKind.Yellow;
+        }
+
+        if (lineName.Contains("Pink"))
+        {
+            return SinkingPillar2D.SegmentKind.Pink;
+        }
+
+        if (lineName.Contains("Green"))
+        {
+            return SinkingPillar2D.SegmentKind.Green;
+        }
+
+        if (lineName.Contains("Gray"))
+        {
+            return SinkingPillar2D.SegmentKind.Gray;
+        }
+
+        return null;
+    }
+
+    public void RestartPuzzle()
+    {
+        isSolved = false;
+        HidePlatforms();
+
+        CachePillars();
+        foreach (SinkingPillar2D pillar in registeredPillars)
+        {
+            if (pillar != null)
+            {
+                pillar.ResetPillar();
+            }
+        }
+
+        GameObject platform = GameObject.Find(restartPlatformName);
+        if (platform == null)
+        {
+            Debug.LogWarning($"Restart platform '{restartPlatformName}' not found.");
+            return;
+        }
+
+        PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>();
+        if (player == null)
+        {
+            Debug.LogWarning("Player not found for restart teleport.");
+            return;
+        }
+
+        Vector3 platformPos = platform.transform.position;
+        Vector3 platformScale = platform.transform.lossyScale;
+        float platformTop = platformPos.y + platformScale.y * 0.5f;
+
+        BoxCollider2D playerCollider = player.GetComponent<BoxCollider2D>();
+        float playerHeight = playerCollider != null ? playerCollider.size.y * player.transform.lossyScale.y : 1f;
+        float teleportY = platformTop + playerHeight * 0.5f + 0.05f;
+
+        player.transform.position = new Vector3(platformPos.x, teleportY, player.transform.position.z);
+
+        Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+        if (playerRb != null)
+        {
+            playerRb.linearVelocity = Vector2.zero;
+        }
+
+        Debug.Log("Room1 谜题已重置，玩家已传送。");
+    }
+
+    private void RevealPlatformsAndTeleportPlayer()
+    {
+        GameObject platformsParent = GameObject.Find("Shared_Platforms");
+        if (platformsParent != null)
+        {
+            SharedPlatformsReveal reveal = platformsParent.GetComponent<SharedPlatformsReveal>();
+            if (reveal == null)
+            {
+                reveal = platformsParent.AddComponent<SharedPlatformsReveal>();
+            }
+
+            reveal.Reveal();
+        }
+
+        GameObject targetPlatform = GameObject.Find("Shared_Platform_01 (2)");
+        if (targetPlatform == null)
+        {
+            Debug.LogWarning("Target platform 'Shared_Platform_01 (2)' not found for teleport.");
+            return;
+        }
+
+        PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>();
+        if (player == null)
+        {
+            Debug.LogWarning("Player not found for teleport.");
+            return;
+        }
+
+        Vector3 platformPos = targetPlatform.transform.position;
+        Vector3 platformScale = targetPlatform.transform.lossyScale;
+        float platformTop = platformPos.y + platformScale.y * 0.5f;
+
+        BoxCollider2D playerCollider = player.GetComponent<BoxCollider2D>();
+        float playerHeight = playerCollider != null ? playerCollider.size.y * player.transform.lossyScale.y : 1f;
+        float teleportY = platformTop + playerHeight * 0.5f + 0.05f;
+
+        player.transform.position = new Vector3(platformPos.x, teleportY, player.transform.position.z);
+
+        Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+        if (playerRb != null)
+        {
+            playerRb.linearVelocity = Vector2.zero;
+        }
+    }
+
+    private void HidePlatforms()
+    {
+        GameObject platformsParent = GameObject.Find("Shared_Platforms");
+        if (platformsParent != null)
+        {
+            SharedPlatformsReveal reveal = platformsParent.GetComponent<SharedPlatformsReveal>();
+            if (reveal != null)
+            {
+                reveal.HideInstant();
+            }
+        }
+    }
+
+    private void EnsurePlatformsHidden()
+    {
+        GameObject platformsParent = GameObject.Find("Shared_Platforms");
+        if (platformsParent == null)
+        {
+            return;
+        }
+
+        SharedPlatformsReveal reveal = platformsParent.GetComponent<SharedPlatformsReveal>();
+        if (reveal == null)
+        {
+            reveal = platformsParent.AddComponent<SharedPlatformsReveal>();
+        }
+
+        reveal.HideInstant();
+    }
+
+    private void SyncPlatformsWithSolvedState()
+    {
+        GameObject platformsParent = GameObject.Find("Shared_Platforms");
+        if (platformsParent == null)
+        {
+            return;
+        }
+
+        SharedPlatformsReveal reveal = platformsParent.GetComponent<SharedPlatformsReveal>();
+        if (reveal == null)
+        {
+            reveal = platformsParent.AddComponent<SharedPlatformsReveal>();
+        }
+
+        if (isSolved)
+        {
+            reveal.SetRevealedInstant();
+        }
+        else
+        {
+            reveal.HideInstant();
+        }
+    }
+
+    private void ShowSuccessDialog()
+    {
+        Time.timeScale = 0f;
+        MainMenu.ConfirmDialogUI.Show(
+            "Room1 谜题成功！",
+            onConfirm: () =>
+            {
+                Time.timeScale = 1f;
+                RevealPlatformsAndTeleportPlayer();
+            },
+            onCancel: () =>
+            {
+                Time.timeScale = 1f;
+                RevealPlatformsAndTeleportPlayer();
+            });
     }
 
     private void Awake()
     {
         EnsureSaveId();
         CachePillars();
+        EnsurePlatformsHidden();
     }
 
     private void OnValidate()

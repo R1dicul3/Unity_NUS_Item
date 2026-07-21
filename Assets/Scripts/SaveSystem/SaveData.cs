@@ -60,6 +60,7 @@ namespace SaveSystem
     {
         public string puzzleId;
         public PillarState[] pillars;
+        public bool isSolved;
     }
 
     [Serializable]
