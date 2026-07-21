@@ -91,6 +91,7 @@ namespace MainMenu
 
             GameObject canvas = Instantiate(canvasPrefab);
             canvas.name = canvasPrefab.name;
+            MenuUIHelper.EnsureCamera();
             MenuUIHelper.EnsureEventSystem();
 
             bool hasRequiredButtons =

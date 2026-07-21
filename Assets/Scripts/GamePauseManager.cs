@@ -334,10 +334,50 @@ public class GamePauseManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (!IsInMenuScene())
+        {
+            EnsureGameplayCamera();
+        }
+
         if (pendingLoadData != null && !IsInMenuScene())
         {
             StartCoroutine(ApplySaveNextFrame(pendingLoadData));
             pendingLoadData = null;
+        }
+    }
+
+    private static void EnsureGameplayCamera()
+    {
+        Camera existingCamera = FindFirstObjectByType<Camera>(FindObjectsInactive.Include);
+        if (existingCamera != null)
+        {
+            // 如果找到了 Camera 但它处于不可用状态，尝试激活/启用它
+            if (!existingCamera.gameObject.activeInHierarchy)
+            {
+                existingCamera.gameObject.SetActive(true);
+            }
+            if (!existingCamera.enabled)
+            {
+                existingCamera.enabled = true;
+            }
+            return;
+        }
+
+        GameObject cameraObject = new GameObject("Main Camera");
+        cameraObject.tag = "MainCamera";
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.orthographic = true;
+        camera.orthographicSize = 4.6f;
+        camera.backgroundColor = new Color(0.08f, 0.12f, 0.17f);
+        camera.nearClipPlane = 0.3f;
+        camera.farClipPlane = 1000f;
+        cameraObject.AddComponent<AudioListener>();
+
+        CameraFollow2D follow = cameraObject.AddComponent<CameraFollow2D>();
+        PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>(FindObjectsInactive.Include);
+        if (player != null)
+        {
+            follow.SetTarget(player.transform);
         }
     }
 

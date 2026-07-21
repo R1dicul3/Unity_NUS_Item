@@ -46,11 +46,22 @@ namespace MainMenu
         public static void EnsureCamera()
         {
 #if UNITY_2023_1_OR_NEWER
-            var existingCam = UnityEngine.Object.FindAnyObjectByType<Camera>();
+            var existingCam = UnityEngine.Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Include);
 #else
-            var existingCam = UnityEngine.Object.FindObjectOfType<Camera>();
+            var existingCam = UnityEngine.Object.FindObjectOfType<Camera>(true);
 #endif
-            if (existingCam != null) return;
+            if (existingCam != null)
+            {
+                if (!existingCam.gameObject.activeInHierarchy)
+                {
+                    existingCam.gameObject.SetActive(true);
+                }
+                if (!existingCam.enabled)
+                {
+                    existingCam.enabled = true;
+                }
+                return;
+            }
 
             GameObject camGO = new GameObject("Main Camera");
             Camera camera = camGO.AddComponent<Camera>();

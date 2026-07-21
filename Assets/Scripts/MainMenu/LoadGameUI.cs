@@ -191,6 +191,7 @@ namespace MainMenu
 
             GameObject canvas = Instantiate(prefab, transform);
             canvas.name = prefab.name;
+            MenuUIHelper.EnsureCamera();
             MenuUIHelper.EnsureEventSystem();
 
             Canvas canvasComponent = canvas.GetComponent<Canvas>();
