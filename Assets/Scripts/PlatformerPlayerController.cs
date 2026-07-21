@@ -66,6 +66,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     private float groundCheckLockoutTimer;
     private float defaultGravityScale;
     private static Sprite fallbackPlayerSprite;
+    private bool _hasEverLeftGround;
 
     private PlayerInputActions inputActions;
 
@@ -181,7 +182,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     }
 
     private void ReadInput() {
-        // ºËÐÄÐÞ¸Ä£º¶ÁÈ¡ Vector2 ÀàÐÍ£¬²¢ÌáÈ¡ X Öá·ÖÁ¿×÷ÎªË®Æ½ÒÆ¶¯ÊäÈë
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸Ä£ï¿½ï¿½ï¿½È¡ Vector2 ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½ï¿½È¡ X ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎªË®Æ½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½
         moveInput = inputActions.Player.Move.ReadValue<Vector2>().x;
 
         if (Mathf.Abs(moveInput) > 0.01f) {
@@ -217,7 +218,14 @@ public class PlatformerPlayerController : MonoBehaviour {
         }
 
         if (!wasGrounded && isGrounded) {
+            if (_hasEverLeftGround) {
+                AudioManager.Instance?.PlayOneShot(SoundType.Land);
+            }
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Min(rb.linearVelocity.y, 0f));
+        }
+
+        if (wasGrounded && !isGrounded) {
+            _hasEverLeftGround = true;
         }
     }
 
@@ -253,9 +261,11 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (canGroundJump) {
             jumpsUsed = 1;
+            AudioManager.Instance?.PlayOneShot(SoundType.Jump);
         }
         else {
             jumpsUsed++;
+            AudioManager.Instance?.PlayOneShot(SoundType.DoubleJump);
         }
 
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
@@ -275,6 +285,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         dashCooldownTimer = dashCooldown;
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
+        AudioManager.Instance?.PlayOneShot(SoundType.Dash);
 
         if (dashTrail != null) {
             dashTrail.Clear();

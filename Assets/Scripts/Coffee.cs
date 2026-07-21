@@ -18,6 +18,7 @@ public class Coffee : MonoBehaviour {
         if (EmotionManager.Instance == null) return;
 
         EmotionManager.Instance.SetEmotion(emotion);
+        AudioManager.Instance?.PlayOneShot(SoundType.CollectItem);
         SaveSystem.CollectedStateTracker.MarkCollected(SaveId);
         Destroy(gameObject);
     }

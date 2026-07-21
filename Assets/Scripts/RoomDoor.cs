@@ -65,6 +65,7 @@ public class RoomDoor : MonoBehaviour {
         }
 
         PlayerTeleported?.Invoke(player, this, targetDoor);
+        AudioManager.Instance?.PlayOneShot(SoundType.DoorOpen);
     }
 
     public string GetSourceAreaName() {

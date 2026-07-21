@@ -23,8 +23,10 @@ Shader "Universal Render Pipeline/CRT"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_BlitTexture);
+            SAMPLER(sampler_LinearClamp);
 
             float _CRTIntensity;
             float _ScanlineIntensity;
@@ -32,6 +34,26 @@ Shader "Universal Render Pipeline/CRT"
             float _ChromaticAberration;
             float _VignetteIntensity;
             float _NoiseIntensity;
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 texcoord : TEXCOORD0;
+            };
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.texcoord = input.uv;
+                return output;
+            }
 
             // 简单伪随机函数
             float Random(float2 uv)

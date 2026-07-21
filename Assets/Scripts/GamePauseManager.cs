@@ -113,6 +113,7 @@ public class GamePauseManager : MonoBehaviour
         isPaused = true;
         Time.timeScale = 0f;
         SuppressDialogueUi(true);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIBack);
 
         if (pauseMenuObject == null)
         {
@@ -133,6 +134,7 @@ public class GamePauseManager : MonoBehaviour
         isPaused = false;
         Time.timeScale = 1f;
         SuppressDialogueUi(false);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIConfirm);
 
         if (pauseMenuObject != null)
         {
@@ -204,6 +206,8 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.CollectedStateTracker.Clear();
         SaveSystem.GameTimer.Instance?.ResetTimer();
         SaveSystem.GameTimer.Instance?.StartTimer();
+        AudioManager.Instance?.PlayOneShot(SoundType.UIConfirm);
+        AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
         SceneManager.LoadScene("Scene_2");
     }
 
@@ -258,6 +262,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.GameTimer.Instance?.SetElapsedTime(data.playTimeSeconds);
         SaveSystem.GameTimer.Instance?.StartTimer();
         SaveSystem.CollectedStateTracker.SetCollectedObjectIds(data.collectedObjectIds);
+        AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
         SceneManager.LoadScene(data.sceneName);
     }
 
@@ -287,6 +292,7 @@ public class GamePauseManager : MonoBehaviour
         PreviousGameplayScene = null;
         pauseMenuObject = null;
         SuppressDialogueUi(false);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIBack);
         SceneManager.LoadScene("MainMenu");
     }
 

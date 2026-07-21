@@ -20,7 +20,7 @@ public class GameSettings : MonoBehaviour
     private float _crtIntensity = 0.5f;
 
     /// <summary>
-    /// 总音量（0–1）。当前不实际控制音频，仅持久化数值。
+    /// 总音量（0–1）。AudioManager 会订阅此属性的变化事件以实时调整音频输出。
     /// </summary>
     public float MasterVolume
     {
@@ -36,7 +36,7 @@ public class GameSettings : MonoBehaviour
     }
 
     /// <summary>
-    /// 音乐音量（0–1）。当前不实际控制音频，仅持久化数值。
+    /// 音乐音量（0–1）。AudioManager 会订阅此属性的变化事件以实时调整背景音乐音量。
     /// </summary>
     public float MusicVolume
     {
@@ -52,7 +52,7 @@ public class GameSettings : MonoBehaviour
     }
 
     /// <summary>
-    /// 音效音量（0–1）。当前不实际控制音频，仅持久化数值。
+    /// 音效音量（0–1）。AudioManager 会订阅此属性的变化事件以实时调整音效播放音量。
     /// </summary>
     public float SFXVolume
     {

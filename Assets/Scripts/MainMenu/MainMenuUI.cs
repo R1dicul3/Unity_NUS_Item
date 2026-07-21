@@ -195,6 +195,11 @@ namespace MainMenu
             SceneManager.LoadScene("Credits");
         }
 
+        void OnSettings()
+        {
+            Debug.Log("[Settings] 功能暂未实现。");
+        }
+
         void OnExit()
         {
 #if UNITY_EDITOR

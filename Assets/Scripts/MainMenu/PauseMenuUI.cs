@@ -82,15 +82,8 @@ namespace MainMenu
             CreateMenuButton(content, "Resume Game", OnResumeGame, true);
             CreateMenuButton(content, "Load Game", OnLoadGame, true);
             CreateMenuButton(content, "Save Game", OnSaveGame, true);
-<<<<<<< Updated upstream
-            CreateMenuButton(content, "Settings", OnSettings, false);
-=======
-
             // 按钮：Settings（暂未实现）
             CreateMenuButton(content, "Settings", null, false);
-
-            // 按钮：Return to Main Menu
->>>>>>> Stashed changes
             CreateMenuButton(content, "Return to Main Menu", OnReturnToMainMenu, true);
             CreateMessageArea(canvas.transform);
         }
@@ -160,16 +153,7 @@ namespace MainMenu
             GamePauseManager.Instance?.SaveGame();
         }
 
-<<<<<<< Updated upstream
-        private void OnSettings()
-        {
-            Debug.Log("Settings clicked - not implemented.");
-        }
-
         private void OnReturnToMainMenu()
-=======
-        void OnReturnToMainMenu()
->>>>>>> Stashed changes
         {
             GamePauseManager.Instance?.ReturnToMainMenu();
         }

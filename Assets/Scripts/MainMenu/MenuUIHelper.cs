@@ -174,7 +174,10 @@ namespace MainMenu
             btn.targetGraphic = btnImage;
 
             if (onClick != null)
+            {
+                btn.onClick.AddListener(() => AudioManager.Instance?.PlayOneShot(SoundType.UIClick));
                 btn.onClick.AddListener(onClick);
+            }
 
             ColorBlock colors = btn.colors;
             colors.normalColor = interactable ? buttonColor : disabledImageColor;
@@ -252,6 +255,7 @@ namespace MainMenu
             button.onClick.RemoveAllListeners();
             if (onClick != null)
             {
+                button.onClick.AddListener(() => AudioManager.Instance?.PlayOneShot(SoundType.UIClick));
                 button.onClick.AddListener(onClick);
             }
 

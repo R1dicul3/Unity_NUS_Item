@@ -56,8 +56,10 @@ public class CharacterSwitcher2D : MonoBehaviour {
     }
 
     public void SetPoweredMode(bool powered) {
+        if (isPoweredMode == powered) return;
         isPoweredMode = powered;
         ApplyCurrentMode();
+        AudioManager.Instance?.PlayOneShot(SoundType.CharacterSwitch);
     }
 
     public void TogglePoweredMode() {
