@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// 只负责"切换角色"：能力（二段跳/冲刺）、颜色、动画控制器。
+// 只负责"切换角色"：能力（二段跳/冲刺）和颜色。
 // 完全独立于世界/平台切换（LevelVariantSwitcher），互不影响。
 public class CharacterSwitcher2D : MonoBehaviour {
     [Header("Target")]
@@ -14,11 +14,6 @@ public class CharacterSwitcher2D : MonoBehaviour {
     [Header("Modes")]
     [SerializeField] private Color poweredColor = new Color(1f, 0.05f, 0.72f);
     [SerializeField] private Color basicColor = new Color(0.05f, 1f, 0.2f);
-
-    [Header("Animation Placeholders")]
-    [SerializeField] private Animator characterAnimator;
-    [SerializeField] private RuntimeAnimatorController poweredAnimationPlaceholder;
-    [SerializeField] private RuntimeAnimatorController basicAnimationPlaceholder;
 
     private bool isPoweredMode;
     private PlayerInputActions inputActions;
@@ -39,9 +34,12 @@ public class CharacterSwitcher2D : MonoBehaviour {
         inputActions?.Disable();
     }
 
+    private void OnDestroy() {
+        inputActions?.Dispose();
+    }
+
     public void Initialize(PlatformerPlayerController playableCharacter) {
         character = playableCharacter;
-        ResolveAnimatorIfNeeded();
         ApplyCurrentMode();
     }
 
@@ -72,26 +70,5 @@ public class CharacterSwitcher2D : MonoBehaviour {
         }
 
         character.SetAbilities(isPoweredMode, isPoweredMode, isPoweredMode ? poweredColor : basicColor);
-        ApplyAnimator();
-    }
-
-    private void ApplyAnimator() {
-        ResolveAnimatorIfNeeded();
-        if (characterAnimator == null) {
-            return;
-        }
-
-        RuntimeAnimatorController controller = isPoweredMode
-            ? poweredAnimationPlaceholder
-            : basicAnimationPlaceholder;
-        if (characterAnimator.runtimeAnimatorController != controller) {
-            characterAnimator.runtimeAnimatorController = controller;
-        }
-    }
-
-    private void ResolveAnimatorIfNeeded() {
-        if (characterAnimator == null && character != null) {
-            characterAnimator = character.GetComponentInChildren<Animator>(true);
-        }
     }
 }

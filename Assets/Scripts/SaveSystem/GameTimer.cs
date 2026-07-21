@@ -86,7 +86,7 @@ namespace SaveSystem
         public string GetFormattedTime()
         {
             TimeSpan ts = TimeSpan.FromSeconds(elapsedTime);
-            return $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+            return $"{(int)ts.TotalHours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
         }
     }
 }

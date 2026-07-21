@@ -6,8 +6,17 @@ public class EmotionManager : MonoBehaviour {
     public EmotionType CurrentEmotion = EmotionType.Calm;
 
     private void Awake() {
-        if (Instance == null) {
-            Instance = this;
+        if (Instance != null && Instance != this) {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+    }
+
+    private void OnDestroy() {
+        if (Instance == this) {
+            Instance = null;
         }
     }
 
@@ -20,6 +29,9 @@ public class EmotionManager : MonoBehaviour {
     public void SetEmotion(string emotionName) {
         if (System.Enum.TryParse(emotionName, out EmotionType emotion)) {
             SetEmotion(emotion);
+        }
+        else {
+            SetEmotion(EmotionType.Calm);
         }
     }
 }

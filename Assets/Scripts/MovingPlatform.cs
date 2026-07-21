@@ -23,20 +23,24 @@ public class MovingPlatform : MonoBehaviour {
     }
 
     void Update() {
-        switch (EmotionManager.Instance.CurrentEmotion) {
+        EmotionType currentEmotion = EmotionManager.Instance != null
+            ? EmotionManager.Instance.CurrentEmotion
+            : EmotionType.Calm;
+
+        switch (currentEmotion) {
             case EmotionType.Angry:
                 Shake();
-                platformMaterial.friction = normalFriction;
+                SetFriction(normalFriction);
                 break;
 
             case EmotionType.Sad:
                 transform.position = startPos;
-                platformMaterial.friction = slipperyFriction;
+                SetFriction(slipperyFriction);
                 break;
 
             default: // Calm
                 transform.position = startPos;
-                platformMaterial.friction = normalFriction;
+                SetFriction(normalFriction);
                 break;
         }
     }
@@ -44,5 +48,11 @@ public class MovingPlatform : MonoBehaviour {
     void Shake() {
         float y = Mathf.Sin(Time.time * frequency) * amplitude;
         transform.position = startPos + Vector3.up * y;
+    }
+
+    void SetFriction(float friction) {
+        if (platformMaterial != null) {
+            platformMaterial.friction = friction;
+        }
     }
 }

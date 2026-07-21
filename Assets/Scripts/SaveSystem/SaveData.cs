@@ -53,6 +53,32 @@ namespace SaveSystem
         public string currentEmotion;
         public string[] collectedObjectIds;
         public PillarPuzzleState[] pillarPuzzleStates;
+
+        public void EnsureDefaults()
+        {
+            if (playerPosition == null)
+            {
+                playerPosition = new SerializableVector3(Vector3.zero);
+            }
+
+            if (string.IsNullOrWhiteSpace(saveTimestamp))
+            {
+                saveTimestamp = "Unknown";
+            }
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                sceneName = "Scene_2";
+            }
+
+            if (string.IsNullOrWhiteSpace(currentEmotion))
+            {
+                currentEmotion = EmotionType.Calm.ToString();
+            }
+
+            collectedObjectIds ??= Array.Empty<string>();
+            pillarPuzzleStates ??= Array.Empty<PillarPuzzleState>();
+        }
     }
 
     [Serializable]

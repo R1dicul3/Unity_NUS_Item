@@ -243,6 +243,8 @@ public class GamePauseManager : MonoBehaviour
             return;
         }
 
+        data.EnsureDefaults();
+
         // 如果从暂停菜单叠加加载了 LoadGame 场景，先卸载它
         if (CameFromPauseMenu)
         {
@@ -389,7 +391,8 @@ public class GamePauseManager : MonoBehaviour
         var player = FindFirstObjectByType<PlatformerPlayerController>();
         if (player != null)
         {
-            player.transform.position = data.playerPosition.ToVector3();
+            Vector3 savedPosition = data.playerPosition != null ? data.playerPosition.ToVector3() : Vector3.zero;
+            player.transform.position = savedPosition;
             // 重置速度，防止加载后保留旧动量
             var rb = player.GetComponent<Rigidbody2D>();
             if (rb != null)

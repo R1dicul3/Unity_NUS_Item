@@ -21,13 +21,20 @@ namespace SaveSystem
         /// <summary>存档槽是否存在。</summary>
         public static bool HasSave(int slot)
         {
-            return File.Exists(GetSavePath(slot));
+            return IsValidSlot(slot) && File.Exists(GetSavePath(slot));
         }
 
         /// <summary>保存数据到指定槽位。</summary>
         public static void Save(int slot, SaveData data)
         {
+            ValidateSlot(slot);
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
             string path = GetSavePath(slot);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(path, json);
             Debug.Log($"[SaveSystem] Save written to {path}");
@@ -36,6 +43,7 @@ namespace SaveSystem
         /// <summary>从指定槽位读取存档。</summary>
         public static SaveData Load(int slot)
         {
+            ValidateSlot(slot);
             string path = GetSavePath(slot);
             if (!File.Exists(path))
             {
@@ -43,15 +51,31 @@ namespace SaveSystem
                 return null;
             }
 
-            string json = File.ReadAllText(path);
-            SaveData data = JsonUtility.FromJson<SaveData>(json);
-            Debug.Log($"[SaveSystem] Save loaded: {path}");
-            return data;
+            try
+            {
+                string json = File.ReadAllText(path);
+                SaveData data = JsonUtility.FromJson<SaveData>(json);
+                if (data == null)
+                {
+                    Debug.LogWarning($"[SaveSystem] Save slot {slot} contains no data.");
+                    return null;
+                }
+
+                data.EnsureDefaults();
+                Debug.Log($"[SaveSystem] Save loaded: {path}");
+                return data;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[SaveSystem] Failed to load save slot {slot}: {e.Message}");
+                return null;
+            }
         }
 
         /// <summary>删除指定槽位的存档。</summary>
         public static void Delete(int slot)
         {
+            ValidateSlot(slot);
             string path = GetSavePath(slot);
             if (File.Exists(path))
             {
@@ -106,6 +130,9 @@ namespace SaveSystem
         /// <summary>获取存档的元数据信息（用于 UI 展示，无需完整反序列化）。</summary>
         public static SaveMetaInfo GetMetaInfo(int slot)
         {
+            if (!IsValidSlot(slot))
+                return null;
+
             string path = GetSavePath(slot);
             if (!File.Exists(path))
                 return null;
@@ -116,6 +143,8 @@ namespace SaveSystem
                 SaveData data = JsonUtility.FromJson<SaveData>(json);
                 if (data == null)
                     return null;
+
+                data.EnsureDefaults();
 
                 return new SaveMetaInfo
                 {
@@ -130,6 +159,19 @@ namespace SaveSystem
                 Debug.LogError($"[SaveSystem] 读取存档 {slot} 元数据失败：{e.Message}");
                 return null;
             }
+        }
+
+        private static void ValidateSlot(int slot)
+        {
+            if (!IsValidSlot(slot))
+            {
+                throw new ArgumentOutOfRangeException(nameof(slot), slot, $"Save slot must be between 1 and {MaxSlots}.");
+            }
+        }
+
+        private static bool IsValidSlot(int slot)
+        {
+            return slot >= 1 && slot <= MaxSlots;
         }
     }
 
@@ -146,7 +188,8 @@ namespace SaveSystem
         public string GetFormattedPlayTime()
         {
             TimeSpan ts = TimeSpan.FromSeconds(playTimeSeconds);
-            return $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+            return $"{(int)ts.TotalHours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
         }
     }
+
 }
