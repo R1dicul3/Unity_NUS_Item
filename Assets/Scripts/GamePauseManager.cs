@@ -208,6 +208,11 @@ public class GamePauseManager : MonoBehaviour
             CameFromPauseMenu = false;
         }
 
+        // 重置暂停状态，防止加载后游戏冻结
+        isPaused = false;
+        Time.timeScale = 1f;
+        pauseMenuObject = null;
+
         pendingLoadData = data;
         HasUnsavedProgress = false;
         SaveSystem.GameTimer.Instance?.SetElapsedTime(data.playTimeSeconds);
