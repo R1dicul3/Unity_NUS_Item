@@ -14,7 +14,7 @@ public class CharacterSwitcher2D : MonoBehaviour {
     private PlayerInputActions inputActions;
 
     public bool IsPoweredMode => isPoweredMode;
-    public PlatformerPlayerController CurrentCharacter => isPoweredMode ? poweredCharacter : basicCharacter;
+    public PlatformerPlayerController CurrentCharacter => isPoweredMode || basicCharacter == null ? poweredCharacter : basicCharacter;
 
     private void Awake() {
         inputActions = new PlayerInputActions();
@@ -48,8 +48,14 @@ public class CharacterSwitcher2D : MonoBehaviour {
         ApplyCurrentMode(false);
     }
 
+    public void Initialize(PlatformerPlayerController character) {
+        poweredCharacter = character;
+        basicCharacter = null;
+        ApplyCurrentMode(false);
+    }
+
     private void Update() {
-        if (!allowDirectInput || poweredCharacter == null || basicCharacter == null) {
+        if (!allowDirectInput || poweredCharacter == null) {
             return;
         }
 
@@ -72,7 +78,13 @@ public class CharacterSwitcher2D : MonoBehaviour {
         PlatformerPlayerController activeChar = isPoweredMode ? poweredCharacter : basicCharacter;
         PlatformerPlayerController inactiveChar = isPoweredMode ? basicCharacter : poweredCharacter;
 
-        if (activeChar == null || inactiveChar == null) {
+        if (activeChar == null) {
+            return;
+        }
+
+        if (inactiveChar == null || inactiveChar == activeChar) {
+            activeChar.gameObject.SetActive(true);
+            activeChar.SetAbilities(isPoweredMode, isPoweredMode);
             return;
         }
 

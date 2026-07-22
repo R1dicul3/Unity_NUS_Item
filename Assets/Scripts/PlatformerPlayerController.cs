@@ -86,6 +86,18 @@ public class PlatformerPlayerController : MonoBehaviour {
         SetAbilities(allowDoubleJump, allowDash);
     }
 
+    public void Initialize(LayerMask platformMask, Color activeColor, Color inactiveColor, bool allowDoubleJump, bool allowDash) {
+        SetAbilities(allowDoubleJump, allowDash);
+
+        if (spriteRenderer == null) {
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null) {
+            spriteRenderer.color = activeColor;
+        }
+    }
+
     public void SetAbilities(bool allowDoubleJump, bool allowDash) {
         canDoubleJump = allowDoubleJump;
         canDash = allowDash;

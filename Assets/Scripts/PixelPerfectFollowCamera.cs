@@ -2,20 +2,20 @@ using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
 public class PixelPerfectFollowCamera : MonoBehaviour {
-    [Header("跟随目标")]
+    [Header("Follow Target")]
     [SerializeField] private Transform target;
     [SerializeField] private Vector2 followOffset = Vector2.zero;
 
-    [Header("平滑参数")]
+    [Header("Smoothing")]
     [SerializeField] private float positionSmoothTime = 0.12f;
     [SerializeField] private float orthoSizeSmoothTime = 0.2f;
 
-    [Header("像素吸附")]
-    [Tooltip("每单位像素数，需要和 Sprite 的 Pixels Per Unit 一致")]
+    [Header("Pixel Snapping")]
+    [Tooltip("Pixels per Unity unit. Keep this aligned with sprite Pixels Per Unit.")]
     [SerializeField] private int pixelsPerUnit = 16;
     [SerializeField] private bool snapToPixelGrid = true;
 
-    [Header("边界限制")]
+    [Header("Bounds")]
     [SerializeField] private bool clampToBounds = true;
 
     private Camera cam;
@@ -34,7 +34,7 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
     private void Awake() {
         cam = GetComponent<Camera>();
         if (!cam.orthographic) {
-            Debug.LogWarning($"{nameof(PixelPerfectFollowCamera)} 需要正交摄像机（Orthographic）。");
+            Debug.LogWarning($"{nameof(PixelPerfectFollowCamera)} requires an orthographic camera.");
         }
         targetOrthoSize = cam.orthographicSize;
     }
@@ -140,9 +140,11 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
             Mathf.Round(position.y / unitPerPixel) * unitPerPixel
         );
     }
+
     public void SetTarget(Transform newTarget) {
         target = newTarget;
     }
+
     public void SetCameraBounds(Bounds bounds) {
         currentBounds = bounds;
         hasBounds = true;
@@ -151,14 +153,20 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
     public void ClearCameraBounds() {
         hasBounds = false;
     }
+
     public void SetCameraSize(float orthographicSize) {
         targetOrthoSize = orthographicSize;
     }
+
     public void SnapImmediate() {
         forceSnapNextUpdate = true;
         if (target != null) {
-            ApplyFollow(); 
+            ApplyFollow();
         }
+    }
+
+    public void ForceSnapToTarget() {
+        SnapImmediate();
     }
 
 #if UNITY_EDITOR
