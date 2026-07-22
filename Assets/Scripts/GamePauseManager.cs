@@ -1,0 +1,521 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+
+/// <summary>
+/// 全局游戏暂停管理器。
+/// 单例，DontDestroyOnLoad，自动监听 ESC（Menu 动作）以唤出/关闭暂停菜单。
+/// 同时负责存档系统的集成（保存、读取、新游戏、返回主菜单）。
+/// </summary>
+public class GamePauseManager : MonoBehaviour
+{
+    public static GamePauseManager Instance { get; private set; }
+
+    private PlayerInputActions inputActions;
+    private bool isPaused = false;
+    private GameObject pauseMenuObject;
+    private bool isSaveGameUIOpen = false;
+    private bool isLoadGameUIOpen = false;
+    private SaveSystem.SaveData pendingLoadData;
+
+    public string PreviousGameplayScene { get; private set; }
+    public bool CameFromPauseMenu { get; private set; }
+    public bool HasUnsavedProgress { get; private set; } = false;
+
+    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits" };
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void Initialize()
+    {
+        if (Instance == null)
+        {
+            GameObject go = new GameObject("GamePauseManager");
+            go.AddComponent<GamePauseManager>();
+        }
+    }
+
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        inputActions = new PlayerInputActions();
+        inputActions.Player.Menu.performed += OnMenuPerformed;
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnEnable()
+    {
+        inputActions?.Enable();
+    }
+
+    private void OnDisable()
+    {
+        inputActions?.Disable();
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        if (inputActions != null)
+        {
+            inputActions.Player.Menu.performed -= OnMenuPerformed;
+            inputActions.Dispose();
+        }
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void OnMenuPerformed(InputAction.CallbackContext context)
+    {
+        if (IsInMenuScene())
+            return;
+
+        // 如果保存界面或确认对话框打开，不处理 ESC（由它们自己处理）
+        if (IsBlockingUiOpen())
+            return;
+
+        if (isPaused)
+            ResumeGame();
+        else
+            PauseGame();
+    }
+
+    private bool IsInMenuScene()
+    {
+        string currentScene = SceneManager.GetActiveScene().name;
+        foreach (string menuScene in menuScenes)
+        {
+            if (currentScene == menuScene)
+                return true;
+        }
+        return false;
+    }
+
+    public void PauseGame()
+    {
+        if (isPaused)
+            return;
+
+        isPaused = true;
+        Time.timeScale = 0f;
+        SuppressDialogueUi(true);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
+        AudioManager.Instance?.ApplyPauseEffect();
+
+        if (pauseMenuObject == null)
+        {
+            pauseMenuObject = new GameObject("PauseMenu");
+            pauseMenuObject.AddComponent<MainMenu.PauseMenuUI>();
+        }
+        else
+        {
+            pauseMenuObject.SetActive(true);
+        }
+    }
+
+    public void ResumeGame()
+    {
+        if (!isPaused)
+            return;
+
+        isPaused = false;
+        Time.timeScale = 1f;
+        SuppressDialogueUi(false);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
+        AudioManager.Instance?.RemovePauseEffect();
+
+        if (pauseMenuObject != null)
+        {
+            pauseMenuObject.SetActive(false);
+        }
+    }
+
+    public void LoadGame()
+    {
+        if (isLoadGameUIOpen || isSaveGameUIOpen)
+            return;
+
+        PreviousGameplayScene = SceneManager.GetActiveScene().name;
+        CameFromPauseMenu = true;
+        isLoadGameUIOpen = true;
+        SuppressDialogueUi(true);
+        if (pauseMenuObject != null)
+        {
+            pauseMenuObject.SetActive(false);
+        }
+        SceneManager.LoadScene("LoadGame", LoadSceneMode.Additive);
+    }
+
+    public void SaveGame()
+    {
+        // 旧的无参数 SaveGame 不再使用，改为打开保存界面
+        OpenSaveGameUI();
+    }
+
+    public void OpenSaveGameUI()
+    {
+        if (isSaveGameUIOpen)
+            return;
+        if (isLoadGameUIOpen)
+            return;
+
+        isSaveGameUIOpen = true;
+        SuppressDialogueUi(true);
+        if (pauseMenuObject != null)
+        {
+            pauseMenuObject.SetActive(false);
+        }
+
+        GameObject go = new GameObject("SaveGameUI");
+        go.AddComponent<MainMenu.SaveGameUI>();
+    }
+
+    public void OnSaveGameUIClosed()
+    {
+        isSaveGameUIOpen = false;
+        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen)
+        {
+            pauseMenuObject.SetActive(true);
+        }
+        else if (!isPaused && !isLoadGameUIOpen)
+        {
+            SuppressDialogueUi(false);
+        }
+    }
+
+    public void MarkProgressSaved()
+    {
+        HasUnsavedProgress = false;
+    }
+
+    public void StartNewGame()
+    {
+        HasUnsavedProgress = true;
+        SaveSystem.CollectedStateTracker.Clear();
+        SaveSystem.GameTimer.Instance?.ResetTimer();
+        SaveSystem.GameTimer.Instance?.StartTimer();
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
+        AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
+        SceneManager.LoadScene("Scene_2");
+    }
+
+    public SaveSystem.SaveData CreateSaveData()
+    {
+        var player = FindFirstObjectByType<PlatformerPlayerController>();
+        var characterSwitcher = FindFirstObjectByType<CharacterSwitcher2D>();
+        var levelVariantSwitcher = FindFirstObjectByType<LevelVariantSwitcher>();
+        var emotionManager = EmotionManager.Instance;
+        Vector3 position = player != null ? player.transform.position : Vector3.zero;
+
+        return new SaveSystem.SaveData
+        {
+            saveVersion = 2,
+            playerPosition = new SaveSystem.SerializableVector3(position),
+            playTimeSeconds = SaveSystem.GameTimer.Instance?.GetElapsedTime() ?? 0f,
+            saveTimestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            sceneName = SceneManager.GetActiveScene().name,
+            isPoweredMode = characterSwitcher == null || characterSwitcher.IsPoweredMode,
+            levelVariantIndex = levelVariantSwitcher != null ? levelVariantSwitcher.CurrentIndex : 0,
+            currentEmotion = emotionManager != null ? emotionManager.CurrentEmotion.ToString() : EmotionType.Calm.ToString(),
+            collectedObjectIds = SaveSystem.CollectedStateTracker.GetCollectedObjectIds(),
+            pillarPuzzleStates = CapturePillarPuzzleStates()
+        };
+    }
+
+    public void LoadSaveGame(int slot)
+    {
+        SaveSystem.SaveData data = SaveSystem.SaveSystem.Load(slot);
+        if (data == null)
+        {
+            Debug.LogWarning($"[GamePauseManager] Cannot read save slot {slot}.");
+            return;
+        }
+
+        data.EnsureDefaults();
+
+        // 如果从暂停菜单叠加加载了 LoadGame 场景，先卸载它
+        if (CameFromPauseMenu)
+        {
+            SceneManager.UnloadSceneAsync("LoadGame");
+            CameFromPauseMenu = false;
+        }
+        isLoadGameUIOpen = false;
+
+        // 重置暂停状态，防止加载后游戏冻结
+        isPaused = false;
+        Time.timeScale = 1f;
+        SuppressDialogueUi(false);
+        pauseMenuObject = null;
+
+        pendingLoadData = data;
+        HasUnsavedProgress = false;
+        SaveSystem.GameTimer.Instance?.SetElapsedTime(data.playTimeSeconds);
+        SaveSystem.GameTimer.Instance?.StartTimer();
+        SaveSystem.CollectedStateTracker.SetCollectedObjectIds(data.collectedObjectIds);
+        AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
+        SceneManager.LoadScene(data.sceneName);
+    }
+
+    public void ReturnToMainMenu()
+    {
+        if (HasUnsavedProgress)
+        {
+            MainMenu.ConfirmDialogUI.Show(
+                "Returning to the main menu will lose unsaved progress. Are you sure?",
+                onConfirm: () => DoReturnToMainMenu(),
+                onCancel: null,
+                dialogSound: SoundType.UIAlert);
+        }
+        else
+        {
+            DoReturnToMainMenu();
+        }
+    }
+
+    private void DoReturnToMainMenu()
+    {
+        Time.timeScale = 1f;
+        isPaused = false;
+        isSaveGameUIOpen = false;
+        isLoadGameUIOpen = false;
+        HasUnsavedProgress = false;
+        CameFromPauseMenu = false;
+        PreviousGameplayScene = null;
+        pauseMenuObject = null;
+        SuppressDialogueUi(false);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    public void ReturnToGameFromLoadGame()
+    {
+        isLoadGameUIOpen = false;
+        CameFromPauseMenu = false;
+        SceneManager.UnloadSceneAsync("LoadGame");
+        if (isPaused && pauseMenuObject != null)
+        {
+            pauseMenuObject.SetActive(true);
+        }
+        else if (!isPaused)
+        {
+            SuppressDialogueUi(false);
+        }
+    }
+
+    private bool IsBlockingUiOpen()
+    {
+        return isSaveGameUIOpen
+            || isLoadGameUIOpen
+            || FindFirstObjectByType<MainMenu.SaveGameUI>() != null
+            || FindFirstObjectByType<MainMenu.LoadGameUI>() != null
+            || FindFirstObjectByType<MainMenu.ConfirmDialogUI>() != null;
+    }
+
+    private void SuppressDialogueUi(bool value)
+    {
+        DialogueController[] dialogues = FindObjectsByType<DialogueController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (DialogueController dialogue in dialogues)
+        {
+            if (dialogue != null)
+            {
+                dialogue.SetUiSuppressed(value);
+            }
+        }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (!IsInMenuScene())
+        {
+            EnsureGameplayCamera();
+            // 进入游戏场景时播放游戏BGM
+            AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
+        }
+
+        if (pendingLoadData != null && !IsInMenuScene())
+        {
+            StartCoroutine(ApplySaveNextFrame(pendingLoadData));
+            pendingLoadData = null;
+        }
+    }
+
+    private static void EnsureGameplayCamera()
+    {
+        Camera existingCamera = FindFirstObjectByType<Camera>(FindObjectsInactive.Include);
+        if (existingCamera != null)
+        {
+            // 如果找到了 Camera 但它处于不可用状态，尝试激活/启用它
+            if (!existingCamera.gameObject.activeInHierarchy)
+            {
+                existingCamera.gameObject.SetActive(true);
+            }
+            if (!existingCamera.enabled)
+            {
+                existingCamera.enabled = true;
+            }
+            return;
+        }
+
+        GameObject cameraObject = new GameObject("Main Camera");
+        cameraObject.tag = "MainCamera";
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.orthographic = true;
+        camera.orthographicSize = 4.6f;
+        camera.backgroundColor = new Color(0.08f, 0.12f, 0.17f);
+        camera.nearClipPlane = 0.3f;
+        camera.farClipPlane = 1000f;
+        cameraObject.AddComponent<AudioListener>();
+
+        CameraFollow2D follow = cameraObject.AddComponent<CameraFollow2D>();
+        PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>(FindObjectsInactive.Include);
+        if (player != null)
+        {
+            follow.SetTarget(player.transform);
+        }
+    }
+
+    private IEnumerator ApplySaveNextFrame(SaveSystem.SaveData data)
+    {
+        // 等待一帧，确保 PlatformerPrototypeBootstrap 已完成初始化
+        yield return null;
+
+        var player = FindFirstObjectByType<PlatformerPlayerController>();
+        if (player != null)
+        {
+            Vector3 savedPosition = data.playerPosition != null ? data.playerPosition.ToVector3() : Vector3.zero;
+            player.transform.position = savedPosition;
+            // 重置速度，防止加载后保留旧动量
+            var rb = player.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[GamePauseManager] Player object not found after loading save.");
+        }
+
+        // 强制相机立即刷新到玩家位置
+        if (data.saveVersion >= 2)
+        {
+            ApplySavedCharacterState(data);
+            ApplySavedWorldState(data);
+            ApplySavedCollectedObjects(data);
+            ApplySavedPillarPuzzleStates(data);
+        }
+
+        var cameraFollow = FindFirstObjectByType<CameraFollow2D>();
+        if (cameraFollow != null)
+        {
+            cameraFollow.ForceSnapToTarget();
+        }
+
+        Debug.Log("[GamePauseManager] Save data applied to scene.");
+    }
+
+    private SaveSystem.PillarPuzzleState[] CapturePillarPuzzleStates()
+    {
+        RoomPillarPuzzle2D[] puzzles = FindObjectsByType<RoomPillarPuzzle2D>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        List<SaveSystem.PillarPuzzleState> states = new List<SaveSystem.PillarPuzzleState>();
+        foreach (RoomPillarPuzzle2D puzzle in puzzles)
+        {
+            if (puzzle != null)
+            {
+                states.Add(puzzle.CaptureState());
+            }
+        }
+
+        return states.ToArray();
+    }
+
+    private void ApplySavedCharacterState(SaveSystem.SaveData data)
+    {
+        CharacterSwitcher2D characterSwitcher = FindFirstObjectByType<CharacterSwitcher2D>(FindObjectsInactive.Include);
+        if (characterSwitcher != null)
+        {
+            characterSwitcher.SetPoweredMode(data.isPoweredMode);
+        }
+    }
+
+    private void ApplySavedWorldState(SaveSystem.SaveData data)
+    {
+        LevelVariantSwitcher levelVariantSwitcher = FindFirstObjectByType<LevelVariantSwitcher>(FindObjectsInactive.Include);
+        if (levelVariantSwitcher != null)
+        {
+            levelVariantSwitcher.SetVariant(data.levelVariantIndex);
+        }
+
+        if (EmotionManager.Instance != null)
+        {
+            EmotionManager.Instance.SetEmotion(data.currentEmotion);
+        }
+    }
+
+    private void ApplySavedCollectedObjects(SaveSystem.SaveData data)
+    {
+        SaveSystem.CollectedStateTracker.SetCollectedObjectIds(data.collectedObjectIds);
+        if (data.collectedObjectIds == null || data.collectedObjectIds.Length == 0)
+        {
+            return;
+        }
+
+        Coffee[] coffees = FindObjectsByType<Coffee>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Coffee coffee in coffees)
+        {
+            if (coffee == null)
+            {
+                continue;
+            }
+
+            foreach (string collectedId in data.collectedObjectIds)
+            {
+                if (coffee.SaveId == collectedId)
+                {
+                    Destroy(coffee.gameObject);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ApplySavedPillarPuzzleStates(SaveSystem.SaveData data)
+    {
+        if (data.pillarPuzzleStates == null || data.pillarPuzzleStates.Length == 0)
+        {
+            return;
+        }
+
+        RoomPillarPuzzle2D[] puzzles = FindObjectsByType<RoomPillarPuzzle2D>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (SaveSystem.PillarPuzzleState puzzleState in data.pillarPuzzleStates)
+        {
+            if (puzzleState == null)
+            {
+                continue;
+            }
+
+            foreach (RoomPillarPuzzle2D puzzle in puzzles)
+            {
+                if (puzzle != null && puzzle.SaveId == puzzleState.puzzleId)
+                {
+                    puzzle.ApplyState(puzzleState);
+                    break;
+                }
+            }
+        }
+    }
+}
