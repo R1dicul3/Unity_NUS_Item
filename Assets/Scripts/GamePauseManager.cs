@@ -18,14 +18,13 @@ public class GamePauseManager : MonoBehaviour
     private GameObject pauseMenuObject;
     private bool isSaveGameUIOpen = false;
     private bool isLoadGameUIOpen = false;
-    private bool isSettingsUIOpen = false;
     private SaveSystem.SaveData pendingLoadData;
 
     public string PreviousGameplayScene { get; private set; }
     public bool CameFromPauseMenu { get; private set; }
     public bool HasUnsavedProgress { get; private set; } = false;
 
-    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits", "Settings" };
+    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits" };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Initialize()
@@ -147,7 +146,7 @@ public class GamePauseManager : MonoBehaviour
 
     public void LoadGame()
     {
-        if (isLoadGameUIOpen || isSaveGameUIOpen || isSettingsUIOpen)
+        if (isLoadGameUIOpen || isSaveGameUIOpen)
             return;
 
         PreviousGameplayScene = SceneManager.GetActiveScene().name;
@@ -171,7 +170,7 @@ public class GamePauseManager : MonoBehaviour
     {
         if (isSaveGameUIOpen)
             return;
-        if (isLoadGameUIOpen || isSettingsUIOpen)
+        if (isLoadGameUIOpen)
             return;
 
         isSaveGameUIOpen = true;
@@ -188,52 +187,11 @@ public class GamePauseManager : MonoBehaviour
     public void OnSaveGameUIClosed()
     {
         isSaveGameUIOpen = false;
-        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen && !isSettingsUIOpen)
+        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen)
         {
             pauseMenuObject.SetActive(true);
         }
-        else if (!isPaused && !isLoadGameUIOpen && !isSettingsUIOpen)
-        {
-            SuppressDialogueUi(false);
-        }
-    }
-
-    public void OpenSettings()
-    {
-        if (isSettingsUIOpen)
-            return;
-        if (isSaveGameUIOpen || isLoadGameUIOpen)
-            return;
-
-        isSettingsUIOpen = true;
-        SuppressDialogueUi(true);
-        if (pauseMenuObject != null)
-        {
-            pauseMenuObject.SetActive(false);
-        }
-
-        MainMenu.SettingsUI.ShowOverlay(() =>
-        {
-            isSettingsUIOpen = false;
-            if (isPaused && pauseMenuObject != null)
-            {
-                pauseMenuObject.SetActive(true);
-            }
-            else if (!isPaused)
-            {
-                SuppressDialogueUi(false);
-            }
-        });
-    }
-
-    public void OnSettingsUIClosed()
-    {
-        isSettingsUIOpen = false;
-        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen && !isSaveGameUIOpen)
-        {
-            pauseMenuObject.SetActive(true);
-        }
-        else if (!isPaused && !isLoadGameUIOpen && !isSaveGameUIOpen)
+        else if (!isPaused && !isLoadGameUIOpen)
         {
             SuppressDialogueUi(false);
         }
@@ -334,7 +292,6 @@ public class GamePauseManager : MonoBehaviour
         isPaused = false;
         isSaveGameUIOpen = false;
         isLoadGameUIOpen = false;
-        isSettingsUIOpen = false;
         HasUnsavedProgress = false;
         CameFromPauseMenu = false;
         PreviousGameplayScene = null;
@@ -349,11 +306,11 @@ public class GamePauseManager : MonoBehaviour
         isLoadGameUIOpen = false;
         CameFromPauseMenu = false;
         SceneManager.UnloadSceneAsync("LoadGame");
-        if (isPaused && pauseMenuObject != null && !isSettingsUIOpen)
+        if (isPaused && pauseMenuObject != null)
         {
             pauseMenuObject.SetActive(true);
         }
-        else if (!isPaused && !isSettingsUIOpen)
+        else if (!isPaused)
         {
             SuppressDialogueUi(false);
         }
@@ -363,10 +320,8 @@ public class GamePauseManager : MonoBehaviour
     {
         return isSaveGameUIOpen
             || isLoadGameUIOpen
-            || isSettingsUIOpen
             || FindFirstObjectByType<MainMenu.SaveGameUI>() != null
             || FindFirstObjectByType<MainMenu.LoadGameUI>() != null
-            || FindFirstObjectByType<MainMenu.SettingsUI>() != null
             || FindFirstObjectByType<MainMenu.ConfirmDialogUI>() != null;
     }
 
@@ -425,7 +380,7 @@ public class GamePauseManager : MonoBehaviour
         camera.farClipPlane = 1000f;
         cameraObject.AddComponent<AudioListener>();
 
-        CameraFollow2D follow = cameraObject.AddComponent<CameraFollow2D>();
+        PixelPerfectFollowCamera follow = cameraObject.AddComponent<PixelPerfectFollowCamera>();
         PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>(FindObjectsInactive.Include);
         if (player != null)
         {
@@ -464,7 +419,7 @@ public class GamePauseManager : MonoBehaviour
             ApplySavedPillarPuzzleStates(data);
         }
 
-        var cameraFollow = FindFirstObjectByType<CameraFollow2D>();
+        var cameraFollow = FindFirstObjectByType<PixelPerfectFollowCamera>();
         if (cameraFollow != null)
         {
             cameraFollow.ForceSnapToTarget();

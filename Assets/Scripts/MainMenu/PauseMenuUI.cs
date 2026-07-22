@@ -82,7 +82,8 @@ namespace MainMenu
             CreateMenuButton(content, "Resume Game", OnResumeGame, true);
             CreateMenuButton(content, "Load Game", OnLoadGame, true);
             CreateMenuButton(content, "Save Game", OnSaveGame, true);
-            CreateMenuButton(content, "Settings", OnSettings, true);
+            // 按钮：Settings（暂未实现）
+            CreateMenuButton(content, "Settings", null, false);
             CreateMenuButton(content, "Return to Main Menu", OnReturnToMainMenu, true);
             CreateMessageArea(canvas.transform);
         }
@@ -113,7 +114,6 @@ namespace MainMenu
                 MenuUIHelper.TryBindButton(canvas.transform, "ResumeButton", OnResumeGame, out _)
                 & MenuUIHelper.TryBindButton(canvas.transform, "LoadButton", OnLoadGame, out _)
                 & MenuUIHelper.TryBindButton(canvas.transform, "SaveButton", OnSaveGame, out _)
-                & MenuUIHelper.TryBindButton(canvas.transform, "SettingsButton", OnSettings, out _)
                 & MenuUIHelper.TryBindButton(canvas.transform, "MainMenuButton", OnReturnToMainMenu, out _);
 
             BindMessage(canvas.transform);
@@ -152,11 +152,6 @@ namespace MainMenu
         private void OnSaveGame()
         {
             GamePauseManager.Instance?.SaveGame();
-        }
-
-        private void OnSettings()
-        {
-            GamePauseManager.Instance?.OpenSettings();
         }
 
         private void OnReturnToMainMenu()

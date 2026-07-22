@@ -77,8 +77,8 @@ namespace MainMenu
             // 按钮：Load Game
             CreateMenuButton(content, "Load Game", OnLoadGame, true);
 
-            // 按钮：Settings
-            CreateMenuButton(content, "Settings", OnSettings, true);
+            // 按钮：Settings（暂未实现）
+            CreateMenuButton(content, "Settings", null, false);
 
             // 按钮：Credits
             CreateMenuButton(content, "Credits", OnCredits, true);
@@ -211,7 +211,7 @@ namespace MainMenu
 
         void OnSettings()
         {
-            SceneManager.LoadScene("Settings");
+            Debug.Log("[Settings] 功能暂未实现。");
         }
 
         void OnExit()
