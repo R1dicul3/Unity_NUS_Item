@@ -140,7 +140,7 @@ public class CameraFollow2D : MonoBehaviour
             return false;
         }
 
-        Transform area = whiteboxRoot.Find(areaName);
+        Transform area = FindArea(areaName);
         if (area == null || !TryCalculateAreaBounds(area, out Bounds areaBounds))
         {
             return false;
@@ -164,7 +164,7 @@ public class CameraFollow2D : MonoBehaviour
         Bounds bestBounds = default;
         float bestDistance = float.MaxValue;
 
-        foreach (Transform child in whiteboxRoot)
+        foreach (Transform child in EnumerateAreas())
         {
             if (!IsAreaName(child.name) || !TryCalculateAreaBounds(child, out Bounds areaBounds))
             {
@@ -262,6 +262,30 @@ public class CameraFollow2D : MonoBehaviour
             }
         }
 
+        if (hasBounds)
+        {
+            return true;
+        }
+
+        Renderer[] renderers = area.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer areaRenderer in renderers)
+        {
+            if (areaRenderer.GetComponentInParent<RoomDoor>() != null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = areaRenderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(areaRenderer.bounds);
+            }
+        }
+
         return hasBounds;
     }
 
@@ -274,6 +298,40 @@ public class CameraFollow2D : MonoBehaviour
 
         GameObject root = GameObject.Find(whiteboxRootName);
         whiteboxRoot = root != null ? root.transform : null;
+    }
+
+    private Transform FindArea(string areaName)
+    {
+        if (whiteboxRoot == null)
+        {
+            return null;
+        }
+
+        foreach (Transform area in EnumerateAreas())
+        {
+            if (area.name == areaName)
+            {
+                return area;
+            }
+        }
+
+        return null;
+    }
+
+    private System.Collections.Generic.IEnumerable<Transform> EnumerateAreas()
+    {
+        if (whiteboxRoot == null)
+        {
+            yield break;
+        }
+
+        foreach (Transform child in whiteboxRoot.GetComponentsInChildren<Transform>(true))
+        {
+            if (child != whiteboxRoot)
+            {
+                yield return child;
+            }
+        }
     }
 
     private void FindTargetIfMissing()
