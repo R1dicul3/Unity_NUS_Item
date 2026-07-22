@@ -60,6 +60,11 @@ namespace MainMenu
                 {
                     existingCam.enabled = true;
                 }
+                // 确保 Camera 上带有 AudioListener，否则无法听到声音
+                if (existingCam.GetComponent<AudioListener>() == null)
+                {
+                    existingCam.gameObject.AddComponent<AudioListener>();
+                }
                 return;
             }
 
@@ -71,6 +76,7 @@ namespace MainMenu
             camera.nearClipPlane = 0.3f;
             camera.farClipPlane = 1000f;
             camera.depth = -1;
+            camGO.AddComponent<AudioListener>();
         }
 
         /// <summary>
@@ -186,8 +192,13 @@ namespace MainMenu
 
             if (onClick != null)
             {
-                btn.onClick.AddListener(() => AudioManager.Instance?.PlayOneShot(SoundType.UIClick));
                 btn.onClick.AddListener(onClick);
+            }
+
+            // 自动挂载按钮音效组件（悬停 + 选中 + 点击）
+            if (btnGO.GetComponent<UIButtonSound>() == null)
+            {
+                btnGO.AddComponent<UIButtonSound>();
             }
 
             ColorBlock colors = btn.colors;
@@ -266,8 +277,13 @@ namespace MainMenu
             button.onClick.RemoveAllListeners();
             if (onClick != null)
             {
-                button.onClick.AddListener(() => AudioManager.Instance?.PlayOneShot(SoundType.UIClick));
                 button.onClick.AddListener(onClick);
+            }
+
+            // 自动挂载按钮音效组件（悬停 + 选中 + 点击）
+            if (button.GetComponent<UIButtonSound>() == null)
+            {
+                button.gameObject.AddComponent<UIButtonSound>();
             }
 
             return true;

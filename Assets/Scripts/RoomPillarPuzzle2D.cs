@@ -443,7 +443,8 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             {
                 Time.timeScale = 1f;
                 RevealPlatformsAndTeleportPlayer();
-            });
+            },
+            dialogSound: SoundType.UISuccess);
     }
 
     private void Awake()

@@ -50,6 +50,11 @@ namespace MainMenu
             BuildUI();
         }
 
+        void Start()
+        {
+            AudioManager.Instance?.PlayMusic(SoundType.MainMenuMusic);
+        }
+
         void BuildUI()
         {
             if (TryBuildPrefabUI())
@@ -129,6 +134,13 @@ namespace MainMenu
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(onClick);
+
+            // 自动挂载按钮音效组件（悬停 + 选中 + 点击）
+            if (button.GetComponent<UIButtonSound>() == null)
+            {
+                button.gameObject.AddComponent<UIButtonSound>();
+            }
+
             return true;
         }
 
@@ -178,7 +190,8 @@ namespace MainMenu
                     {
                         GamePauseManager.Instance?.StartNewGame();
                     },
-                    onCancel: () => SceneManager.LoadScene("LoadGame"));
+                    onCancel: () => SceneManager.LoadScene("LoadGame"),
+                    dialogSound: SoundType.UIAlert);
             }
             else
             {

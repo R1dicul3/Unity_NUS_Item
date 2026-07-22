@@ -113,7 +113,8 @@ public class GamePauseManager : MonoBehaviour
         isPaused = true;
         Time.timeScale = 0f;
         SuppressDialogueUi(true);
-        AudioManager.Instance?.PlayOneShot(SoundType.UIBack);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
+        AudioManager.Instance?.ApplyPauseEffect();
 
         if (pauseMenuObject == null)
         {
@@ -134,7 +135,8 @@ public class GamePauseManager : MonoBehaviour
         isPaused = false;
         Time.timeScale = 1f;
         SuppressDialogueUi(false);
-        AudioManager.Instance?.PlayOneShot(SoundType.UIConfirm);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
+        AudioManager.Instance?.RemovePauseEffect();
 
         if (pauseMenuObject != null)
         {
@@ -206,7 +208,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.CollectedStateTracker.Clear();
         SaveSystem.GameTimer.Instance?.ResetTimer();
         SaveSystem.GameTimer.Instance?.StartTimer();
-        AudioManager.Instance?.PlayOneShot(SoundType.UIConfirm);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
         SceneManager.LoadScene("Scene_2");
     }
@@ -275,7 +277,8 @@ public class GamePauseManager : MonoBehaviour
             MainMenu.ConfirmDialogUI.Show(
                 "Returning to the main menu will lose unsaved progress. Are you sure?",
                 onConfirm: () => DoReturnToMainMenu(),
-                onCancel: null);
+                onCancel: null,
+                dialogSound: SoundType.UIAlert);
         }
         else
         {
@@ -294,7 +297,7 @@ public class GamePauseManager : MonoBehaviour
         PreviousGameplayScene = null;
         pauseMenuObject = null;
         SuppressDialogueUi(false);
-        AudioManager.Instance?.PlayOneShot(SoundType.UIBack);
+        AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         SceneManager.LoadScene("MainMenu");
     }
 
@@ -339,6 +342,8 @@ public class GamePauseManager : MonoBehaviour
         if (!IsInMenuScene())
         {
             EnsureGameplayCamera();
+            // 进入游戏场景时播放游戏BGM
+            AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
         }
 
         if (pendingLoadData != null && !IsInMenuScene())

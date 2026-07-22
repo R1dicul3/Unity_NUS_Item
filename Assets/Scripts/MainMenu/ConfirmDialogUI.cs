@@ -10,12 +10,12 @@ namespace MainMenu
         private PlayerInputActions inputActions;
         private UnityAction storedOnCancel;
 
-        public static void Show(string message, UnityAction onConfirm, UnityAction onCancel = null)
+        public static void Show(string message, UnityAction onConfirm, UnityAction onCancel = null, SoundType dialogSound = SoundType.None)
         {
             GameObject dialogObject = new GameObject("ConfirmDialog");
             ConfirmDialogUI dialog = dialogObject.AddComponent<ConfirmDialogUI>();
             dialog.storedOnCancel = onCancel;
-            dialog.Build(message, onConfirm, onCancel);
+            dialog.Build(message, onConfirm, onCancel, dialogSound);
         }
 
         private void OnEnable()
@@ -44,8 +44,14 @@ namespace MainMenu
             Destroy(gameObject);
         }
 
-        private void Build(string message, UnityAction onConfirm, UnityAction onCancel)
+        private void Build(string message, UnityAction onConfirm, UnityAction onCancel, SoundType dialogSound)
         {
+            // 播放弹窗音效（如果指定了有效类型）
+            if (dialogSound != SoundType.None)
+            {
+                AudioManager.Instance?.PlayOneShot(dialogSound);
+            }
+
             if (TryBuildPrefabUI(message, onConfirm, onCancel))
             {
                 return;

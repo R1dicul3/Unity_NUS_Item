@@ -31,7 +31,8 @@ public class Room1FloorSpikes : MonoBehaviour
         MainMenu.ConfirmDialogUI.Show(
             failMessage,
             onConfirm: OnRetry,
-            onCancel: OnRetry);
+            onCancel: OnRetry,
+            dialogSound: SoundType.UIFail);
     }
 
     private void OnRetry()

@@ -321,7 +321,8 @@ namespace MainMenu
                     selectedSlot = -1;
                     RefreshUI();
                 },
-                onCancel: null);
+                onCancel: null,
+                dialogSound: SoundType.UIAlert);
         }
 
         void OnBackClicked()

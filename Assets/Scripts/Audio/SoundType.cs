@@ -8,9 +8,11 @@ public enum SoundType
 
     // UI 音效
     UIClick,
-    UIConfirm,
-    UIBack,
-    UIError,
+    UIHover,
+    UISelect,
+    UIAlert,
+    UISuccess,
+    UIFail,
 
     // 玩家动作音效
     Jump,
