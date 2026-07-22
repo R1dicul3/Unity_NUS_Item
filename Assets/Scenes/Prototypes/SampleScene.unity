@@ -53029,13 +53029,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dialogueLines:
-  - speaker: Guide
-    text: This is the portrait placeholder on the left. Click to continue.
-  - speaker: Guide
-    text: The dialogue box occupies the lower part of the screen. You can replace
-      these lines from code or the Inspector.
-  - speaker: Guide
-    text: Press Z to switch the player's ability mode, then try your hand-built room.
+  - speaker: Left
+    text: The left portrait is active while this character is speaking.
+    speakerSide: 0
+  - speaker: Right
+    text: Now the right portrait lights up and the left portrait dims.
+    speakerSide: 1
+  - speaker: Left
+    text: Replace these lines from code or the Inspector for reusable conversations.
+    speakerSide: 0
   showOnStart: 1
   portraitSprite: {fileID: -3575151272355729696, guid: d13bd3c67e28dff47a44f4c9e864fd57, type: 3}
   dialogueCanvas: {fileID: 2107121260}

@@ -77,9 +77,9 @@ public class PlatformerPrototypeBootstrapWaste : MonoBehaviour
         DialogueController dialogue = dialogueObject.AddComponent<DialogueController>();
         dialogue.SetLines(new[]
         {
-            new DialogueController.DialogueLine { speaker = "Guide", text = "This is the portrait placeholder on the left. Click to continue." },
-            new DialogueController.DialogueLine { speaker = "Guide", text = "The dialogue box occupies the lower part of the screen. You can replace these lines from code or the Inspector." },
-            new DialogueController.DialogueLine { speaker = "Guide", text = "Press Z to switch the player's ability mode, then try the platform route." }
+            new DialogueController.DialogueLine { speaker = "Left", speakerSide = DialogueController.SpeakerSide.Left, text = "The left portrait is active while this character is speaking." },
+            new DialogueController.DialogueLine { speaker = "Right", speakerSide = DialogueController.SpeakerSide.Right, text = "Now the right portrait lights up and the left portrait dims." },
+            new DialogueController.DialogueLine { speaker = "Left", speakerSide = DialogueController.SpeakerSide.Left, text = "Replace these lines from code or the Inspector for reusable conversations." }
         });
     }
 
