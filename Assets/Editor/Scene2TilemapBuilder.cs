@@ -9,23 +9,25 @@ public static class Scene2TilemapBuilder
 {
     private const string ScenePath = "Assets/Scenes/Gameplay/Scene_2.unity";
     private const string AutoRunFlagPath = "Assets/Editor/RunScene2TilemapConversion.flag";
+    private const string WhiteboxRootName = "White_Box";
     private const string TilemapRootName = "Tilemap_Scene_2";
-    private const string RoomsRootName = "Rooms";
+    private const string SolidTilemapName = "Solid_Walls_Floors_Ceilings";
     private const string TileFolder = "Assets/Art/Tiles";
     private const string PixelSpritePath = "Assets/Art/whitebox_pixel.png";
-    private const string RoomTilePath = TileFolder + "/Scene2_Room.asset";
+    private const string SolidTilePath = TileFolder + "/Scene2_SolidWhitebox.asset";
+    private const float CellSize = 0.25f;
 
-    [MenuItem("Tools/Tilemap/Convert Scene_2 Rooms To Tilemap")]
+    [MenuItem("Tools/Tilemap/Convert Scene_2 Walls Floors Ceilings To Tilemap")]
     public static void ConvertCurrentScene()
     {
-        ConvertSceneToRoomTilemap(saveScene: false);
+        ConvertSceneToTilemap(saveScene: false);
     }
 
-    [MenuItem("Tools/Tilemap/Convert Scene_2 Rooms To Tilemap And Save")]
+    [MenuItem("Tools/Tilemap/Convert Scene_2 Walls Floors Ceilings To Tilemap And Save")]
     public static void ConvertScene2AndSave()
     {
         EditorSceneManager.OpenScene(ScenePath);
-        ConvertSceneToRoomTilemap(saveScene: true);
+        ConvertSceneToTilemap(saveScene: true);
     }
 
     [InitializeOnLoadMethod]
@@ -50,21 +52,28 @@ public static class Scene2TilemapBuilder
         };
     }
 
-    private static void ConvertSceneToRoomTilemap(bool saveScene)
+    private static void ConvertSceneToTilemap(bool saveScene)
     {
-        Tile roomTile = EnsureRoomTile();
+        Tile solidTile = EnsureSolidTile();
         RemoveExistingTilemapRoot();
 
         GameObject root = new GameObject(TilemapRootName);
-        Transform roomsRoot = CreateChild(root.transform, RoomsRootName).transform;
+        Grid grid = root.AddComponent<Grid>();
+        grid.cellSize = Vector3.one * CellSize;
+        grid.cellGap = Vector3.zero;
+        grid.cellLayout = GridLayout.CellLayout.Rectangle;
 
-        int roomCount = 0;
-        foreach (SpriteRenderer roomRenderer in FindRoomRenderers())
+        Tilemap solidMap = CreateSolidTilemap(root.transform);
+
+        int convertedCount = 0;
+        foreach (SpriteRenderer renderer in FindStructuralRenderers())
         {
-            CreateRoomTilemap(roomsRoot, roomRenderer, roomTile);
-            roomRenderer.enabled = false;
-            roomCount++;
+            PaintRendererBounds(solidMap, renderer, solidTile);
+            DisableSourceBlock(renderer);
+            convertedCount++;
         }
+
+        RebindCameraToTilemap();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         if (saveScene)
@@ -72,10 +81,10 @@ public static class Scene2TilemapBuilder
             EditorSceneManager.SaveOpenScenes();
         }
 
-        Debug.Log($"Scene_2 room tilemap conversion complete: {roomCount} rooms converted. Platforms and mechanics were not modified.");
+        Debug.Log($"Scene_2 structural tilemap conversion complete: {convertedCount} wall/floor/ceiling blocks converted with visible tiles and solid collision.");
     }
 
-    private static IEnumerable<SpriteRenderer> FindRoomRenderers()
+    private static IEnumerable<SpriteRenderer> FindStructuralRenderers()
     {
         foreach (SpriteRenderer renderer in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
@@ -84,12 +93,13 @@ public static class Scene2TilemapBuilder
                 continue;
             }
 
-            if (!renderer.gameObject.name.StartsWith("Room_"))
+            Transform transform = renderer.transform;
+            if (!transform.IsChildOfName(WhiteboxRootName) || transform.IsChildOfName(TilemapRootName))
             {
                 continue;
             }
 
-            if (renderer.transform.IsChildOfName(TilemapRootName))
+            if (!IsStructuralName(renderer.gameObject.name))
             {
                 continue;
             }
@@ -98,59 +108,81 @@ public static class Scene2TilemapBuilder
         }
     }
 
-    private static void CreateRoomTilemap(Transform parent, SpriteRenderer source, TileBase roomTile)
+    private static bool IsStructuralName(string objectName)
     {
-        Bounds bounds = source.bounds;
-        int cellsX = Mathf.Max(1, Mathf.CeilToInt(bounds.size.x));
-        int cellsY = Mathf.Max(1, Mathf.CeilToInt(bounds.size.y));
-        Vector3 tilemapScale = new Vector3(bounds.size.x / cellsX, bounds.size.y / cellsY, 1f);
+        return objectName.StartsWith("Floor") ||
+               objectName.StartsWith("Ceiling") ||
+               objectName.StartsWith("Wall");
+    }
 
-        GameObject roomObject = new GameObject(source.gameObject.name);
-        roomObject.transform.SetParent(parent, false);
-        roomObject.transform.position = new Vector3(bounds.min.x, bounds.min.y, source.transform.position.z);
-        roomObject.transform.localScale = tilemapScale;
-
-        Grid grid = roomObject.AddComponent<Grid>();
-        grid.cellSize = Vector3.one;
-        grid.cellGap = Vector3.zero;
-        grid.cellLayout = GridLayout.CellLayout.Rectangle;
-
-        GameObject tilemapObject = new GameObject("Tilemap");
-        tilemapObject.transform.SetParent(roomObject.transform, false);
+    private static Tilemap CreateSolidTilemap(Transform parent)
+    {
+        GameObject tilemapObject = new GameObject(SolidTilemapName);
+        tilemapObject.transform.SetParent(parent, false);
 
         Tilemap tilemap = tilemapObject.AddComponent<Tilemap>();
         tilemap.tileAnchor = new Vector3(0.5f, 0.5f, 0f);
-        for (int x = 0; x < cellsX; x++)
-        {
-            for (int y = 0; y < cellsY; y++)
-            {
-                Vector3Int cell = new Vector3Int(x, y, 0);
-                tilemap.SetTile(cell, roomTile);
-                tilemap.SetTileFlags(cell, TileFlags.None);
-                tilemap.SetColor(cell, source.color);
-            }
-        }
 
         TilemapRenderer renderer = tilemapObject.AddComponent<TilemapRenderer>();
-        renderer.sortingLayerID = source.sortingLayerID;
-        renderer.sortingOrder = source.sortingOrder;
+        renderer.sortingOrder = 2;
+
+        Rigidbody2D body = tilemapObject.AddComponent<Rigidbody2D>();
+        body.bodyType = RigidbodyType2D.Static;
+
+        TilemapCollider2D tilemapCollider = tilemapObject.AddComponent<TilemapCollider2D>();
+        tilemapCollider.usedByComposite = true;
+
+        CompositeCollider2D composite = tilemapObject.AddComponent<CompositeCollider2D>();
+        composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+
+        return tilemap;
     }
 
-    private static Tile EnsureRoomTile()
+    private static void PaintRendererBounds(Tilemap tilemap, SpriteRenderer renderer, TileBase tile)
+    {
+        Bounds bounds = renderer.bounds;
+        int xMin = Mathf.FloorToInt(bounds.min.x / CellSize);
+        int xMax = Mathf.CeilToInt(bounds.max.x / CellSize);
+        int yMin = Mathf.FloorToInt(bounds.min.y / CellSize);
+        int yMax = Mathf.CeilToInt(bounds.max.y / CellSize);
+
+        for (int x = xMin; x < xMax; x++)
+        {
+            for (int y = yMin; y < yMax; y++)
+            {
+                Vector3Int cell = new Vector3Int(x, y, 0);
+                tilemap.SetTile(cell, tile);
+                tilemap.SetTileFlags(cell, TileFlags.None);
+                tilemap.SetColor(cell, renderer.color);
+            }
+        }
+    }
+
+    private static void DisableSourceBlock(SpriteRenderer renderer)
+    {
+        renderer.enabled = false;
+
+        foreach (BoxCollider2D collider in renderer.GetComponents<BoxCollider2D>())
+        {
+            collider.enabled = false;
+        }
+    }
+
+    private static Tile EnsureSolidTile()
     {
         EnsureFolder("Assets", "Art");
         EnsureFolder("Assets/Art", "Tiles");
 
-        Tile tile = AssetDatabase.LoadAssetAtPath<Tile>(RoomTilePath);
+        Tile tile = AssetDatabase.LoadAssetAtPath<Tile>(SolidTilePath);
         if (tile == null)
         {
             tile = ScriptableObject.CreateInstance<Tile>();
-            AssetDatabase.CreateAsset(tile, RoomTilePath);
+            AssetDatabase.CreateAsset(tile, SolidTilePath);
         }
 
         tile.sprite = EnsurePixelSprite();
         tile.color = Color.white;
-        tile.colliderType = Tile.ColliderType.None;
+        tile.colliderType = Tile.ColliderType.Grid;
         tile.flags = TileFlags.None;
         EditorUtility.SetDirty(tile);
         AssetDatabase.SaveAssets();
@@ -177,6 +209,12 @@ public static class Scene2TilemapBuilder
             if (importer.textureType != TextureImporterType.Sprite)
             {
                 importer.textureType = TextureImporterType.Sprite;
+                changed = true;
+            }
+
+            if (importer.spriteImportMode != SpriteImportMode.Single)
+            {
+                importer.spriteImportMode = SpriteImportMode.Single;
                 changed = true;
             }
 
@@ -207,11 +245,23 @@ public static class Scene2TilemapBuilder
         return AssetDatabase.LoadAssetAtPath<Sprite>(PixelSpritePath);
     }
 
-    private static GameObject CreateChild(Transform parent, string name)
+    private static void RebindCameraToTilemap()
     {
-        GameObject child = new GameObject(name);
-        child.transform.SetParent(parent, false);
-        return child;
+        CameraFollow2D cameraFollow = Object.FindFirstObjectByType<CameraFollow2D>(FindObjectsInactive.Include);
+        if (cameraFollow == null)
+        {
+            return;
+        }
+
+        SerializedObject serializedCamera = new SerializedObject(cameraFollow);
+        SerializedProperty whiteboxName = serializedCamera.FindProperty("whiteboxRootName");
+        if (whiteboxName != null)
+        {
+            whiteboxName.stringValue = TilemapRootName;
+        }
+
+        serializedCamera.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(cameraFollow);
     }
 
     private static void RemoveExistingTilemapRoot()
