@@ -46,17 +46,27 @@ namespace MainMenu.Editor
             if (defaultFont != null) creditsUI.overrideFont = defaultFont;
             EditorSceneManager.SaveScene(creditsScene, "Assets/Scenes/Core/Credits.unity");
 
+            // Settings 场景
+            var settingsScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var settingsGO = new GameObject("SettingsUI");
+            var settingsUI = settingsGO.AddComponent<MainMenu.SettingsUI>();
+            if (defaultFont != null) settingsUI.overrideFont = defaultFont;
+            settingsUI.backSceneName = "MainMenu";
+            EditorSceneManager.SaveScene(settingsScene, "Assets/Scenes/Core/Settings.unity");
+
             // 添加到 Build Settings
             AddSceneToBuildSettings("Assets/Scenes/Core/MainMenu.unity");
             AddSceneToBuildSettings("Assets/Scenes/Core/LoadGame.unity");
             AddSceneToBuildSettings("Assets/Scenes/Core/Credits.unity");
+            AddSceneToBuildSettings("Assets/Scenes/Core/Settings.unity");
 
             AssetDatabase.Refresh();
             EditorUtility.DisplayDialog("创建完成",
                 "已成功创建以下场景并添加到 Build Settings：\n\n" +
                 "• Assets/Scenes/Core/MainMenu.unity\n" +
                 "• Assets/Scenes/Core/LoadGame.unity\n" +
-                "• Assets/Scenes/Core/Credits.unity\n\n" +
+                "• Assets/Scenes/Core/Credits.unity\n" +
+                "• Assets/Scenes/Core/Settings.unity\n\n" +
                 "建议操作流程：\n" +
                 "1. 双击打开 MainMenu 场景\n" +
                 "2. 点击 Play 即可预览主菜单界面。", "确定");
@@ -95,6 +105,19 @@ namespace MainMenu.Editor
             go.AddComponent<MainMenu.CreditsUI>();
             EditorSceneManager.SaveScene(scene, "Assets/Scenes/Core/Credits.unity");
             AddSceneToBuildSettings("Assets/Scenes/Core/Credits.unity");
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("MainMenu/Create Settings Scene Only")]
+        static void CreateSettingsScene()
+        {
+            System.IO.Directory.CreateDirectory(Application.dataPath + "/Scenes/Core");
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var go = new GameObject("SettingsUI");
+            var ui = go.AddComponent<MainMenu.SettingsUI>();
+            ui.backSceneName = "MainMenu";
+            EditorSceneManager.SaveScene(scene, "Assets/Scenes/Core/Settings.unity");
+            AddSceneToBuildSettings("Assets/Scenes/Core/Settings.unity");
             AssetDatabase.Refresh();
         }
 
