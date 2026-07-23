@@ -258,6 +258,10 @@ public class RoomDoor : MonoBehaviour {
         );
     }
 
+    public string GetSourceAreaName() {
+        return GetAreaName();
+    }
+
     private bool TryGetAutoLinkedDestination(
         out Vector3 destination,
         out RoomDoor linkedDoor
