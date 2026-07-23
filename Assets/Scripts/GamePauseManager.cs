@@ -18,13 +18,14 @@ public class GamePauseManager : MonoBehaviour
     private GameObject pauseMenuObject;
     private bool isSaveGameUIOpen = false;
     private bool isLoadGameUIOpen = false;
+    private bool isSettingsUIOpen = false;
     private SaveSystem.SaveData pendingLoadData;
 
     public string PreviousGameplayScene { get; private set; }
     public bool CameFromPauseMenu { get; private set; }
     public bool HasUnsavedProgress { get; private set; } = false;
 
-    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits" };
+    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits", "Settings" };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Initialize()
@@ -146,7 +147,7 @@ public class GamePauseManager : MonoBehaviour
 
     public void LoadGame()
     {
-        if (isLoadGameUIOpen || isSaveGameUIOpen)
+        if (isLoadGameUIOpen || isSaveGameUIOpen || isSettingsUIOpen)
             return;
 
         PreviousGameplayScene = SceneManager.GetActiveScene().name;
@@ -170,7 +171,7 @@ public class GamePauseManager : MonoBehaviour
     {
         if (isSaveGameUIOpen)
             return;
-        if (isLoadGameUIOpen)
+        if (isLoadGameUIOpen || isSettingsUIOpen)
             return;
 
         isSaveGameUIOpen = true;
@@ -187,11 +188,52 @@ public class GamePauseManager : MonoBehaviour
     public void OnSaveGameUIClosed()
     {
         isSaveGameUIOpen = false;
-        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen)
+        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen && !isSettingsUIOpen)
         {
             pauseMenuObject.SetActive(true);
         }
-        else if (!isPaused && !isLoadGameUIOpen)
+        else if (!isPaused && !isLoadGameUIOpen && !isSettingsUIOpen)
+        {
+            SuppressDialogueUi(false);
+        }
+    }
+
+    public void OpenSettings()
+    {
+        if (isSettingsUIOpen)
+            return;
+        if (isSaveGameUIOpen || isLoadGameUIOpen)
+            return;
+
+        isSettingsUIOpen = true;
+        SuppressDialogueUi(true);
+        if (pauseMenuObject != null)
+        {
+            pauseMenuObject.SetActive(false);
+        }
+
+        MainMenu.SettingsUI.ShowOverlay(() =>
+        {
+            isSettingsUIOpen = false;
+            if (isPaused && pauseMenuObject != null)
+            {
+                pauseMenuObject.SetActive(true);
+            }
+            else if (!isPaused)
+            {
+                SuppressDialogueUi(false);
+            }
+        });
+    }
+
+    public void OnSettingsUIClosed()
+    {
+        isSettingsUIOpen = false;
+        if (isPaused && pauseMenuObject != null && !isLoadGameUIOpen && !isSaveGameUIOpen)
+        {
+            pauseMenuObject.SetActive(true);
+        }
+        else if (!isPaused && !isLoadGameUIOpen && !isSaveGameUIOpen)
         {
             SuppressDialogueUi(false);
         }
@@ -293,6 +335,7 @@ public class GamePauseManager : MonoBehaviour
         isPaused = false;
         isSaveGameUIOpen = false;
         isLoadGameUIOpen = false;
+        isSettingsUIOpen = false;
         HasUnsavedProgress = false;
         CameFromPauseMenu = false;
         PreviousGameplayScene = null;
@@ -307,11 +350,11 @@ public class GamePauseManager : MonoBehaviour
         isLoadGameUIOpen = false;
         CameFromPauseMenu = false;
         SceneManager.UnloadSceneAsync("LoadGame");
-        if (isPaused && pauseMenuObject != null)
+        if (isPaused && pauseMenuObject != null && !isSettingsUIOpen)
         {
             pauseMenuObject.SetActive(true);
         }
-        else if (!isPaused)
+        else if (!isPaused && !isSettingsUIOpen)
         {
             SuppressDialogueUi(false);
         }
@@ -321,8 +364,10 @@ public class GamePauseManager : MonoBehaviour
     {
         return isSaveGameUIOpen
             || isLoadGameUIOpen
+            || isSettingsUIOpen
             || FindFirstObjectByType<MainMenu.SaveGameUI>() != null
             || FindFirstObjectByType<MainMenu.LoadGameUI>() != null
+            || FindFirstObjectByType<MainMenu.SettingsUI>() != null
             || FindFirstObjectByType<MainMenu.ConfirmDialogUI>() != null;
     }
 
