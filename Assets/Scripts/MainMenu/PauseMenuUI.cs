@@ -154,14 +154,14 @@ namespace MainMenu
             GamePauseManager.Instance?.SaveGame();
         }
 
-        private void OnSettings()
-        {
-            GamePauseManager.Instance?.OpenSettings();
-        }
-
         private void OnReturnToMainMenu()
         {
             GamePauseManager.Instance?.ReturnToMainMenu();
+        }
+
+        private void OnSettings()
+        {
+            GamePauseManager.Instance?.OpenSettings();
         }
 
         private void CreateMessageArea(Transform canvasTransform)

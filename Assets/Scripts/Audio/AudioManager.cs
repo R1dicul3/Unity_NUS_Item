@@ -86,6 +86,11 @@ public class AudioManager : MonoBehaviour
         GameSettings.Instance.OnMasterVolumeChanged += OnMasterVolumeChanged;
         GameSettings.Instance.OnMusicVolumeChanged += OnMusicVolumeChanged;
         GameSettings.Instance.OnSFXVolumeChanged += OnSFXVolumeChanged;
+
+        // 同步已保存的音量值，避免启动时音量未生效
+        _masterVolume = GameSettings.Instance.MasterVolume;
+        _musicVolume = GameSettings.Instance.MusicVolume;
+        _sfxVolume = GameSettings.Instance.SFXVolume;
     }
 
     private void UnsubscribeFromSettings()

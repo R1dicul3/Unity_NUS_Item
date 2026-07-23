@@ -1,29 +1,33 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// 只负责"切换角色"：能力（二段跳/冲刺）和颜色。
-// 完全独立于世界/平台切换（LevelVariantSwitcher），互不影响。
 public class CharacterSwitcher2D : MonoBehaviour {
-    [Header("Target")]
-    [SerializeField] private PlatformerPlayerController character;
+    [Header("Characters")]
+    [SerializeField] private PlatformerPlayerController poweredCharacter;
+    [SerializeField] private PlatformerPlayerController basicCharacter;
 
     [Header("Input")]
     [SerializeField] private bool allowDirectInput = true;
     [SerializeField] private bool startInPoweredMode = true;
 
-    [Header("Modes")]
-    [SerializeField] private Color poweredColor = new Color(1f, 0.05f, 0.72f);
-    [SerializeField] private Color basicColor = new Color(0.05f, 1f, 0.2f);
-
     private bool isPoweredMode;
     private PlayerInputActions inputActions;
 
     public bool IsPoweredMode => isPoweredMode;
+    public PlatformerPlayerController CurrentCharacter => isPoweredMode || basicCharacter == null ? poweredCharacter : basicCharacter;
 
     private void Awake() {
         inputActions = new PlayerInputActions();
         isPoweredMode = startInPoweredMode;
-        ApplyCurrentMode();
+
+        if (poweredCharacter != null) {
+            poweredCharacter.SetAbilities(true, true);
+        }
+        if (basicCharacter != null) {
+            basicCharacter.SetAbilities(false, false);
+        }
+
+        ApplyCurrentMode(false);
     }
 
     private void OnEnable() {
@@ -38,25 +42,32 @@ public class CharacterSwitcher2D : MonoBehaviour {
         inputActions?.Dispose();
     }
 
-    public void Initialize(PlatformerPlayerController playableCharacter) {
-        character = playableCharacter;
-        ApplyCurrentMode();
+    public void Initialize(PlatformerPlayerController powered, PlatformerPlayerController basic) {
+        poweredCharacter = powered;
+        basicCharacter = basic;
+        ApplyCurrentMode(false);
+    }
+
+    public void Initialize(PlatformerPlayerController character) {
+        poweredCharacter = character;
+        basicCharacter = null;
+        ApplyCurrentMode(false);
     }
 
     private void Update() {
-        if (!allowDirectInput || character == null) {
+        if (!allowDirectInput || poweredCharacter == null) {
             return;
         }
 
         if (inputActions.Player.SwitchCharacter.WasPressedThisFrame()) {
-            SetPoweredMode(!isPoweredMode);
+            TogglePoweredMode();
         }
     }
 
     public void SetPoweredMode(bool powered) {
         if (isPoweredMode == powered) return;
         isPoweredMode = powered;
-        ApplyCurrentMode();
+        ApplyCurrentMode(true);
         AudioManager.Instance?.PlayOneShot(SoundType.CharacterSwitch);
     }
 
@@ -64,11 +75,28 @@ public class CharacterSwitcher2D : MonoBehaviour {
         SetPoweredMode(!isPoweredMode);
     }
 
-    private void ApplyCurrentMode() {
-        if (character == null) {
+    private void ApplyCurrentMode(bool syncPhysics) {
+        PlatformerPlayerController activeChar = isPoweredMode ? poweredCharacter : basicCharacter;
+        PlatformerPlayerController inactiveChar = isPoweredMode ? basicCharacter : poweredCharacter;
+
+        if (activeChar == null) {
             return;
         }
 
-        character.SetAbilities(isPoweredMode, isPoweredMode, isPoweredMode ? poweredColor : basicColor);
+        if (inactiveChar == null || inactiveChar == activeChar) {
+            activeChar.gameObject.SetActive(true);
+            activeChar.SetAbilities(isPoweredMode, isPoweredMode);
+            return;
+        }
+
+        if (syncPhysics) {
+            activeChar.transform.position = inactiveChar.transform.position;
+            activeChar.SyncStateFrom(inactiveChar);
+        }
+
+        activeChar.gameObject.SetActive(true);
+        inactiveChar.gameObject.SetActive(false);
+
+        activeChar.SetAbilities(isPoweredMode, isPoweredMode);
     }
 }

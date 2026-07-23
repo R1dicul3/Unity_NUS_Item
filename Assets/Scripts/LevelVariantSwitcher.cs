@@ -66,8 +66,7 @@ public class LevelVariantSwitcher : MonoBehaviour {
         }
     }
 
-    // ����У�飺ֻҪ��ǰ��ɫ����"������ɫ"����ɫ���ڶ�������������̲��ɼ���������ײ��
-    // ��ֻ�ڰ�����һ���ж�һ�Σ���ֹ������н���ɫ�������л�ǿ��ɫ���µ�©����
+    // Keep the red variant gated to the weaker character, including after a character switch.
     private void EnforceCharacterGate() {
         if (currentIndex == 1 && !CanSwitchWorld()) {
             currentIndex = 0;

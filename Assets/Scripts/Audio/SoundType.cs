@@ -15,6 +15,7 @@ public enum SoundType
     UIFail,
 
     // 玩家动作音效
+    Walk,
     Jump,
     DoubleJump,
     Land,

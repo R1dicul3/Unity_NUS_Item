@@ -73,8 +73,6 @@ public static class Scene2TilemapBuilder
             convertedCount++;
         }
 
-        RebindCameraToTilemap();
-
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         if (saveScene)
         {
@@ -243,25 +241,6 @@ public static class Scene2TilemapBuilder
         }
 
         return AssetDatabase.LoadAssetAtPath<Sprite>(PixelSpritePath);
-    }
-
-    private static void RebindCameraToTilemap()
-    {
-        CameraFollow2D cameraFollow = Object.FindFirstObjectByType<CameraFollow2D>(FindObjectsInactive.Include);
-        if (cameraFollow == null)
-        {
-            return;
-        }
-
-        SerializedObject serializedCamera = new SerializedObject(cameraFollow);
-        SerializedProperty whiteboxName = serializedCamera.FindProperty("whiteboxRootName");
-        if (whiteboxName != null)
-        {
-            whiteboxName.stringValue = TilemapRootName;
-        }
-
-        serializedCamera.ApplyModifiedPropertiesWithoutUndo();
-        EditorUtility.SetDirty(cameraFollow);
     }
 
     private static void RemoveExistingTilemapRoot()

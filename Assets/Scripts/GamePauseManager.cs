@@ -252,7 +252,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.GameTimer.Instance?.StartTimer();
         AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
-        SceneManager.LoadScene("Scene_2");
+        SceneManager.LoadScene("Scene_main");
     }
 
     public SaveSystem.SaveData CreateSaveData()
@@ -425,7 +425,7 @@ public class GamePauseManager : MonoBehaviour
         camera.farClipPlane = 1000f;
         cameraObject.AddComponent<AudioListener>();
 
-        CameraFollow2D follow = cameraObject.AddComponent<CameraFollow2D>();
+        PixelPerfectFollowCamera follow = cameraObject.AddComponent<PixelPerfectFollowCamera>();
         PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>(FindObjectsInactive.Include);
         if (player != null)
         {
@@ -464,7 +464,7 @@ public class GamePauseManager : MonoBehaviour
             ApplySavedPillarPuzzleStates(data);
         }
 
-        var cameraFollow = FindFirstObjectByType<CameraFollow2D>();
+        var cameraFollow = FindFirstObjectByType<PixelPerfectFollowCamera>();
         if (cameraFollow != null)
         {
             cameraFollow.ForceSnapToTarget();

@@ -4,9 +4,6 @@ using UnityEngine.SceneManagement;
 public class PlatformerPrototypeBootstrap : MonoBehaviour
 {
     private const string PrototypeScenePathMarker = "/Prototypes/";
-    private static readonly bool ConfigureExistingSceneObjects = false;
-    private static readonly bool CreateFallbackDialogueModule = false;
-    private static readonly bool CreateFallbackInstructionHud = false;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreatePrototype()
@@ -31,18 +28,9 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         {
             player = CreatePlayer("Player", spawnPosition, groundMask, playerColor, true, true);
         }
-        else if (ConfigureExistingSceneObjects)
-        {
-            player.Initialize(groundMask, playerColor, new Color(0.18f, 0.18f, 0.2f), true, true);
-        }
 
         Camera camera = ConfigureCamera(player.transform);
         CreateCharacterSwitcher(player);
-        CreateDialogueModule();
-        if (CreateFallbackInstructionHud)
-        {
-            CreateInstructionHud(camera.transform);
-        }
     }
 
     private static PlatformerPlayerController CreatePlayer(string name, Vector2 position, LayerMask groundMask, Color activeColor, bool canDoubleJump, bool canDash)
@@ -93,27 +81,6 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         switcher.Initialize(player);
     }
 
-    private static void CreateDialogueModule()
-    {
-        DialogueController dialogue = FindFirstObjectByType<DialogueController>();
-        if (dialogue == null)
-        {
-            if (!CreateFallbackDialogueModule)
-            {
-                return;
-            }
-
-            GameObject dialogueObject = new GameObject("Dialogue Module");
-            dialogue = dialogueObject.AddComponent<DialogueController>();
-            dialogue.SetLines(new[]
-            {
-                new DialogueController.DialogueLine { speaker = "Guide", text = "This is the portrait placeholder on the left. Click to continue." },
-                new DialogueController.DialogueLine { speaker = "Guide", text = "The dialogue box occupies the lower part of the screen. You can replace these lines from code or the Inspector." },
-                new DialogueController.DialogueLine { speaker = "Guide", text = "Press Z to switch the player's ability mode, then try your hand-built room." }
-            });
-        }
-    }
-
     private static Camera ConfigureCamera(Transform player)
     {
         Camera camera = Camera.main;
@@ -134,27 +101,14 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
             camera.transform.position = new Vector3(player.position.x, player.position.y, -10f);
         }
 
-        CameraFollow2D follow = camera.GetComponent<CameraFollow2D>();
+        PixelPerfectFollowCamera follow = camera.GetComponent<PixelPerfectFollowCamera>();
         if (follow == null)
         {
-            follow = camera.gameObject.AddComponent<CameraFollow2D>();
+            follow = camera.gameObject.AddComponent<PixelPerfectFollowCamera>();
         }
 
         follow.SetTarget(player);
         return camera;
-    }
-
-    private static void CreateInstructionHud(Transform cameraTransform)
-    {
-        GameObject hud = new GameObject("Prototype Controls HUD");
-        hud.transform.SetParent(cameraTransform, false);
-        TextMesh text = hud.AddComponent<TextMesh>();
-        text.text = "Z: Switch Ability   Magenta: Double Jump + Dash   Green: Single Jump Only   A/D: Move   Space: Jump   Left Shift: Dash";
-        text.fontSize = 36;
-        text.characterSize = 0.08f;
-        text.anchor = TextAnchor.UpperLeft;
-        text.color = new Color(0.88f, 0.94f, 1f);
-        hud.transform.localPosition = new Vector3(-7.35f, 3.95f, 9f);
     }
 
     private static Sprite CreateSquareSprite()
