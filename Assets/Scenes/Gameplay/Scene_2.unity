@@ -1665,8 +1665,8 @@ Transform:
   m_GameObject: {fileID: 354093250}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -27.04, y: -21.007502, z: -0.22}
-  m_LocalScale: {x: 30.6, y: 0.18, z: 1}
+  m_LocalPosition: {x: -27.04, y: -23.616875, z: -0.22}
+  m_LocalScale: {x: 68.85, y: 0.405, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1199453828}
@@ -1931,13 +1931,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SinkingPillar2D
   blockSprite: {fileID: 0}
-  floorY: -27.27
-  ceilingY: -10.570001
-  pillarWidth: 2.35
-  segmentHeight: 4.175
+  floorY: -37.7075
+  ceilingY: -0.1325
+  pillarWidth: 5.2875
+  segmentHeight: 9.39375
   visualZ: -0.18
   segments: 00000000020000000100000003000000
-  maxSinkDistance: 8.35
+  maxSinkDistance: 18.7875
   sinkSpeed: 3.4
   returnSpeed: 6.8
   finalVisibleSegments: 1
@@ -23619,8 +23619,8 @@ Transform:
   m_GameObject: {fileID: 759520727}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -27.04, y: -25.1825, z: -0.22}
-  m_LocalScale: {x: 30.6, y: 0.18, z: 1}
+  m_LocalPosition: {x: -27.04, y: -33.010625, z: -0.22}
+  m_LocalScale: {x: 68.85, y: 0.405, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1199453828}
@@ -25535,8 +25535,8 @@ Transform:
   m_GameObject: {fileID: 1079140539}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -27.04, y: -12.657501, z: -0.22}
-  m_LocalScale: {x: 30.6, y: 0.18, z: 1}
+  m_LocalPosition: {x: -27.04, y: -4.829375, z: -0.22}
+  m_LocalScale: {x: 68.85, y: 0.405, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1199453828}
@@ -30043,13 +30043,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SinkingPillar2D
   blockSprite: {fileID: 0}
-  floorY: -27.27
-  ceilingY: -10.570001
-  pillarWidth: 2.35
-  segmentHeight: 4.175
+  floorY: -37.7075
+  ceilingY: -0.1325
+  pillarWidth: 5.2875
+  segmentHeight: 9.39375
   visualZ: -0.18
   segments: 03000000000000000400000002000000
-  maxSinkDistance: 4.175
+  maxSinkDistance: 9.39375
   sinkSpeed: 3.4
   returnSpeed: 6.8
   finalVisibleSegments: 2
@@ -30393,13 +30393,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SinkingPillar2D
   blockSprite: {fileID: 0}
-  floorY: -27.27
-  ceilingY: -10.570001
-  pillarWidth: 2.35
-  segmentHeight: 4.175
+  floorY: -37.7075
+  ceilingY: -0.1325
+  pillarWidth: 5.2875
+  segmentHeight: 9.39375
   visualZ: -0.18
   segments: 00000000030000000200000004000000
-  maxSinkDistance: 8.35
+  maxSinkDistance: 18.7875
   sinkSpeed: 3.4
   returnSpeed: 6.8
   finalVisibleSegments: 1
@@ -31126,8 +31126,8 @@ Transform:
   m_GameObject: {fileID: 1852987729}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -27.04, y: -16.8325, z: -0.22}
-  m_LocalScale: {x: 30.6, y: 0.18, z: 1}
+  m_LocalPosition: {x: -27.04, y: -14.223125, z: -0.22}
+  m_LocalScale: {x: 68.85, y: 0.405, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1199453828}
@@ -32359,13 +32359,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SinkingPillar2D
   blockSprite: {fileID: 0}
-  floorY: -27.27
-  ceilingY: -10.570001
-  pillarWidth: 2.35
-  segmentHeight: 4.175
+  floorY: -37.7075
+  ceilingY: -0.1325
+  pillarWidth: 5.2875
+  segmentHeight: 9.39375
   visualZ: -0.18
   segments: 01000000040000000200000003000000
-  maxSinkDistance: 12.525
+  maxSinkDistance: 28.18125
   sinkSpeed: 3.4
   returnSpeed: 6.8
   finalVisibleSegments: 1
@@ -33298,13 +33298,13 @@ MonoBehaviour:
   saveId: Room_1_Pillar_Puzzle
   roomTransform: {fileID: 0}
   fallbackRoomCenter: {x: -27.04, y: -18.92}
-  fallbackRoomSize: {x: 32, y: 18.8}
-  wallPadding: 0.7
+  fallbackRoomSize: {x: 72, y: 42.3}
+  wallPadding: 1.575
   blockSprite: {fileID: 0}
-  pillarWidth: 2.35
+  pillarWidth: 5.2875
   pillarAreaWidthRatio: 0.72
-  pillarTopPadding: 0.35
-  pillarBottomPadding: 0.35
+  pillarTopPadding: 0.7875
+  pillarBottomPadding: 0.7875
   sinkSpeed: 3.4
   returnSpeed: 6.8
   finalVisibleSegments: 1
@@ -33313,7 +33313,7 @@ MonoBehaviour:
   pink: {r: 1, g: 0.28, b: 0.68, a: 1}
   green: {r: 0.1, g: 0.9, b: 0.38, a: 1}
   gray: {r: 0.55, g: 0.58, b: 0.62, a: 1}
-  alignmentTolerance: 0.5
+  alignmentTolerance: 1.125
   restartPlatformName: Shared_Platform_01 (2)
 --- !u!1 &9500000000
 GameObject:
