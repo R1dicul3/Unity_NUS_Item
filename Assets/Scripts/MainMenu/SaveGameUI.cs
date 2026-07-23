@@ -237,7 +237,8 @@ namespace MainMenu
             {
                 ConfirmDialogUI.Show($"Save slot {selectedSlot} already has data. Overwrite it?",
                     onConfirm: () => DoSave(selectedSlot),
-                    onCancel: null);
+                    onCancel: null,
+                    dialogSound: SoundType.UIAlert);
                 return;
             }
 
@@ -259,6 +260,7 @@ namespace MainMenu
 
             SaveSystem.SaveSystem.Save(slot, data);
             GamePauseManager.Instance?.MarkProgressSaved();
+            AudioManager.Instance?.PlayOneShot(SoundType.UISuccess);
             ShowMessage("Saved.", Color.green);
             RefreshUI();
             Invoke(nameof(Close), 1.5f);

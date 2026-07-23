@@ -24,6 +24,14 @@ public class AudioManager : MonoBehaviour
     private AudioSource _musicSource;
     private AudioSource[] _sfxSources;
     private int _sfxIndex;
+    private SoundType _currentMusicType = SoundType.None;
+
+    // 暂停音效效果（变远变闷）的原始状态缓存
+    private AudioLowPassFilter _musicLowPassFilter;
+    private float _originalMusicVolumeRatio = 1f;
+    private float _originalMusicPitch = 1f;
+    private float _originalLowPassCutoff = 22000f;
+    private Coroutine _pauseEffectCoroutine;
 
     private float _masterVolume = 1f;
     private float _musicVolume = 1f;
@@ -189,6 +197,14 @@ public class AudioManager : MonoBehaviour
         AudioClip clip = soundLibrary.GetClip(type);
         if (clip == null) return;
 
+        // 如果已经在播放同一首音乐，直接返回，避免从头重新开始
+        if (type == _currentMusicType && _musicSource.isPlaying)
+        {
+            return;
+        }
+
+        _currentMusicType = type;
+
         if (fadeDuration > 0f && _musicSource.isPlaying)
         {
             StopCoroutine(nameof(CrossfadeMusic));
@@ -217,6 +233,7 @@ public class AudioManager : MonoBehaviour
         else
         {
             _musicSource.Stop();
+            _currentMusicType = SoundType.None;
         }
     }
 
@@ -240,6 +257,80 @@ public class AudioManager : MonoBehaviour
         {
             _musicSource.UnPause();
         }
+    }
+
+    /// <summary>
+    /// 应用暂停音效效果：BGM 继续播放，但音量降低、音高略微下降、并添加低通滤波让声音变闷变远。
+    /// </summary>
+    /// <param name="transitionDuration">渐变过渡时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
+    public void ApplyPauseEffect(float transitionDuration = 0.6f)
+    {
+        if (_pauseEffectCoroutine != null)
+        {
+            StopCoroutine(_pauseEffectCoroutine);
+        }
+        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(true, transitionDuration));
+    }
+
+    /// <summary>
+    /// 移除暂停音效效果，将 BGM 恢复到正常状态。
+    /// </summary>
+    /// <param name="transitionDuration">渐变恢复时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
+    public void RemovePauseEffect(float transitionDuration = 0.6f)
+    {
+        if (_pauseEffectCoroutine != null)
+        {
+            StopCoroutine(_pauseEffectCoroutine);
+        }
+        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(false, transitionDuration));
+    }
+
+    private IEnumerator PauseEffectTransition(bool apply, float duration)
+    {
+        // 确保低通滤波器组件存在
+        if (_musicLowPassFilter == null)
+        {
+            _musicLowPassFilter = gameObject.GetComponent<AudioLowPassFilter>();
+            if (_musicLowPassFilter == null)
+            {
+                _musicLowPassFilter = gameObject.AddComponent<AudioLowPassFilter>();
+            }
+            _musicLowPassFilter.cutoffFrequency = 22000f;
+        }
+
+        if (apply)
+        {
+            // 进入暂停：记录原始值（仅在首次应用时记录）
+            _originalMusicVolumeRatio = _musicSource.volume / (_masterVolume * _musicVolume + 0.0001f);
+            _originalMusicPitch = _musicSource.pitch;
+            _originalLowPassCutoff = _musicLowPassFilter.cutoffFrequency;
+        }
+
+        float targetVolume = apply
+            ? _masterVolume * _musicVolume * 0.85f
+            : _masterVolume * _musicVolume * _originalMusicVolumeRatio;
+        float targetPitch = apply ? 0.98f : _originalMusicPitch;
+        float targetCutoff = apply ? 5000f : _originalLowPassCutoff;
+
+        float startVolume = _musicSource.volume;
+        float startPitch = _musicSource.pitch;
+        float startCutoff = _musicLowPassFilter.cutoffFrequency;
+
+        float timer = 0f;
+        while (timer < duration)
+        {
+            timer += Time.unscaledDeltaTime;
+            float t = timer / duration;
+            _musicSource.volume = Mathf.Lerp(startVolume, targetVolume, t);
+            _musicSource.pitch = Mathf.Lerp(startPitch, targetPitch, t);
+            _musicLowPassFilter.cutoffFrequency = Mathf.Lerp(startCutoff, targetCutoff, t);
+            yield return null;
+        }
+
+        _musicSource.volume = targetVolume;
+        _musicSource.pitch = targetPitch;
+        _musicLowPassFilter.cutoffFrequency = targetCutoff;
+        _pauseEffectCoroutine = null;
     }
 
     #endregion
@@ -299,6 +390,7 @@ public class AudioManager : MonoBehaviour
 
         _musicSource.Stop();
         _musicSource.volume = _masterVolume * _musicVolume;
+        _currentMusicType = SoundType.None;
     }
 
     #endregion

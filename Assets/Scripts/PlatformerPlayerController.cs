@@ -26,30 +26,28 @@ public class PlatformerPlayerController : MonoBehaviour {
     [SerializeField] private float dashCooldown = 0.55f;
 
     [Header("Ground Check")]
-    [SerializeField] private LayerMask groundMask;
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.78f, 0.12f);
     [SerializeField] private float groundCheckOffset = 0.53f;
-    [SerializeField] private float groundSurfaceTolerance = 0.08f;
     [SerializeField] private float groundCheckLockoutAfterJump = 0.08f;
 
     [Header("Physics")]
     [SerializeField] private bool useFrictionlessMaterial = true;
 
-    [Header("Player Shape")]
-    [SerializeField] private bool autoAlignVisualAndCollider = true;
+    [Header("Collider")]
+    [SerializeField] private bool autoAlignCollider = true;
     [SerializeField] private Vector2 bodySize = new Vector2(0.75f, 1.05f);
     [SerializeField] private Vector2 bodyOffset;
-    [SerializeField] private Vector3 visualLocalPosition = Vector3.zero;
-    [SerializeField] private Vector3 visualLocalScale = new Vector3(0.75f, 1.05f, 1f);
 
     [Header("Control State")]
     [SerializeField] private bool isControlled = true;
-    [SerializeField] private Color controlledColor = new Color(1f, 0.05f, 0.72f);
-    [SerializeField] private Color inactiveColor = new Color(0.18f, 0.18f, 0.2f);
+
+    [Header("Animation")]
+    [SerializeField] private float walkAnimationThreshold = 0.05f;
 
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
+    private Animator animator;
     private TrailRenderer dashTrail;
     private PhysicsMaterial2D frictionlessMaterial;
 
@@ -59,46 +57,50 @@ public class PlatformerPlayerController : MonoBehaviour {
     private bool isGrounded;
     private bool wasGrounded;
     private bool isDashing;
+    private bool isInDialogue;
     private float coyoteTimer;
     private float jumpBufferTimer;
     private float dashTimer;
     private float dashCooldownTimer;
     private float groundCheckLockoutTimer;
     private float defaultGravityScale;
-    private static Sprite fallbackPlayerSprite;
-    private bool _hasEverLeftGround;
 
     private PlayerInputActions inputActions;
+
+    private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
+    private static readonly int IsInDialogueHash = Animator.StringToHash("IsInDialogue");
 
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
     public bool IsControlled => isControlled;
+    public bool IsInDialogue => isInDialogue;
     public bool CanDoubleJump => canDoubleJump;
     public bool CanDash => canDash;
     public bool IsWeakerCharacter => !canDoubleJump && !canDash;
     public Collider2D BodyCollider => boxCollider;
 
     public void Initialize(LayerMask platformMask) {
-        groundMask = platformMask;
     }
 
-    public void Initialize(LayerMask platformMask, Color activeColor, Color idleColor) {
-        groundMask = platformMask;
-        controlledColor = activeColor;
-        inactiveColor = idleColor;
+    public void Initialize(LayerMask platformMask, bool allowDoubleJump, bool allowDash) {
+        SetAbilities(allowDoubleJump, allowDash);
     }
 
-    public void Initialize(LayerMask platformMask, Color activeColor, Color idleColor, bool allowDoubleJump, bool allowDash) {
-        groundMask = platformMask;
-        controlledColor = activeColor;
-        inactiveColor = idleColor;
-        SetAbilities(allowDoubleJump, allowDash, activeColor);
+    public void Initialize(LayerMask platformMask, Color activeColor, Color inactiveColor, bool allowDoubleJump, bool allowDash) {
+        SetAbilities(allowDoubleJump, allowDash);
+
+        if (spriteRenderer == null) {
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null) {
+            spriteRenderer.color = activeColor;
+        }
     }
 
-    public void SetAbilities(bool allowDoubleJump, bool allowDash, Color activeColor) {
+    public void SetAbilities(bool allowDoubleJump, bool allowDash) {
         canDoubleJump = allowDoubleJump;
         canDash = allowDash;
-        controlledColor = activeColor;
         maxJumpCount = canDoubleJump ? 2 : 1;
 
         if (!canDash && isDashing) {
@@ -109,8 +111,6 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (!canDoubleJump && jumpsUsed > 1) {
             jumpsUsed = 1;
         }
-
-        UpdateVisuals();
     }
 
     public void SetControlled(bool value) {
@@ -123,21 +123,22 @@ public class PlatformerPlayerController : MonoBehaviour {
             rb.gravityScale = defaultGravityScale;
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
         }
+    }
 
-        UpdateVisuals();
+    public void SetDialogueState(bool inDialogue) {
+        isInDialogue = inDialogue;
+        SetControlled(!inDialogue);
     }
 
     private void Awake() {
         inputActions = new PlayerInputActions();
-
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
         defaultGravityScale = rb.gravityScale;
-        AdoptSceneVisualPosition();
-        AlignVisualAndCollider();
-        EnsureVisualSprite();
+        AlignCollider();
         ApplyFrictionlessMaterial();
     }
 
@@ -154,7 +155,6 @@ public class PlatformerPlayerController : MonoBehaviour {
     }
 
     private void Update() {
-        AlignVisualAndCollider();
         UpdateGroundState();
         UpdateTimers();
 
@@ -182,7 +182,6 @@ public class PlatformerPlayerController : MonoBehaviour {
     }
 
     private void ReadInput() {
-        // �����޸ģ���ȡ Vector2 ���ͣ�����ȡ X �������Ϊˮƽ�ƶ�����
         moveInput = inputActions.Player.Move.ReadValue<Vector2>().x;
 
         if (Mathf.Abs(moveInput) > 0.01f) {
@@ -196,7 +195,8 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private void UpdateGroundState() {
         wasGrounded = isGrounded;
-        if (groundCheckLockoutTimer > 0f || rb.linearVelocity.y > 0.05f) {
+
+        if (groundCheckLockoutTimer > 0f || rb.linearVelocity.y > 0.5f) {
             isGrounded = false;
             return;
         }
@@ -204,7 +204,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         Vector2 checkCenter = (Vector2)transform.position + Vector2.down * groundCheckOffset;
         isGrounded = false;
 
-        Collider2D[] hits = Physics2D.OverlapBoxAll(checkCenter, groundCheckSize, 0f, groundMask);
+        Collider2D[] hits = Physics2D.OverlapBoxAll(checkCenter, groundCheckSize, 0f);
         foreach (Collider2D hit in hits) {
             if (IsGroundCollider(hit)) {
                 isGrounded = true;
@@ -218,14 +218,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         }
 
         if (!wasGrounded && isGrounded) {
-            if (_hasEverLeftGround) {
-                AudioManager.Instance?.PlayOneShot(SoundType.Land);
-            }
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Min(rb.linearVelocity.y, 0f));
-        }
-
-        if (wasGrounded && !isGrounded) {
-            _hasEverLeftGround = true;
         }
     }
 
@@ -261,11 +254,9 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (canGroundJump) {
             jumpsUsed = 1;
-            AudioManager.Instance?.PlayOneShot(SoundType.Jump);
         }
         else {
             jumpsUsed++;
-            AudioManager.Instance?.PlayOneShot(SoundType.DoubleJump);
         }
 
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
@@ -285,7 +276,6 @@ public class PlatformerPlayerController : MonoBehaviour {
         dashCooldownTimer = dashCooldown;
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
-        AudioManager.Instance?.PlayOneShot(SoundType.Dash);
 
         if (dashTrail != null) {
             dashTrail.Clear();
@@ -313,39 +303,29 @@ public class PlatformerPlayerController : MonoBehaviour {
     }
 
     private void UpdateVisuals() {
-        EnsureVisualSprite();
-
         if (spriteRenderer != null) {
             spriteRenderer.flipX = facingDirection < 0f;
-            if (isDashing && isControlled) {
-                spriteRenderer.color = new Color(0.55f, 0.92f, 1f);
-            }
-            else {
-                spriteRenderer.color = isControlled ? controlledColor : inactiveColor;
-            }
         }
 
         if (dashTrail != null) {
             dashTrail.emitting = isDashing;
         }
+
+        UpdateAnimator();
     }
 
-    private void EnsureVisualSprite() {
-        if (spriteRenderer == null) {
-            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        }
-
-        if (spriteRenderer == null) {
+    private void UpdateAnimator() {
+        if (animator == null) {
             return;
         }
+        bool isWalking = !isInDialogue && Mathf.Abs(moveInput) > 0.01f;
 
-        if (spriteRenderer.sprite == null) {
-            spriteRenderer.sprite = GetFallbackPlayerSprite();
-        }
+        animator.SetBool(IsWalkingHash, isWalking);
+        animator.SetBool(IsInDialogueHash, isInDialogue);
     }
 
-    private void AlignVisualAndCollider() {
-        if (!autoAlignVisualAndCollider) {
+    private void AlignCollider() {
+        if (!autoAlignCollider) {
             return;
         }
 
@@ -357,48 +337,6 @@ public class PlatformerPlayerController : MonoBehaviour {
             boxCollider.size = bodySize;
             boxCollider.offset = bodyOffset;
         }
-
-        if (spriteRenderer == null) {
-            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        }
-
-        if (spriteRenderer != null) {
-            spriteRenderer.transform.localPosition = visualLocalPosition;
-            spriteRenderer.transform.localScale = visualLocalScale;
-        }
-    }
-
-    private void AdoptSceneVisualPosition() {
-        if (!autoAlignVisualAndCollider || spriteRenderer == null || spriteRenderer.transform == transform) {
-            return;
-        }
-
-        Vector3 localDelta = spriteRenderer.transform.localPosition - visualLocalPosition;
-        if (localDelta.sqrMagnitude <= 0.000001f) {
-            return;
-        }
-
-        transform.position += transform.TransformVector(localDelta);
-        spriteRenderer.transform.localPosition = visualLocalPosition;
-    }
-
-    private static Sprite GetFallbackPlayerSprite() {
-        if (fallbackPlayerSprite != null) {
-            return fallbackPlayerSprite;
-        }
-
-        Texture2D texture = new Texture2D(1, 1) {
-            name = "Runtime Player Pixel",
-            hideFlags = HideFlags.HideAndDontSave,
-            filterMode = FilterMode.Point
-        };
-        texture.SetPixel(0, 0, Color.white);
-        texture.Apply();
-
-        fallbackPlayerSprite = Sprite.Create(texture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
-        fallbackPlayerSprite.name = "Runtime Player Sprite";
-        fallbackPlayerSprite.hideFlags = HideFlags.HideAndDontSave;
-        return fallbackPlayerSprite;
     }
 
     private void OnDrawGizmosSelected() {
@@ -411,8 +349,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        AlignVisualAndCollider();
-        EnsureVisualSprite();
+        animator = GetComponentInChildren<Animator>();
+        AlignCollider();
     }
 
     private void ApplyFrictionlessMaterial() {
@@ -436,14 +374,21 @@ public class PlatformerPlayerController : MonoBehaviour {
             return false;
         }
 
-        if (boxCollider == null) {
-            return true;
-        }
+        return true;
+    }
 
-        Bounds playerBounds = boxCollider.bounds;
-        Bounds hitBounds = hit.bounds;
-        bool hasGroundSurfaceUnderFeet = hitBounds.max.y <= playerBounds.min.y + groundSurfaceTolerance;
-        bool overlapsFeetHorizontally = hitBounds.max.x > playerBounds.min.x && hitBounds.min.x < playerBounds.max.x;
-        return hasGroundSurfaceUnderFeet && overlapsFeetHorizontally;
+    public void SyncStateFrom(PlatformerPlayerController oldPlayer) {
+        if (oldPlayer == null) return;
+
+        this.facingDirection = oldPlayer.facingDirection;
+        this.jumpsUsed = oldPlayer.jumpsUsed;
+        this.coyoteTimer = oldPlayer.coyoteTimer;
+        this.isGrounded = oldPlayer.isGrounded;
+        this.jumpBufferTimer = oldPlayer.jumpBufferTimer;
+        this.dashCooldownTimer = oldPlayer.dashCooldownTimer;
+
+        if (this.rb != null && oldPlayer.rb != null) {
+            this.rb.linearVelocity = oldPlayer.rb.linearVelocity;
+        }
     }
 }
