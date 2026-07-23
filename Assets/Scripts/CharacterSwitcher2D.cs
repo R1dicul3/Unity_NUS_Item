@@ -68,6 +68,7 @@ public class CharacterSwitcher2D : MonoBehaviour {
         if (isPoweredMode == powered) return;
         isPoweredMode = powered;
         ApplyCurrentMode(true);
+        AudioManager.Instance?.PlayOneShot(SoundType.CharacterSwitch);
     }
 
     public void TogglePoweredMode() {
@@ -85,6 +86,7 @@ public class CharacterSwitcher2D : MonoBehaviour {
         if (inactiveChar == null || inactiveChar == activeChar) {
             activeChar.gameObject.SetActive(true);
             activeChar.SetAbilities(isPoweredMode, isPoweredMode);
+            RetargetCamera(activeChar);
             return;
         }
 
@@ -97,5 +99,23 @@ public class CharacterSwitcher2D : MonoBehaviour {
         inactiveChar.gameObject.SetActive(false);
 
         activeChar.SetAbilities(isPoweredMode, isPoweredMode);
+        RetargetCamera(activeChar);
+    }
+
+    // 被切走的角色会被 SetActive(false)，摄像机必须改跟新的那个，
+    // 否则画面会停在已经禁用的角色身上。
+    private void RetargetCamera(PlatformerPlayerController activeChar) {
+        if (activeChar == null) {
+            return;
+        }
+
+        PixelPerfectFollowCamera followCamera =
+            FindFirstObjectByType<PixelPerfectFollowCamera>();
+
+        if (followCamera == null) {
+            return;
+        }
+
+        followCamera.SetTarget(activeChar.transform);
     }
 }

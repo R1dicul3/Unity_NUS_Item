@@ -780,6 +780,32 @@ MonoBehaviour:
   teleportCooldown: 0.25
   promptDisplayDuration: 2
   targetCameraArea: {fileID: 1481854637}
+  cameraTransitionDuration: 0.35
+  cameraTransitionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  transitionMusic: 18
 --- !u!61 &380800945
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -882,6 +908,32 @@ MonoBehaviour:
   teleportCooldown: 0.25
   promptDisplayDuration: 2
   targetCameraArea: {fileID: 796813321}
+  cameraTransitionDuration: 0.35
+  cameraTransitionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  transitionMusic: 19
 --- !u!61 &382347211
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -6242,7 +6294,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -6314,7 +6366,7 @@ MonoBehaviour:
   followOffset: {x: 0, y: 0}
   positionSmoothTime: 0.12
   orthoSizeSmoothTime: 0.2
-  pixelsPerUnit: 64
+  pixelsPerUnit: 128
   snapToPixelGrid: 1
   clampToBounds: 1
 --- !u!1 &536186993
@@ -6633,6 +6685,7 @@ MonoBehaviour:
   bodyOffset: {x: -0.1, y: 0}
   isControlled: 1
   walkAnimationThreshold: 0.05
+  walkSoundInterval: 0.35
 --- !u!1 &565056808
 GameObject:
   m_ObjectHideFlags: 0
@@ -6971,7 +7024,7 @@ Transform:
   m_GameObject: {fileID: 660954254}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -47.173218, y: 3.58919, z: 0}
+  m_LocalPosition: {x: -47.09, y: 3.81, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7464,6 +7517,22 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &999999999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1038751159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3f5c8d2e1b9476f8c0d2a5b7e9f1c3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneTransitionDoor
+  targetSceneName: Scene_2
+  promptDisplayDuration: 2
+  teleportCooldown: 0.5
+  transitionMusic: 0
 --- !u!1 &1038751159
 GameObject:
   m_ObjectHideFlags: 0
@@ -7475,7 +7544,7 @@ GameObject:
   - component: {fileID: 1038751160}
   - component: {fileID: 1038751161}
   - component: {fileID: 1038751162}
-  - component: {fileID: 3000000000}
+  - component: {fileID: 999999999}
   m_Layer: 0
   m_Name: doorswindowsstairs_LRK_2 (3)
   m_TagString: Untagged
@@ -7603,20 +7672,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2, y: 3.125}
   m_EdgeRadius: 0
---- !u!114 &3000000000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1038751159}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed20731bd4ce467dbe8feeb7abb827b1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::SceneTransitionDoor
-  targetSceneName: Scene_2
-  promptDisplayDuration: 2
 --- !u!1 &1052091493
 GameObject:
   m_ObjectHideFlags: 0
@@ -7836,6 +7891,32 @@ MonoBehaviour:
   teleportCooldown: 0.25
   promptDisplayDuration: 2
   targetCameraArea: {fileID: 1668021617}
+  cameraTransitionDuration: 0.35
+  cameraTransitionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  transitionMusic: 0
 --- !u!61 &1054476244
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -10851,6 +10932,32 @@ MonoBehaviour:
   teleportCooldown: 0.25
   promptDisplayDuration: 2
   targetCameraArea: {fileID: 796813321}
+  cameraTransitionDuration: 0.35
+  cameraTransitionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  transitionMusic: 0
 --- !u!61 &1668201725
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -11992,7 +12099,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Press X/Enter
+  m_text: Press Enter/X
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12001,8 +12108,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4289901234
+  m_fontColor: {r: 0.7, g: 0.7, b: 0.7, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -12019,8 +12126,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 16
-  m_fontSizeBase: 16
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

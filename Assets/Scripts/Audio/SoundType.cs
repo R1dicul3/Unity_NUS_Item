@@ -15,6 +15,7 @@ public enum SoundType
     UIFail,
 
     // 玩家动作音效
+    Walk,
     Jump,
     DoubleJump,
     Land,
@@ -29,5 +30,8 @@ public enum SoundType
     // 背景音乐
     MainMenuMusic,
     GameplayMusic,
+    SceneMainMusic,
+    InnMusic,
+    Scene2Music,
     PauseMusic,
 }

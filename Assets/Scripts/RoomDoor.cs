@@ -24,6 +24,18 @@ public class RoomDoor : MonoBehaviour {
 
     [SerializeField] private CameraArea targetCameraArea;
 
+    [Header("Camera Transition")]
+    [Tooltip("过门后摄像机移动到新房间的时长（秒）。设为 0 则和以前一样瞬间硬切。")]
+    [SerializeField] private float cameraTransitionDuration = 0.35f;
+
+    [Tooltip("摄像机过渡的缓动曲线。留空则使用默认的平滑缓入缓出。")]
+    [SerializeField] private AnimationCurve cameraTransitionCurve =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("Audio")]
+    [Tooltip("过门后切换的 BGM。设为 None 则保持当前音乐不变。")]
+    [SerializeField] private SoundType transitionMusic = SoundType.None;
+
     private static float nextAllowedTeleportTime;
 
     private bool isPlayerInZone;
@@ -155,6 +167,8 @@ public class RoomDoor : MonoBehaviour {
         nextAllowedTeleportTime =
             Time.time + teleportCooldown;
 
+        AudioManager.Instance?.PlayOneShot(SoundType.DoorOpen);
+
         if (playerBody != null) {
             float horizontalVelocity =
                 preserveHorizontalDirection
@@ -178,6 +192,11 @@ public class RoomDoor : MonoBehaviour {
 
         SchedulePromptHide(promptDisplayDuration);
 
+        if (transitionMusic != SoundType.None)
+        {
+            AudioManager.Instance?.PlayMusic(transitionMusic);
+        }
+
         PlayerTeleported?.Invoke(
             player,
             this,
@@ -197,9 +216,12 @@ public class RoomDoor : MonoBehaviour {
             return;
         }
 
-        camera.SetCameraBounds(targetCameraArea.CameraBounds);
-        camera.SetCameraSize(targetCameraArea.CameraSize);
-        camera.SnapImmediate();
+        camera.TransitionTo(
+            targetCameraArea.CameraBounds,
+            targetCameraArea.CameraSize,
+            cameraTransitionDuration,
+            cameraTransitionCurve
+        );
     }
 
     private void SchedulePromptHide(float delay) {

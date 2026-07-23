@@ -8,12 +8,18 @@ public class SceneTransitionDoor : MonoBehaviour
 {
     [SerializeField] private string targetSceneName = "Scene_2";
     [SerializeField] private float promptDisplayDuration = 2f;
+    [SerializeField] private float teleportCooldown = 0.5f;
+
+    [Header("Audio")]
+    [Tooltip("切换场景前播放的 BGM。设为 None 则保持当前音乐不变（由目标场景的默认 BGM 接管）。")]
+    [SerializeField] private SoundType transitionMusic = SoundType.None;
 
     private PlayerInputActions inputActions;
     private bool isPlayerInZone;
     private PlatformerPlayerController currentPlayer;
     private Coroutine hidePromptCoroutine;
     private float promptShownTime;
+    private float nextAllowedTeleportTime;
 
     private void Reset()
     {
@@ -105,9 +111,21 @@ public class SceneTransitionDoor : MonoBehaviour
 
     private void LoadTargetScene()
     {
+        if (Time.time < nextAllowedTeleportTime)
+            return;
+
+        nextAllowedTeleportTime = Time.time + teleportCooldown;
+
         InteractPromptController.Instance?.Hide();
         isPlayerInZone = false;
         currentPlayer = null;
+
+        AudioManager.Instance?.PlayOneShot(SoundType.DoorOpen);
+
+        if (transitionMusic != SoundType.None)
+        {
+            AudioManager.Instance?.PlayMusic(transitionMusic);
+        }
 
         if (!string.IsNullOrEmpty(targetSceneName))
         {
