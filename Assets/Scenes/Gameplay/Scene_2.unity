@@ -33257,7 +33257,7 @@ GameObject:
   - component: {fileID: 9400000001}
   - component: {fileID: 9400000002}
   m_Layer: 0
-  m_Name: Room_1
+  m_Name: Room_1_Pillar_Puzzle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -33272,8 +33272,8 @@ Transform:
   m_GameObject: {fileID: 9400000000}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -16.05, y: -38.99, z: 0}
-  m_LocalScale: {x: 0.775, y: 0.58805436, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1199453828}
@@ -33296,7 +33296,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomPillarPuzzle2D
   saveId: Room_1_Pillar_Puzzle
-  roomTransform: {fileID: 0}
+  roomTransform: {fileID: 9400000101}
   fallbackRoomCenter: {x: -27.04, y: -18.92}
   fallbackRoomSize: {x: 72, y: 42.3}
   wallPadding: 1.575
@@ -33315,6 +33315,37 @@ MonoBehaviour:
   gray: {r: 0.55, g: 0.58, b: 0.62, a: 1}
   alignmentTolerance: 1.125
   restartPlatformName: Shared_Platform_01 (2)
+--- !u!1 &9400000100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9400000101}
+  m_Layer: 0
+  m_Name: Room_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9400000101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9400000100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -27.04, y: -18.92, z: 0}
+  m_LocalScale: {x: 72, y: 42.3, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9500000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -33647,6 +33678,7 @@ SceneRoots:
   - {fileID: 2301000041}
   - {fileID: 9200000751}
   - {fileID: 9400000001}
+  - {fileID: 9400000101}
   - {fileID: 1343347070}
   - {fileID: 9500000001}
   - {fileID: 455698094}

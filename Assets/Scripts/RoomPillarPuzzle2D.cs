@@ -414,7 +414,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     {
         EnsureSaveId();
         EnsureColorTargets();
-        EnsureGeneratedPuzzleContent();
         CachePillars();
         EnsurePlatformsHidden();
     }
@@ -423,11 +422,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     {
         EnsureSaveId();
         EnsureColorTargets();
-    }
-
-    private void OnEnable()
-    {
-        EnsureGeneratedPuzzleContent();
     }
 
     [ContextMenu("Rebuild Puzzle")]
@@ -522,41 +516,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         }
 
         registeredPillars.RemoveAll(pillar => pillar == null);
-    }
-
-    private void EnsureGeneratedPuzzleContent()
-    {
-        if (!Application.isPlaying)
-        {
-            return;
-        }
-
-        ResolveRoomTransform();
-        EnsureColorTargets();
-
-        if (!HasGeneratedPillars())
-        {
-            RebuildPuzzle();
-            return;
-        }
-
-        if (transform.Find("Background_Color_Lines") == null)
-        {
-            CreateBackgroundColorLines();
-        }
-    }
-
-    private bool HasGeneratedPillars()
-    {
-        foreach (SinkingPillar2D pillar in GetComponentsInChildren<SinkingPillar2D>(true))
-        {
-            if (pillar != null && !pillar.name.StartsWith("__Removing_", System.StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void ResolveRoomTransform()
