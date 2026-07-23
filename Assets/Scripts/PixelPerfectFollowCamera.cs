@@ -18,6 +18,8 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
 
     [Header("Bounds")]
     [SerializeField] private bool clampToBounds = true;
+    [SerializeField] private bool clampToRoomMarkers = true;
+    [SerializeField] private string roomMarkerRootName = "White_Box";
 
     private Camera cam;
     private Vector2 positionVelocity;
@@ -32,6 +34,7 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
 
     private Coroutine transitionRoutine;
     private bool isTransitioning;
+    private Transform roomMarkerRoot;
 
     public Transform Target => target;
     public bool IsTransitioning => isTransitioning;
@@ -45,10 +48,12 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
     }
 
     private void OnEnable() {
+        RoomDoor.PlayerTeleported += HandlePlayerTeleported;
         forceSnapNextUpdate = true;
     }
 
     private void OnDisable() {
+        RoomDoor.PlayerTeleported -= HandlePlayerTeleported;
         // 禁用时协程会被 Unity 直接终止，这里必须手动清掉过渡状态，
         // 否则重新启用后 LateUpdate 会一直以为还在过渡中而不再跟随。
         StopTransition();
@@ -69,6 +74,11 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
             SetCameraSize(area.CameraSize);
             SnapImmediate();
             break;
+        }
+
+        if (!hasBounds && clampToRoomMarkers) {
+            SetCurrentRoomMarkerFromTarget();
+            SnapImmediate();
         }
     }
 
@@ -158,6 +168,182 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
             Mathf.Round(position.x / unitPerPixel) * unitPerPixel,
             Mathf.Round(position.y / unitPerPixel) * unitPerPixel
         );
+    }
+
+    private void HandlePlayerTeleported(
+        PlatformerPlayerController player,
+        RoomDoor sourceDoor,
+        RoomDoor targetDoor
+    ) {
+        if (!clampToRoomMarkers ||
+            player == null ||
+            target == null ||
+            player.transform != target) {
+            return;
+        }
+
+        string targetAreaName =
+            targetDoor != null ? targetDoor.GetAreaName() : string.Empty;
+
+        if (!string.IsNullOrEmpty(targetAreaName) &&
+            TrySetBoundsFromRoomMarker(targetAreaName)) {
+            SnapImmediate();
+            return;
+        }
+
+        SetCurrentRoomMarkerFromTarget();
+        SnapImmediate();
+    }
+
+    private void SetCurrentRoomMarkerFromTarget() {
+        if (target == null) return;
+        SetCurrentRoomMarkerFromPosition(target.position);
+    }
+
+    private void SetCurrentRoomMarkerFromPosition(Vector3 position) {
+        CacheRoomMarkerRoot();
+        if (roomMarkerRoot == null) return;
+
+        Transform bestMarker = null;
+        Bounds bestBounds = default;
+        float bestDistance = float.MaxValue;
+
+        foreach (Transform marker in EnumerateRoomMarkers()) {
+            if (!IsAreaName(marker.name) ||
+                !TryCalculateMarkerBounds(marker, out Bounds markerBounds)) {
+                continue;
+            }
+
+            if (Contains2D(markerBounds, position)) {
+                SetCameraBounds(markerBounds);
+                return;
+            }
+
+            float distance = DistanceToBounds2D(markerBounds, position);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestMarker = marker;
+                bestBounds = markerBounds;
+            }
+        }
+
+        if (bestMarker != null) {
+            SetCameraBounds(bestBounds);
+        }
+    }
+
+    private bool TrySetBoundsFromRoomMarker(string markerName) {
+        CacheRoomMarkerRoot();
+        if (roomMarkerRoot == null) return false;
+
+        foreach (Transform marker in EnumerateRoomMarkers()) {
+            if (marker.name != markerName) continue;
+            if (!TryCalculateMarkerBounds(marker, out Bounds markerBounds)) {
+                return false;
+            }
+
+            SetCameraBounds(markerBounds);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void CacheRoomMarkerRoot() {
+        if (roomMarkerRoot != null && HasAreaChildren(roomMarkerRoot)) {
+            return;
+        }
+
+        GameObject root = GameObject.Find(roomMarkerRootName);
+        roomMarkerRoot = root != null ? root.transform : null;
+    }
+
+    private System.Collections.Generic.IEnumerable<Transform> EnumerateRoomMarkers() {
+        if (roomMarkerRoot == null) yield break;
+
+        Transform areaRoot = roomMarkerRoot.Find("Area_Markers");
+        if (areaRoot == null) {
+            areaRoot = roomMarkerRoot;
+        }
+
+        foreach (Transform child in areaRoot) {
+            yield return child;
+        }
+    }
+
+    private static bool TryCalculateMarkerBounds(
+        Transform marker,
+        out Bounds bounds
+    ) {
+        bounds = default;
+
+        SpriteRenderer markerRenderer = marker.GetComponent<SpriteRenderer>();
+        if (markerRenderer == null || markerRenderer.sprite == null) {
+            return false;
+        }
+
+        Bounds spriteBounds = markerRenderer.sprite.bounds;
+        Vector3 scaledSize = Vector3.Scale(
+            spriteBounds.size,
+            marker.lossyScale
+        );
+        scaledSize = new Vector3(
+            Mathf.Abs(scaledSize.x),
+            Mathf.Abs(scaledSize.y),
+            Mathf.Abs(scaledSize.z)
+        );
+
+        if (scaledSize.x <= 0.001f || scaledSize.y <= 0.001f) {
+            return false;
+        }
+
+        bounds = new Bounds(
+            marker.TransformPoint(spriteBounds.center),
+            scaledSize
+        );
+        return true;
+    }
+
+    private static bool HasAreaChildren(Transform root) {
+        Transform areaRoot = root.Find("Area_Markers");
+        if (areaRoot == null) {
+            areaRoot = root;
+        }
+
+        foreach (Transform child in areaRoot) {
+            if (IsAreaName(child.name)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsAreaName(string objectName) {
+        return objectName == "Room_Start" ||
+               objectName.StartsWith("Room_") ||
+               objectName.StartsWith("Path_");
+    }
+
+    private static bool Contains2D(Bounds bounds, Vector3 position) {
+        return position.x >= bounds.min.x &&
+               position.x <= bounds.max.x &&
+               position.y >= bounds.min.y &&
+               position.y <= bounds.max.y;
+    }
+
+    private static float DistanceToBounds2D(Bounds bounds, Vector3 position) {
+        float dx = Mathf.Max(
+            bounds.min.x - position.x,
+            0f,
+            position.x - bounds.max.x
+        );
+        float dy = Mathf.Max(
+            bounds.min.y - position.y,
+            0f,
+            position.y - bounds.max.y
+        );
+        return dx * dx + dy * dy;
     }
 
     public void SetTarget(Transform newTarget) {
