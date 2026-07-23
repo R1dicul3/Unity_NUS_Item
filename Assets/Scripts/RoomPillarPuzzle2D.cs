@@ -554,21 +554,24 @@ public class RoomPillarPuzzle2D : MonoBehaviour
 
     private void ResolveRoomTransform()
     {
-        if (roomTransform != null)
+        if (roomTransform != null && roomTransform != transform)
         {
             return;
         }
 
         GameObject room = GameObject.Find("Room_1");
-        if (room != null)
+        if (room != null && room.transform != transform)
         {
             roomTransform = room.transform;
+            return;
         }
+
+        roomTransform = null;
     }
 
     private Bounds GetRoomBoundsInLayoutSpace()
     {
-        if (roomTransform == null)
+        if (roomTransform == null || roomTransform == transform)
         {
             return new Bounds(fallbackRoomCenter, fallbackRoomSize);
         }
