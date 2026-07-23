@@ -19,6 +19,7 @@ public class DialogueController : MonoBehaviour {
 
     [Header("Hierarchy UI")]
     [SerializeField] private Canvas dialogueCanvas;
+    [SerializeField] private CinematicLetterbox cinematicLetterbox;
     [SerializeField] private Image portraitImage;
     [SerializeField] private Text portraitLabel;
     [SerializeField] private Text speakerText;
@@ -40,6 +41,9 @@ public class DialogueController : MonoBehaviour {
     [SerializeField] private Vector2 dialogueBoxAnchorMax = new Vector2(0.96f, 0.4f);
     [SerializeField] private Vector2 dialogueBoxOffsetMin = Vector2.zero;
     [SerializeField] private Vector2 dialogueBoxOffsetMax = Vector2.zero;
+
+    [Header("Cinematic Letterbox")]
+    [SerializeField] private bool useCinematicLetterbox = true;
 
     [Header("Speaker Text Layout")]
     [SerializeField] private Vector2 speakerAnchorMin = new Vector2(0.04f, 0.72f);
@@ -167,6 +171,7 @@ public class DialogueController : MonoBehaviour {
         }
 
         if (isShowing) {
+            ShowLetterbox();
             ShowCurrentLine();
         }
     }
@@ -196,8 +201,15 @@ public class DialogueController : MonoBehaviour {
 
     public void HideDialogue() {
         isShowing = false;
+
         if (dialogueCanvas != null) {
-            dialogueCanvas.gameObject.SetActive(false);
+            if (Application.isPlaying && !uiSuppressed && HasLetterbox()) {
+                cinematicLetterbox.Hide(DeactivateCanvasIfDialogueStillHidden);
+            }
+            else {
+                HideLetterboxImmediate();
+                dialogueCanvas.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -205,6 +217,10 @@ public class DialogueController : MonoBehaviour {
         uiSuppressed = value;
         if (dialogueCanvas != null) {
             dialogueCanvas.gameObject.SetActive(isShowing && !uiSuppressed);
+        }
+
+        if (!uiSuppressed && isShowing) {
+            ShowLetterboxImmediate();
         }
     }
 
@@ -242,6 +258,10 @@ public class DialogueController : MonoBehaviour {
                 portraitImage = image;
             }
         }
+
+        if (cinematicLetterbox == null && dialogueCanvas != null) {
+            cinematicLetterbox = dialogueCanvas.GetComponentInChildren<CinematicLetterbox>(true);
+        }
     }
 
     private bool HasRequiredUi() {
@@ -255,6 +275,7 @@ public class DialogueController : MonoBehaviour {
             BuildFallbackUi();
         }
 
+        EnsureLetterbox();
         ApplyLayout();
         ApplyPortrait();
     }
@@ -281,6 +302,12 @@ public class DialogueController : MonoBehaviour {
 
         ApplyLayout();
         ApplyPortrait();
+        if (previewInEditMode && useCinematicLetterbox) {
+            ShowLetterboxImmediate();
+        }
+        else {
+            HideLetterboxImmediate();
+        }
     }
 
     private void BuildFallbackUi() {
@@ -294,6 +321,8 @@ public class DialogueController : MonoBehaviour {
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight = 0.5f;
         dialogueCanvas.gameObject.AddComponent<GraphicRaycaster>();
+
+        EnsureLetterbox();
 
         RectTransform portrait = CreatePanel("PortraitImage", dialogueCanvas.transform, portraitAnchorMin, portraitAnchorMax, portraitColor);
         portraitImage = portrait.GetComponent<Image>();
@@ -353,6 +382,66 @@ public class DialogueController : MonoBehaviour {
 
         if (portraitLabel != null) {
             portraitLabel.gameObject.SetActive(!hasPortrait);
+        }
+    }
+
+    private void EnsureLetterbox() {
+        if (!useCinematicLetterbox || dialogueCanvas == null) {
+            return;
+        }
+
+        if (cinematicLetterbox == null) {
+            Transform existing = dialogueCanvas.transform.Find("CinematicLetterbox");
+            if (existing != null) {
+                cinematicLetterbox = existing.GetComponent<CinematicLetterbox>();
+            }
+        }
+
+        if (cinematicLetterbox == null) {
+            GameObject letterboxObject = new GameObject("CinematicLetterbox");
+            letterboxObject.transform.SetParent(dialogueCanvas.transform, false);
+            RectTransform letterboxRect = letterboxObject.AddComponent<RectTransform>();
+            letterboxRect.anchorMin = Vector2.zero;
+            letterboxRect.anchorMax = Vector2.one;
+            letterboxRect.offsetMin = Vector2.zero;
+            letterboxRect.offsetMax = Vector2.zero;
+            cinematicLetterbox = letterboxObject.AddComponent<CinematicLetterbox>();
+        }
+
+        cinematicLetterbox.transform.SetAsFirstSibling();
+        cinematicLetterbox.EnsureBars();
+        cinematicLetterbox.ApplyLayout();
+    }
+
+    private bool HasLetterbox() {
+        return useCinematicLetterbox && cinematicLetterbox != null;
+    }
+
+    private void ShowLetterbox() {
+        EnsureLetterbox();
+
+        if (HasLetterbox()) {
+            cinematicLetterbox.Show();
+        }
+    }
+
+    private void ShowLetterboxImmediate() {
+        EnsureLetterbox();
+
+        if (HasLetterbox()) {
+            cinematicLetterbox.SetVisibleImmediate(true);
+        }
+    }
+
+    private void HideLetterboxImmediate() {
+        if (cinematicLetterbox != null) {
+            cinematicLetterbox.SetVisibleImmediate(false);
+        }
+    }
+
+    private void DeactivateCanvasIfDialogueStillHidden() {
+        if (!isShowing && dialogueCanvas != null) {
+            dialogueCanvas.gameObject.SetActive(false);
         }
     }
 
