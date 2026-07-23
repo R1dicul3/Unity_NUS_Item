@@ -302,7 +302,6 @@ public class GamePauseManager : MonoBehaviour
         Time.timeScale = 1f;
         SuppressDialogueUi(false);
         pauseMenuObject = null;
-        AudioManager.Instance?.RemovePauseEffect();
 
         pendingLoadData = data;
         HasUnsavedProgress = false;
