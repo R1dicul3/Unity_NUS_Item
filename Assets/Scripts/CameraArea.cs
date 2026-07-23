@@ -3,21 +3,18 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public class CameraArea : MonoBehaviour {
     [Header("视野大小")]
-    [Tooltip("这个区域使用的正交摄像机 Size，一般像素游戏里所有房间用同一个值即可")]
     [SerializeField] private float cameraSize = 5f;
 
     [Header("出生房间（可选）")]
-    [Tooltip("勾选后，场景一开始加载摄像机就会立刻用这个区域的边界/视野初始化，" +
-             "不用等玩家第一次走门。玩家出生的那个房间勾选这个。")]
     [SerializeField] private bool isStartingArea = false;
 
     public bool IsStartingArea => isStartingArea;
 
     [Header("自动触发（可选）")]
-    [Tooltip("勾选后，玩家走进该区域会自动切换摄像机边界，无需通过 RoomDoor 传送门")]
     [SerializeField] private bool enableAutoTrigger = false;
-    [Tooltip("自动触发时是否瞬间切换（不平滑）。同一场景内连续行走建议关闭，做成平滑跟随更自然")]
     [SerializeField] private bool autoTriggerSnapImmediate = false;
+    [SerializeField] private float autoTriggerTransitionDuration = 0.35f;
+    [SerializeField] private AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     private BoxCollider2D boundsCollider;
 
@@ -37,16 +34,22 @@ public class CameraArea : MonoBehaviour {
         if (!enableAutoTrigger) return;
 
         PlatformerPlayerController player = other.GetComponentInParent<PlatformerPlayerController>();
-        if (player == null) return;
+        if (player == null || !player.IsControlled) return;
 
         PixelPerfectFollowCamera camera = FindFirstObjectByType<PixelPerfectFollowCamera>();
         if (camera == null) return;
 
-        camera.SetCameraBounds(CameraBounds);
-        camera.SetCameraSize(CameraSize);
-
         if (autoTriggerSnapImmediate) {
+            camera.SetCameraBounds(CameraBounds);
+            camera.SetCameraSize(CameraSize);
             camera.SnapImmediate();
+        }
+        else if (autoTriggerTransitionDuration > 0f) {
+            camera.TransitionTo(CameraBounds, CameraSize, autoTriggerTransitionDuration, transitionCurve);
+        }
+        else {
+            camera.SetCameraBounds(CameraBounds);
+            camera.SetCameraSize(CameraSize);
         }
     }
 

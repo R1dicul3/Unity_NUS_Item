@@ -10,15 +10,15 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     [Header("Room Source")]
     [SerializeField] private Transform roomTransform;
     [SerializeField] private Vector2 fallbackRoomCenter = new Vector2(-27.04f, -18.92f);
-    [SerializeField] private Vector2 fallbackRoomSize = new Vector2(32f, 18.8f);
-    [SerializeField] private float wallPadding = 0.7f;
+    [SerializeField] private Vector2 fallbackRoomSize = new Vector2(72f, 42.3f);
+    [SerializeField] private float wallPadding = 1.575f;
 
     [Header("Pillars")]
     [SerializeField] private Sprite blockSprite;
-    [SerializeField] private float pillarWidth = 2.35f;
+    [SerializeField] private float pillarWidth = 5.2875f;
     [SerializeField] private float pillarAreaWidthRatio = 0.72f;
-    [SerializeField] private float pillarTopPadding = 0.35f;
-    [SerializeField] private float pillarBottomPadding = 0.35f;
+    [SerializeField] private float pillarTopPadding = 0.7875f;
+    [SerializeField] private float pillarBottomPadding = 0.7875f;
     [SerializeField] private float sinkSpeed = 3.4f;
     [SerializeField] private float returnSpeed = 6.8f;
     [SerializeField] private float finalVisibleSegments = 1f;
@@ -31,7 +31,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     [SerializeField] private Color gray = new Color(0.55f, 0.58f, 0.62f, 1f);
 
     [Header("Completion")]
-    [SerializeField] private float alignmentTolerance = 0.5f;
+    [SerializeField] private float alignmentTolerance = 1.125f;
 
     [Header("Restart")]
     [SerializeField] private string restartPlatformName = "Shared_Platform_01 (2)";
@@ -554,21 +554,24 @@ public class RoomPillarPuzzle2D : MonoBehaviour
 
     private void ResolveRoomTransform()
     {
-        if (roomTransform != null)
+        if (roomTransform != null && roomTransform != transform)
         {
             return;
         }
 
         GameObject room = GameObject.Find("Room_1");
-        if (room != null)
+        if (room != null && room.transform != transform)
         {
             roomTransform = room.transform;
+            return;
         }
+
+        roomTransform = null;
     }
 
     private Bounds GetRoomBoundsInLayoutSpace()
     {
-        if (roomTransform == null)
+        if (roomTransform == null || roomTransform == transform)
         {
             return new Bounds(fallbackRoomCenter, fallbackRoomSize);
         }

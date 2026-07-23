@@ -18,6 +18,8 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
 
     [Header("Bounds")]
     [SerializeField] private bool clampToBounds = true;
+    [SerializeField] private bool clampToRoomMarkers = true;
+    [SerializeField] private string roomMarkerRootName = "White_Box";
 
     private Camera cam;
     private Vector2 positionVelocity;
@@ -32,6 +34,7 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
 
     private Coroutine transitionRoutine;
     private bool isTransitioning;
+    private Transform roomMarkerRoot;
 
     public Transform Target => target;
     public bool IsTransitioning => isTransitioning;
@@ -45,12 +48,12 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
     }
 
     private void OnEnable() {
+        RoomDoor.PlayerTeleported += HandlePlayerTeleported;
         forceSnapNextUpdate = true;
     }
 
     private void OnDisable() {
-        // 禁用时协程会被 Unity 直接终止，这里必须手动清掉过渡状态，
-        // 否则重新启用后 LateUpdate 会一直以为还在过渡中而不再跟随。
+        RoomDoor.PlayerTeleported -= HandlePlayerTeleported;
         StopTransition();
     }
 
@@ -69,6 +72,11 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
             SetCameraSize(area.CameraSize);
             SnapImmediate();
             break;
+        }
+
+        if (!hasBounds && clampToRoomMarkers) {
+            SetCurrentRoomMarkerFromTarget();
+            SnapImmediate();
         }
     }
 
@@ -160,6 +168,182 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
         );
     }
 
+    private void HandlePlayerTeleported(
+        PlatformerPlayerController player,
+        RoomDoor sourceDoor,
+        RoomDoor targetDoor
+    ) {
+        if (!clampToRoomMarkers ||
+            player == null ||
+            target == null ||
+            player.transform != target) {
+            return;
+        }
+
+        string targetAreaName =
+            targetDoor != null ? targetDoor.GetAreaName() : string.Empty;
+
+        if (!string.IsNullOrEmpty(targetAreaName) &&
+            TrySetBoundsFromRoomMarker(targetAreaName)) {
+            SnapImmediate();
+            return;
+        }
+
+        SetCurrentRoomMarkerFromTarget();
+        SnapImmediate();
+    }
+
+    private void SetCurrentRoomMarkerFromTarget() {
+        if (target == null) return;
+        SetCurrentRoomMarkerFromPosition(target.position);
+    }
+
+    private void SetCurrentRoomMarkerFromPosition(Vector3 position) {
+        CacheRoomMarkerRoot();
+        if (roomMarkerRoot == null) return;
+
+        Transform bestMarker = null;
+        Bounds bestBounds = default;
+        float bestDistance = float.MaxValue;
+
+        foreach (Transform marker in EnumerateRoomMarkers()) {
+            if (!IsAreaName(marker.name) ||
+                !TryCalculateMarkerBounds(marker, out Bounds markerBounds)) {
+                continue;
+            }
+
+            if (Contains2D(markerBounds, position)) {
+                SetCameraBounds(markerBounds);
+                return;
+            }
+
+            float distance = DistanceToBounds2D(markerBounds, position);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestMarker = marker;
+                bestBounds = markerBounds;
+            }
+        }
+
+        if (bestMarker != null) {
+            SetCameraBounds(bestBounds);
+        }
+    }
+
+    private bool TrySetBoundsFromRoomMarker(string markerName) {
+        CacheRoomMarkerRoot();
+        if (roomMarkerRoot == null) return false;
+
+        foreach (Transform marker in EnumerateRoomMarkers()) {
+            if (marker.name != markerName) continue;
+            if (!TryCalculateMarkerBounds(marker, out Bounds markerBounds)) {
+                return false;
+            }
+
+            SetCameraBounds(markerBounds);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void CacheRoomMarkerRoot() {
+        if (roomMarkerRoot != null && HasAreaChildren(roomMarkerRoot)) {
+            return;
+        }
+
+        GameObject root = GameObject.Find(roomMarkerRootName);
+        roomMarkerRoot = root != null ? root.transform : null;
+    }
+
+    private System.Collections.Generic.IEnumerable<Transform> EnumerateRoomMarkers() {
+        if (roomMarkerRoot == null) yield break;
+
+        Transform areaRoot = roomMarkerRoot.Find("Area_Markers");
+        if (areaRoot == null) {
+            areaRoot = roomMarkerRoot;
+        }
+
+        foreach (Transform child in areaRoot) {
+            yield return child;
+        }
+    }
+
+    private static bool TryCalculateMarkerBounds(
+        Transform marker,
+        out Bounds bounds
+    ) {
+        bounds = default;
+
+        SpriteRenderer markerRenderer = marker.GetComponent<SpriteRenderer>();
+        if (markerRenderer == null || markerRenderer.sprite == null) {
+            return false;
+        }
+
+        Bounds spriteBounds = markerRenderer.sprite.bounds;
+        Vector3 scaledSize = Vector3.Scale(
+            spriteBounds.size,
+            marker.lossyScale
+        );
+        scaledSize = new Vector3(
+            Mathf.Abs(scaledSize.x),
+            Mathf.Abs(scaledSize.y),
+            Mathf.Abs(scaledSize.z)
+        );
+
+        if (scaledSize.x <= 0.001f || scaledSize.y <= 0.001f) {
+            return false;
+        }
+
+        bounds = new Bounds(
+            marker.TransformPoint(spriteBounds.center),
+            scaledSize
+        );
+        return true;
+    }
+
+    private static bool HasAreaChildren(Transform root) {
+        Transform areaRoot = root.Find("Area_Markers");
+        if (areaRoot == null) {
+            areaRoot = root;
+        }
+
+        foreach (Transform child in areaRoot) {
+            if (IsAreaName(child.name)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsAreaName(string objectName) {
+        return objectName == "Room_Start" ||
+               objectName.StartsWith("Room_") ||
+               objectName.StartsWith("Path_");
+    }
+
+    private static bool Contains2D(Bounds bounds, Vector3 position) {
+        return position.x >= bounds.min.x &&
+               position.x <= bounds.max.x &&
+               position.y >= bounds.min.y &&
+               position.y <= bounds.max.y;
+    }
+
+    private static float DistanceToBounds2D(Bounds bounds, Vector3 position) {
+        float dx = Mathf.Max(
+            bounds.min.x - position.x,
+            0f,
+            position.x - bounds.max.x
+        );
+        float dy = Mathf.Max(
+            bounds.min.y - position.y,
+            0f,
+            position.y - bounds.max.y
+        );
+        return dx * dx + dy * dy;
+    }
+
     public void SetTarget(Transform newTarget) {
         target = newTarget;
     }
@@ -184,10 +368,6 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
         }
     }
 
-    /// <summary>
-    /// 平滑地把摄像机移动/缩放到新的房间区域，代替 SetCameraBounds + SetCameraSize + SnapImmediate 的硬切。
-    /// duration 小于等于 0 时退化为瞬间切换，行为与 SnapImmediate 完全一致。
-    /// </summary>
     public void TransitionTo(
         Bounds bounds,
         float orthographicSize,
@@ -226,7 +406,6 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
         Vector2 startPosition = transform.position;
         float startOrthoSize = cam.orthographicSize;
 
-        // 先切边界和目标视野，这样每帧重算的落点就是新房间的落点。
         SetCameraBounds(bounds);
         SetCameraSize(orthographicSize);
 
@@ -244,14 +423,12 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
                 ? easing.Evaluate(progress)
                 : Mathf.SmoothStep(0f, 1f, progress);
 
-            // 视野先插值，GetDesiredPosition 的边界夹取依赖当前 orthographicSize。
             cam.orthographicSize = Mathf.Lerp(
                 startOrthoSize,
                 targetOrthoSize,
                 easedProgress
             );
 
-            // 玩家在过渡期间仍可移动，所以落点每帧重算。
             Vector2 newPosition = Vector2.Lerp(
                 startPosition,
                 GetDesiredPosition(),
@@ -278,6 +455,51 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
     }
 
     public void ForceSnapToTarget() {
+        SnapImmediate();
+    }
+
+    public void RefreshCameraBoundsToTarget(float transitionDuration = 0f, AnimationCurve curve = null) {
+        if (target == null) return;
+
+        // 强制同步物理，确保新激活的角色碰撞体能被正确检测
+        Physics2D.SyncTransforms();
+
+        Collider2D[] hits = Physics2D.OverlapPointAll(target.position);
+        CameraArea targetArea = null;
+
+        foreach (Collider2D hit in hits) {
+            targetArea = hit.GetComponent<CameraArea>();
+            if (targetArea != null) break;
+        }
+
+        if (targetArea != null) {
+            if (transitionDuration > 0f) {
+                TransitionTo(targetArea.CameraBounds, targetArea.CameraSize, transitionDuration, curve);
+            }
+            else {
+                SetCameraBounds(targetArea.CameraBounds);
+                SetCameraSize(targetArea.CameraSize);
+                SnapImmediate();
+            }
+            return;
+        }
+
+        // 清空旧边界，防止被锁死在旧房间
+        ClearCameraBounds();
+
+        if (clampToRoomMarkers) {
+            SetCurrentRoomMarkerFromTarget();
+            if (hasBounds) {
+                if (transitionDuration > 0f) {
+                    TransitionTo(currentBounds, targetOrthoSize, transitionDuration, curve);
+                }
+                else {
+                    SnapImmediate();
+                }
+                return;
+            }
+        }
+
         SnapImmediate();
     }
 

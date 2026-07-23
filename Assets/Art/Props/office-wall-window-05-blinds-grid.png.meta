@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: 0d498894845ed8440b77c7f380cc978f
+guid: 606fe3186a42ff34bb94983b0533ab09
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7713545972125905943
-    second: elevator-with-panel_0
-  - first:
-      213: 6844203218540988942
-    second: elevator-with-panel_1
+      213: -3357150378641938726
+    second: office-wall-window-05-blinds-grid_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -54,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -129,7 +126,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: elevator-with-panel_0
+      name: office-wall-window-05-blinds-grid_0
       rect:
         serializedVersion: 2
         x: 0
@@ -137,15 +134,15 @@ TextureImporter:
         width: 768
         height: 432
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 714b53b81350c0b60800000000000000
-      internalID: 7713545972125905943
+      spriteID: ad6aa7f74810961d0800000000000000
+      internalID: -3357150378641938726
       vertices: []
       indices: 
       edges: []
@@ -154,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 8dadc58ba1fee1747874c1141b8ff592
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -162,11 +159,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":768.0,"y":432.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      elevator-with-panel_0: 7713545972125905943
+      office-wall-window-05-blinds-grid_0: -3357150378641938726
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

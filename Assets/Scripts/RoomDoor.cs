@@ -29,7 +29,8 @@ public class RoomDoor : MonoBehaviour {
     [SerializeField] private float cameraTransitionDuration = 0.35f;
 
     [Tooltip("摄像机过渡的缓动曲线。留空则使用默认的平滑缓入缓出。")]
-    [SerializeField] private AnimationCurve cameraTransitionCurve =
+    [SerializeField]
+    private AnimationCurve cameraTransitionCurve =
         AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Audio")]
@@ -188,12 +189,12 @@ public class RoomDoor : MonoBehaviour {
         isPlayerInZone = false;
         currentPlayer = null;
 
-        UpdateCamera();
+        // 核心修复：把当前过门的玩家（无论是Player1还是Player2）传进去，确保摄像机目标正确绑定
+        UpdateCamera(player);
 
         SchedulePromptHide(promptDisplayDuration);
 
-        if (transitionMusic != SoundType.None)
-        {
+        if (transitionMusic != SoundType.None) {
             AudioManager.Instance?.PlayMusic(transitionMusic);
         }
 
@@ -204,15 +205,20 @@ public class RoomDoor : MonoBehaviour {
         );
     }
 
-    private void UpdateCamera() {
-        if (targetCameraArea == null) {
-            return;
-        }
-
+    private void UpdateCamera(PlatformerPlayerController player) {
         PixelPerfectFollowCamera camera =
             FindFirstObjectByType<PixelPerfectFollowCamera>();
 
         if (camera == null) {
+            return;
+        }
+
+        // 无论何时过门，先强制把摄像机的 Target 设为当前过门的玩家！
+        if (player != null) {
+            camera.SetTarget(player.transform);
+        }
+
+        if (targetCameraArea == null) {
             return;
         }
 
