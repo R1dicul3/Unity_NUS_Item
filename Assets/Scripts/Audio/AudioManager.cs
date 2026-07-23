@@ -28,7 +28,6 @@ public class AudioManager : MonoBehaviour
 
     // 暂停音效效果（变远变闷）的原始状态缓存
     private AudioLowPassFilter _musicLowPassFilter;
-    private float _originalMusicVolumeRatio = 1f;
     private float _originalMusicPitch = 1f;
     private float _originalLowPassCutoff = 22000f;
     private Coroutine _pauseEffectCoroutine;
@@ -86,6 +85,11 @@ public class AudioManager : MonoBehaviour
         GameSettings.Instance.OnMasterVolumeChanged += OnMasterVolumeChanged;
         GameSettings.Instance.OnMusicVolumeChanged += OnMusicVolumeChanged;
         GameSettings.Instance.OnSFXVolumeChanged += OnSFXVolumeChanged;
+
+        // 同步已保存的音量值，避免启动时音量未生效
+        _masterVolume = GameSettings.Instance.MasterVolume;
+        _musicVolume = GameSettings.Instance.MusicVolume;
+        _sfxVolume = GameSettings.Instance.SFXVolume;
     }
 
     private void UnsubscribeFromSettings()
@@ -301,14 +305,13 @@ public class AudioManager : MonoBehaviour
         if (apply)
         {
             // 进入暂停：记录原始值（仅在首次应用时记录）
-            _originalMusicVolumeRatio = _musicSource.volume / (_masterVolume * _musicVolume + 0.0001f);
             _originalMusicPitch = _musicSource.pitch;
             _originalLowPassCutoff = _musicLowPassFilter.cutoffFrequency;
         }
 
         float targetVolume = apply
             ? _masterVolume * _musicVolume * 0.85f
-            : _masterVolume * _musicVolume * _originalMusicVolumeRatio;
+            : _masterVolume * _musicVolume;
         float targetPitch = apply ? 0.98f : _originalMusicPitch;
         float targetCutoff = apply ? 5000f : _originalLowPassCutoff;
 

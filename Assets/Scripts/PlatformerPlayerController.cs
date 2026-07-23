@@ -44,6 +44,10 @@ public class PlatformerPlayerController : MonoBehaviour {
     [Header("Animation")]
     [SerializeField] private float walkAnimationThreshold = 0.05f;
 
+    [Header("Audio")]
+    [Tooltip("走路音效的步进间隔（秒）。")]
+    [SerializeField] private float walkSoundInterval = 0.35f;
+
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
@@ -64,6 +68,8 @@ public class PlatformerPlayerController : MonoBehaviour {
     private float dashCooldownTimer;
     private float groundCheckLockoutTimer;
     private float defaultGravityScale;
+    private float walkSoundTimer;
+    private bool wasWalking;
 
     private PlayerInputActions inputActions;
 
@@ -168,6 +174,7 @@ public class PlatformerPlayerController : MonoBehaviour {
             jumpBufferTimer = 0f;
         }
 
+        UpdateWalkSound();
         UpdateVisuals();
     }
 
@@ -219,6 +226,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (!wasGrounded && isGrounded) {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Min(rb.linearVelocity.y, 0f));
+            AudioManager.Instance?.PlayOneShot(SoundType.Land);
         }
     }
 
@@ -264,6 +272,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         coyoteTimer = 0f;
         isGrounded = false;
         groundCheckLockoutTimer = groundCheckLockoutAfterJump;
+
+        AudioManager.Instance?.PlayOneShot(SoundType.Jump);
     }
 
     private void TryDash() {
@@ -276,6 +286,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         dashCooldownTimer = dashCooldown;
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
+
+        AudioManager.Instance?.PlayOneShot(SoundType.Dash);
 
         if (dashTrail != null) {
             dashTrail.Clear();
@@ -322,6 +334,27 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsInDialogueHash, isInDialogue);
+    }
+
+    private void UpdateWalkSound() {
+        bool isWalking = isGrounded && Mathf.Abs(moveInput) > 0.01f && !isInDialogue;
+
+        if (isWalking) {
+            if (!wasWalking) {
+                // 刚开始走路，立即播放第一声
+                AudioManager.Instance?.PlayOneShot(SoundType.Walk);
+                walkSoundTimer = 0f;
+            }
+            else {
+                walkSoundTimer += Time.deltaTime;
+                if (walkSoundTimer >= walkSoundInterval) {
+                    AudioManager.Instance?.PlayOneShot(SoundType.Walk);
+                    walkSoundTimer = 0f;
+                }
+            }
+        }
+
+        wasWalking = isWalking;
     }
 
     private void AlignCollider() {
