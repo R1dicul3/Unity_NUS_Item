@@ -4,6 +4,13 @@ using UnityEngine.InputSystem;
 
 public class RoomPillarPuzzle2D : MonoBehaviour
 {
+    [System.Serializable]
+    private struct ColorTarget
+    {
+        public SinkingPillar2D.SegmentKind kind;
+        public int pillarIndex;
+    }
+
     [Header("Save")]
     [SerializeField] private string saveId;
 
@@ -32,6 +39,15 @@ public class RoomPillarPuzzle2D : MonoBehaviour
 
     [Header("Completion")]
     [SerializeField] private float alignmentTolerance = 1.125f;
+    [SerializeField] private float targetLineWidth = 3.825f;
+    [SerializeField] private float targetLineThickness = 0.27f;
+    [SerializeField] private ColorTarget[] colorTargets =
+    {
+        new ColorTarget { kind = SinkingPillar2D.SegmentKind.Yellow, pillarIndex = 0 },
+        new ColorTarget { kind = SinkingPillar2D.SegmentKind.Gray, pillarIndex = 1 },
+        new ColorTarget { kind = SinkingPillar2D.SegmentKind.Green, pillarIndex = 2 },
+        new ColorTarget { kind = SinkingPillar2D.SegmentKind.Pink, pillarIndex = 3 }
+    };
 
     [Header("Restart")]
     [SerializeField] private string restartPlatformName = "Shared_Platform_01 (2)";
@@ -195,37 +211,9 @@ public class RoomPillarPuzzle2D : MonoBehaviour
 
     private bool CheckCompletion()
     {
-        Transform linesParent = transform.Find("Background_Color_Lines");
-        if (linesParent == null)
+        float lineY = GetTargetLineWorldY();
+        foreach (SinkingPillar2D.SegmentKind color in GetRequiredTargetColors())
         {
-            return false;
-        }
-
-        Dictionary<SinkingPillar2D.SegmentKind, float> lineYByColor = new Dictionary<SinkingPillar2D.SegmentKind, float>();
-        foreach (Transform line in linesParent)
-        {
-            SinkingPillar2D.SegmentKind? kind = ParseLineColor(line.name);
-            if (kind.HasValue)
-            {
-                lineYByColor[kind.Value] = line.position.y;
-            }
-        }
-
-        SinkingPillar2D.SegmentKind[] requiredColors =
-        {
-            SinkingPillar2D.SegmentKind.Yellow,
-            SinkingPillar2D.SegmentKind.Pink,
-            SinkingPillar2D.SegmentKind.Green,
-            SinkingPillar2D.SegmentKind.Gray
-        };
-
-        foreach (SinkingPillar2D.SegmentKind color in requiredColors)
-        {
-            if (!lineYByColor.TryGetValue(color, out float lineY))
-            {
-                return false;
-            }
-
             bool found = false;
             foreach (SinkingPillar2D pillar in registeredPillars)
             {
@@ -256,31 +244,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         }
 
         return true;
-    }
-
-    private static SinkingPillar2D.SegmentKind? ParseLineColor(string lineName)
-    {
-        if (lineName.Contains("Yellow"))
-        {
-            return SinkingPillar2D.SegmentKind.Yellow;
-        }
-
-        if (lineName.Contains("Pink"))
-        {
-            return SinkingPillar2D.SegmentKind.Pink;
-        }
-
-        if (lineName.Contains("Green"))
-        {
-            return SinkingPillar2D.SegmentKind.Green;
-        }
-
-        if (lineName.Contains("Gray"))
-        {
-            return SinkingPillar2D.SegmentKind.Gray;
-        }
-
-        return null;
     }
 
     public void RestartPuzzle()
@@ -450,6 +413,8 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     private void Awake()
     {
         EnsureSaveId();
+        EnsureColorTargets();
+        EnsureGeneratedPuzzleContent();
         CachePillars();
         EnsurePlatformsHidden();
     }
@@ -457,24 +422,23 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     private void OnValidate()
     {
         EnsureSaveId();
+        EnsureColorTargets();
     }
 
     private void OnEnable()
     {
-        if (Application.isPlaying && transform.childCount == 0)
-        {
-            RebuildPuzzle();
-        }
+        EnsureGeneratedPuzzleContent();
     }
 
     [ContextMenu("Rebuild Puzzle")]
     public void RebuildPuzzle()
     {
         ResolveRoomTransform();
+        EnsureColorTargets();
         registeredPillars.Clear();
         ClearGeneratedChildren();
 
-        Bounds roomBounds = GetRoomBoundsInLayoutSpace();
+        Bounds roomBounds = GetRoomBoundsInPuzzleSpace();
         float floorY = roomBounds.min.y + wallPadding + pillarBottomPadding;
         float ceilingY = roomBounds.max.y - wallPadding - pillarTopPadding;
         float segmentHeight = (ceilingY - floorY) / 4f;
@@ -482,6 +446,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         float innerLeft = roomBounds.center.x - usableWidth * 0.5f + pillarWidth * 0.5f;
         float innerRight = roomBounds.center.x + usableWidth * 0.5f - pillarWidth * 0.5f;
         float spacing = (innerRight - innerLeft) / 3f;
+        float targetY = floorY + segmentHeight * 0.5f;
 
         CreatePillar("Pillar_01", innerLeft + spacing * 0f, floorY, ceilingY, segmentHeight, finalVisibleSegments, false, false, new[]
         {
@@ -514,6 +479,8 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             SinkingPillar2D.SegmentKind.Yellow,
             SinkingPillar2D.SegmentKind.Green
         });
+
+        CreateBackgroundColorLines(targetY, innerLeft, spacing);
     }
 
     private void CreatePillar(
@@ -545,11 +512,51 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         SinkingPillar2D[] pillars = GetComponentsInChildren<SinkingPillar2D>(true);
         foreach (SinkingPillar2D pillar in pillars)
         {
+            if (pillar.name.StartsWith("__Removing_", System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             RegisterPillar(pillar);
             pillar.ConfigurePuzzle(this);
         }
 
         registeredPillars.RemoveAll(pillar => pillar == null);
+    }
+
+    private void EnsureGeneratedPuzzleContent()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
+        ResolveRoomTransform();
+        EnsureColorTargets();
+
+        if (!HasGeneratedPillars())
+        {
+            RebuildPuzzle();
+            return;
+        }
+
+        if (transform.Find("Background_Color_Lines") == null)
+        {
+            CreateBackgroundColorLines();
+        }
+    }
+
+    private bool HasGeneratedPillars()
+    {
+        foreach (SinkingPillar2D pillar in GetComponentsInChildren<SinkingPillar2D>(true))
+        {
+            if (pillar != null && !pillar.name.StartsWith("__Removing_", System.StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void ResolveRoomTransform()
@@ -569,31 +576,90 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         roomTransform = null;
     }
 
-    private Bounds GetRoomBoundsInLayoutSpace()
+    private Bounds GetRoomBoundsInPuzzleSpace()
     {
+        Bounds worldBounds;
         if (roomTransform == null || roomTransform == transform)
         {
-            return new Bounds(fallbackRoomCenter, fallbackRoomSize);
+            worldBounds = new Bounds(fallbackRoomCenter, fallbackRoomSize);
         }
-
-        Bounds worldBounds = new Bounds(
-            roomTransform.position,
-            new Vector3(Mathf.Abs(roomTransform.lossyScale.x), Mathf.Abs(roomTransform.lossyScale.y), 1f));
-
-        Transform layoutSpace = transform.parent;
-        if (layoutSpace == null)
+        else
         {
-            return worldBounds;
+            worldBounds = new Bounds(
+                roomTransform.position,
+                new Vector3(Mathf.Abs(roomTransform.lossyScale.x), Mathf.Abs(roomTransform.lossyScale.y), 1f));
         }
 
         Vector3 min = worldBounds.min;
         Vector3 max = worldBounds.max;
-        Bounds localBounds = new Bounds(layoutSpace.InverseTransformPoint(new Vector3(min.x, min.y, 0f)), Vector3.zero);
-        localBounds.Encapsulate(layoutSpace.InverseTransformPoint(new Vector3(min.x, max.y, 0f)));
-        localBounds.Encapsulate(layoutSpace.InverseTransformPoint(new Vector3(max.x, min.y, 0f)));
-        localBounds.Encapsulate(layoutSpace.InverseTransformPoint(new Vector3(max.x, max.y, 0f)));
+        Bounds localBounds = new Bounds(transform.InverseTransformPoint(new Vector3(min.x, min.y, 0f)), Vector3.zero);
+        localBounds.Encapsulate(transform.InverseTransformPoint(new Vector3(min.x, max.y, 0f)));
+        localBounds.Encapsulate(transform.InverseTransformPoint(new Vector3(max.x, min.y, 0f)));
+        localBounds.Encapsulate(transform.InverseTransformPoint(new Vector3(max.x, max.y, 0f)));
         localBounds.size = new Vector3(localBounds.size.x, localBounds.size.y, 1f);
         return localBounds;
+    }
+
+    private float GetTargetLineWorldY()
+    {
+        Bounds roomBounds = GetRoomBoundsInPuzzleSpace();
+        float floorY = roomBounds.min.y + wallPadding + pillarBottomPadding;
+        float ceilingY = roomBounds.max.y - wallPadding - pillarTopPadding;
+        float segmentHeight = (ceilingY - floorY) / 4f;
+        return transform.TransformPoint(new Vector3(0f, floorY + segmentHeight * 0.5f, 0f)).y;
+    }
+
+    private void GetTargetLineLayout(out float targetY, out float innerLeft, out float spacing)
+    {
+        Bounds roomBounds = GetRoomBoundsInPuzzleSpace();
+        float floorY = roomBounds.min.y + wallPadding + pillarBottomPadding;
+        float ceilingY = roomBounds.max.y - wallPadding - pillarTopPadding;
+        float segmentHeight = (ceilingY - floorY) / 4f;
+        float usableWidth = (roomBounds.size.x - wallPadding * 2f) * Mathf.Clamp01(pillarAreaWidthRatio);
+        innerLeft = roomBounds.center.x - usableWidth * 0.5f + pillarWidth * 0.5f;
+        float innerRight = roomBounds.center.x + usableWidth * 0.5f - pillarWidth * 0.5f;
+        spacing = (innerRight - innerLeft) / 3f;
+        targetY = floorY + segmentHeight * 0.5f;
+    }
+
+    private IEnumerable<SinkingPillar2D.SegmentKind> GetRequiredTargetColors()
+    {
+        EnsureColorTargets();
+        HashSet<SinkingPillar2D.SegmentKind> colors = new HashSet<SinkingPillar2D.SegmentKind>();
+        foreach (ColorTarget target in colorTargets)
+        {
+            if (target.kind != SinkingPillar2D.SegmentKind.Empty && colors.Add(target.kind))
+            {
+                yield return target.kind;
+            }
+        }
+    }
+
+    private void CreateBackgroundColorLines(float y, float innerLeft, float spacing)
+    {
+        GameObject linesRoot = new GameObject("Background_Color_Lines");
+        linesRoot.transform.SetParent(transform, false);
+        linesRoot.transform.localPosition = Vector3.zero;
+
+        foreach (ColorTarget target in colorTargets)
+        {
+            int pillarIndex = Mathf.Clamp(target.pillarIndex, 0, 3);
+            GameObject line = new GameObject($"Target_{target.kind}_{pillarIndex + 1}");
+            line.transform.SetParent(linesRoot.transform, false);
+            line.transform.localPosition = new Vector3(innerLeft + spacing * pillarIndex, y, 0.05f);
+            line.transform.localScale = new Vector3(Mathf.Max(0.1f, targetLineWidth), Mathf.Max(0.01f, targetLineThickness), 1f);
+
+            SpriteRenderer renderer = line.AddComponent<SpriteRenderer>();
+            renderer.sprite = GetBlockSprite();
+            renderer.color = GetColor(target.kind);
+            renderer.sortingOrder = 5;
+        }
+    }
+
+    private void CreateBackgroundColorLines()
+    {
+        GetTargetLineLayout(out float targetY, out float innerLeft, out float spacing);
+        CreateBackgroundColorLines(targetY, innerLeft, spacing);
     }
 
     private void ClearGeneratedChildren()
@@ -612,6 +678,8 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         {
             if (Application.isPlaying)
             {
+                child.SetActive(false);
+                child.name = $"__Removing_{child.name}";
                 Destroy(child);
             }
             else
@@ -624,6 +692,23 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     private Sprite GetBlockSprite()
     {
         return blockSprite != null ? blockSprite : GetFallbackSprite();
+    }
+
+    private Color GetColor(SinkingPillar2D.SegmentKind kind)
+    {
+        switch (kind)
+        {
+            case SinkingPillar2D.SegmentKind.Yellow:
+                return yellow;
+            case SinkingPillar2D.SegmentKind.Pink:
+                return pink;
+            case SinkingPillar2D.SegmentKind.Green:
+                return green;
+            case SinkingPillar2D.SegmentKind.Gray:
+                return gray;
+            default:
+                return Color.clear;
+        }
     }
 
     private static Sprite GetFallbackSprite()
@@ -654,6 +739,22 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         {
             saveId = GetHierarchyPath(transform);
         }
+    }
+
+    private void EnsureColorTargets()
+    {
+        if (colorTargets != null && colorTargets.Length > 0)
+        {
+            return;
+        }
+
+        colorTargets = new[]
+        {
+            new ColorTarget { kind = SinkingPillar2D.SegmentKind.Yellow, pillarIndex = 0 },
+            new ColorTarget { kind = SinkingPillar2D.SegmentKind.Gray, pillarIndex = 1 },
+            new ColorTarget { kind = SinkingPillar2D.SegmentKind.Green, pillarIndex = 2 },
+            new ColorTarget { kind = SinkingPillar2D.SegmentKind.Pink, pillarIndex = 3 }
+        };
     }
 
     private static string GetHierarchyPath(Transform current)
