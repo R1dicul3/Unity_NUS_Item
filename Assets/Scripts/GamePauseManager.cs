@@ -210,7 +210,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.GameTimer.Instance?.StartTimer();
         AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
-        SceneManager.LoadScene("Scene_2");
+        SceneManager.LoadScene("Scene_main");
     }
 
     public SaveSystem.SaveData CreateSaveData()
