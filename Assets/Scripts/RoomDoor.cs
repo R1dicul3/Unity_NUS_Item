@@ -24,6 +24,10 @@ public class RoomDoor : MonoBehaviour {
 
     [SerializeField] private CameraArea targetCameraArea;
 
+    [Header("Audio")]
+    [Tooltip("过门后切换的 BGM。设为 None 则保持当前音乐不变。")]
+    [SerializeField] private SoundType transitionMusic = SoundType.None;
+
     private static float nextAllowedTeleportTime;
 
     private bool isPlayerInZone;
@@ -155,6 +159,8 @@ public class RoomDoor : MonoBehaviour {
         nextAllowedTeleportTime =
             Time.time + teleportCooldown;
 
+        AudioManager.Instance?.PlayOneShot(SoundType.DoorOpen);
+
         if (playerBody != null) {
             float horizontalVelocity =
                 preserveHorizontalDirection
@@ -177,6 +183,11 @@ public class RoomDoor : MonoBehaviour {
         UpdateCamera();
 
         SchedulePromptHide(promptDisplayDuration);
+
+        if (transitionMusic != SoundType.None)
+        {
+            AudioManager.Instance?.PlayMusic(transitionMusic);
+        }
 
         PlayerTeleported?.Invoke(
             player,

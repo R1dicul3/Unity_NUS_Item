@@ -21,6 +21,16 @@ public class AudioManager : MonoBehaviour
     [Tooltip("音效音频源的对象池大小。同时播放的音效数量超过此值时，最早的音效会被复用。")]
     [SerializeField] private int sfxPoolSize = 8;
 
+    [Header("Pause Effect")]
+    [Tooltip("暂停音效效果的渐变过渡时长（秒）。")]
+    [SerializeField] [Range(0.05f, 2f)] private float pauseEffectDuration = 0.3f;
+    [Tooltip("暂停时 BGM 音量降到正常音量的比例。")]
+    [SerializeField] [Range(0f, 1f)] private float pauseVolumeRatio = 0.6f;
+    [Tooltip("暂停时 BGM 的音高倍率。")]
+    [SerializeField] [Range(0.5f, 1f)] private float pausePitch = 0.93f;
+    [Tooltip("暂停时低通滤波器的截止频率（Hz），越低越闷。")]
+    [SerializeField] [Range(100f, 8000f)] private float pauseLowPassCutoff = 2500f;
+
     private AudioSource _musicSource;
     private AudioSource[] _sfxSources;
     private int _sfxIndex;
@@ -267,26 +277,28 @@ public class AudioManager : MonoBehaviour
     /// 应用暂停音效效果：BGM 继续播放，但音量降低、音高略微下降、并添加低通滤波让声音变闷变远。
     /// </summary>
     /// <param name="transitionDuration">渐变过渡时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
-    public void ApplyPauseEffect(float transitionDuration = 0.6f)
+    public void ApplyPauseEffect(float transitionDuration = -1f)
     {
         if (_pauseEffectCoroutine != null)
         {
             StopCoroutine(_pauseEffectCoroutine);
         }
-        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(true, transitionDuration));
+        float duration = transitionDuration >= 0f ? transitionDuration : pauseEffectDuration;
+        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(true, duration));
     }
 
     /// <summary>
     /// 移除暂停音效效果，将 BGM 恢复到正常状态。
     /// </summary>
     /// <param name="transitionDuration">渐变恢复时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
-    public void RemovePauseEffect(float transitionDuration = 0.6f)
+    public void RemovePauseEffect(float transitionDuration = -1f)
     {
         if (_pauseEffectCoroutine != null)
         {
             StopCoroutine(_pauseEffectCoroutine);
         }
-        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(false, transitionDuration));
+        float duration = transitionDuration >= 0f ? transitionDuration : pauseEffectDuration;
+        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(false, duration));
     }
 
     private IEnumerator PauseEffectTransition(bool apply, float duration)
@@ -310,10 +322,10 @@ public class AudioManager : MonoBehaviour
         }
 
         float targetVolume = apply
-            ? _masterVolume * _musicVolume * 0.85f
+            ? _masterVolume * _musicVolume * pauseVolumeRatio
             : _masterVolume * _musicVolume;
-        float targetPitch = apply ? 0.98f : _originalMusicPitch;
-        float targetCutoff = apply ? 5000f : _originalLowPassCutoff;
+        float targetPitch = apply ? pausePitch : _originalMusicPitch;
+        float targetCutoff = apply ? pauseLowPassCutoff : _originalLowPassCutoff;
 
         float startVolume = _musicSource.volume;
         float startPitch = _musicSource.pitch;

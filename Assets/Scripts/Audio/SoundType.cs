@@ -30,5 +30,8 @@ public enum SoundType
     // 背景音乐
     MainMenuMusic,
     GameplayMusic,
+    SceneMainMusic,
+    InnMusic,
+    Scene2Music,
     PauseMusic,
 }

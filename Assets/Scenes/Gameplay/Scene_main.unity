@@ -780,6 +780,7 @@ MonoBehaviour:
   teleportCooldown: 0.25
   promptDisplayDuration: 2
   targetCameraArea: {fileID: 1481854637}
+  transitionMusic: 18
 --- !u!61 &380800945
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -882,6 +883,7 @@ MonoBehaviour:
   teleportCooldown: 0.25
   promptDisplayDuration: 2
   targetCameraArea: {fileID: 796813321}
+  transitionMusic: 19
 --- !u!61 &382347211
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -7475,6 +7477,7 @@ GameObject:
   - component: {fileID: 1038751160}
   - component: {fileID: 1038751161}
   - component: {fileID: 1038751162}
+  - component: {fileID: 999999999}
   m_Layer: 0
   m_Name: doorswindowsstairs_LRK_2 (3)
   m_TagString: Untagged
@@ -7602,6 +7605,21 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2, y: 3.125}
   m_EdgeRadius: 0
+--- !u!114 &999999999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1038751159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3f5c8d2e1b9476f8c0d2a5b7e9f1c3d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SceneTransitionDoor
+  targetSceneName: Scene_2
+  promptDisplayDuration: 2
+  teleportCooldown: 0.5
 --- !u!1 &1052091493
 GameObject:
   m_ObjectHideFlags: 0
