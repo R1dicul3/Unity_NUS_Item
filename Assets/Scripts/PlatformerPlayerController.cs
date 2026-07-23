@@ -50,6 +50,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
+    private Animator animator;
     private TrailRenderer dashTrail;
     private PhysicsMaterial2D frictionlessMaterial;
 
@@ -66,6 +67,11 @@ public class PlatformerPlayerController : MonoBehaviour {
     private float groundCheckLockoutTimer;
     private float defaultGravityScale;
     private static Sprite fallbackPlayerSprite;
+
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
+    private static readonly int VerticalVelocityHash = Animator.StringToHash("VerticalVelocity");
+    private static readonly int IsDashingHash = Animator.StringToHash("IsDashing");
 
     private PlayerInputActions inputActions;
 
@@ -132,6 +138,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
         defaultGravityScale = rb.gravityScale;
         AdoptSceneVisualPosition();
@@ -168,6 +175,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         }
 
         UpdateVisuals();
+        UpdateAnimator();
     }
 
     private void FixedUpdate() {
@@ -319,6 +327,21 @@ public class PlatformerPlayerController : MonoBehaviour {
         }
     }
 
+    private void UpdateAnimator() {
+        if (animator == null) {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        if (animator == null || animator.runtimeAnimatorController == null) {
+            return;
+        }
+
+        animator.SetFloat(SpeedHash, Mathf.Abs(rb.linearVelocity.x));
+        animator.SetBool(IsGroundedHash, isGrounded);
+        animator.SetFloat(VerticalVelocityHash, rb.linearVelocity.y);
+        animator.SetBool(IsDashingHash, isDashing);
+    }
+
     private void EnsureVisualSprite() {
         if (spriteRenderer == null) {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -328,9 +351,14 @@ public class PlatformerPlayerController : MonoBehaviour {
             return;
         }
 
-        if (spriteRenderer.sprite == null) {
+        if (spriteRenderer.sprite == null && !HasAnimatorController(spriteRenderer)) {
             spriteRenderer.sprite = GetFallbackPlayerSprite();
         }
+    }
+
+    private static bool HasAnimatorController(SpriteRenderer renderer) {
+        Animator rendererAnimator = renderer.GetComponent<Animator>();
+        return rendererAnimator != null && rendererAnimator.runtimeAnimatorController != null;
     }
 
     private void AlignVisualAndCollider() {
@@ -400,6 +428,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         rb = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        animator = GetComponentInChildren<Animator>();
         AlignVisualAndCollider();
         EnsureVisualSprite();
     }

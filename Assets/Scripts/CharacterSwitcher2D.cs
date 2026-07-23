@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 // 只负责"切换角色"：能力（二段跳/冲刺）、颜色、动画控制器。
 // 完全独立于世界/平台切换（LevelVariantSwitcher），互不影响。
 public class CharacterSwitcher2D : MonoBehaviour {
+    private const string DefaultBasicControllerResourcePath = "Animations/ManBasic";
+
     [Header("Target")]
     [SerializeField] private PlatformerPlayerController character;
 
@@ -69,21 +71,36 @@ public class CharacterSwitcher2D : MonoBehaviour {
             return;
         }
 
-        character.SetAbilities(isPoweredMode, isPoweredMode, isPoweredMode ? poweredColor : basicColor);
-        ApplyAnimator();
+        RuntimeAnimatorController controller = GetControllerForCurrentMode();
+        Color activeColor = isPoweredMode || controller == null ? (isPoweredMode ? poweredColor : basicColor) : Color.white;
+        character.SetAbilities(isPoweredMode, isPoweredMode, activeColor);
+        ApplyAnimator(controller);
     }
 
-    private void ApplyAnimator() {
+    private RuntimeAnimatorController GetControllerForCurrentMode() {
+        if (!isPoweredMode && basicAnimationPlaceholder == null) {
+            basicAnimationPlaceholder = Resources.Load<RuntimeAnimatorController>(DefaultBasicControllerResourcePath);
+        }
+
+        return isPoweredMode
+            ? poweredAnimationPlaceholder
+            : basicAnimationPlaceholder;
+    }
+
+    private void ApplyAnimator(RuntimeAnimatorController controller) {
         ResolveAnimatorIfNeeded();
         if (characterAnimator == null) {
             return;
         }
 
-        RuntimeAnimatorController controller = isPoweredMode
-            ? poweredAnimationPlaceholder
-            : basicAnimationPlaceholder;
         if (characterAnimator.runtimeAnimatorController != controller) {
             characterAnimator.runtimeAnimatorController = controller;
+        }
+
+        if (controller != null) {
+            characterAnimator.SetLayerWeight(0, 1f);
+            characterAnimator.Rebind();
+            characterAnimator.Update(0f);
         }
     }
 

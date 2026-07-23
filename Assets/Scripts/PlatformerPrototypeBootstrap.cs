@@ -65,6 +65,7 @@ public class PlatformerPrototypeBootstrap : MonoBehaviour
         renderer.sprite = CreateSquareSprite();
         renderer.color = activeColor;
         visual.transform.localScale = new Vector3(0.75f, 1.05f, 1f);
+        visual.AddComponent<Animator>();
 
         TrailRenderer trail = player.AddComponent<TrailRenderer>();
         trail.time = 0.18f;

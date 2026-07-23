@@ -1,0 +1,25 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.3/staging' branch; Version is '6000.3.19f1 (7689f4515d75) revision 7768564'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-31514" at "2026-07-21T12:32:53.3624218Z"
+OS: 'Windows 11  (10.0.26200) CoreCountrySpecific' Language: 'zh' Physical Memory: 32386 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-07-21T12:32:53Z
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.18.1'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-31514"
+[Licensing::IpcConnector] LicenseClient-31514 channel disconnected successfully.
+[Licensing::IpcConnector] Channel LicenseClient-31514-6000.3.19 doesn't exist
+[Licensing::Module] Successfully launched the LicensingClient (PId: 54604)
+Starting IPC server.
+Waiting for clients to connect on \\.\pipe\Unity-LicenseClient-31514-6000.3.19, press Ctrl-C to exit.
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-31514-6000.3.19" at "2026-07-21T12:33:02.56354Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 54604, path: "C:/Program Files/Unity/Hub/Editor/6000.3.19f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Error: Timed-out after 30.00s, waiting for HandshakeResponse
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-31514-6000.3.19"
+[Licensing::IpcConnector] LicenseClient-31514-6000.3.19 channel disconnected successfully.
+[Licensing::Module] Error: Licensing initialization failed after 39.28s
+Shut down.

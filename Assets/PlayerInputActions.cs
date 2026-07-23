@@ -310,7 +310,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""e0470b44-6130-4956-bbc8-3c1c5090a2ed"",
-                    ""path"": ""<Keyboard>/quote"",
+                    ""path"": ""<Keyboard>/tab"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",

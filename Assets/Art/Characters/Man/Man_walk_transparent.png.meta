@@ -1,0 +1,467 @@
+fileFormatVersion: 2
+guid: b8cb3f1ecefef0245be21a6c22762063
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 278070156581940232
+    second: Man_walk_transparent_0
+  - first:
+      213: -7247690776711393913
+    second: Man_walk_transparent_1
+  - first:
+      213: 2844277224064213897
+    second: Man_walk_transparent_2
+  - first:
+      213: -7603869767059130199
+    second: Man_walk_transparent_3
+  - first:
+      213: -6835822523870311069
+    second: Man_walk_transparent_4
+  - first:
+      213: -7829788507853818034
+    second: Man_walk_transparent_5
+  - first:
+      213: -4941547952482976717
+    second: Man_walk_transparent_6
+  - first:
+      213: -3079229183741901698
+    second: Man_walk_transparent_7
+  - first:
+      213: 6122675969838540622
+    second: Man_walk_transparent_8
+  - first:
+      213: 1930761731230281587
+    second: Man_walk_transparent_9
+  - first:
+      213: -612408547511714064
+    second: Man_walk_transparent_10
+  - first:
+      213: 9123151075820536466
+    second: Man_walk_transparent_11
+  - first:
+      213: 2873447066978626910
+    second: Man_walk_00
+  - first:
+      213: -392173683870846391
+    second: Man_walk_01
+  - first:
+      213: 3700247023552434265
+    second: Man_walk_02
+  - first:
+      213: -163744905309056236
+    second: Man_walk_03
+  - first:
+      213: -1915236839506725734
+    second: Man_walk_04
+  - first:
+      213: -6387978539036208404
+    second: Man_walk_05
+  - first:
+      213: -5820593341677385782
+    second: Man_walk_06
+  - first:
+      213: 8295793150223040662
+    second: Man_walk_07
+  - first:
+      213: -7044845059808977546
+    second: Man_walk_08
+  - first:
+      213: 8881006538799565730
+    second: Man_walk_09
+  - first:
+      213: -193691905632069813
+    second: Man_walk_10
+  - first:
+      213: 806292162573582256
+    second: Man_walk_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 683
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Man_walk_transparent_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1365
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80c24b98557ebd300800000000000000
+      internalID: 278070156581940232
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_1
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 1365
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78d0e3473a70b6b90800000000000000
+      internalID: -7247690776711393913
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_2
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 1365
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 983e41fc017e87720800000000000000
+      internalID: 2844277224064213897
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_3
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 1365
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a8bb10ebb0a97690800000000000000
+      internalID: -7603869767059130199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 683
+        width: 512
+        height: 682
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 36d881dd1a74221a0800000000000000
+      internalID: -6835822523870311069
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_5
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 683
+        width: 512
+        height: 682
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e47ffea06d0075390800000000000000
+      internalID: -7829788507853818034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_6
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 683
+        width: 512
+        height: 682
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33c71b391581c6bb0800000000000000
+      internalID: -4941547952482976717
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_7
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 683
+        width: 512
+        height: 682
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e744c013f516445d0800000000000000
+      internalID: -3079229183741901698
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_8
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e47eb01fa5d18f450800000000000000
+      internalID: 6122675969838540622
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_9
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 0
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37f26ef90917bca10800000000000000
+      internalID: 1930761731230281587
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_10
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 0
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0feb624bba94087f0800000000000000
+      internalID: -612408547511714064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Man_walk_transparent_11
+      rect:
+        serializedVersion: 2
+        x: 1536
+        y: 0
+        width: 512
+        height: 683
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29281822191fb9e70800000000000000
+      internalID: 9123151075820536466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 0436e2733f2910f4ea65de69046cc961
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":4.0,"y":3.0},"gridSpriteSize":{"x":512.0,"y":682.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Man_walk_transparent_0: 278070156581940232
+      Man_walk_transparent_1: -7247690776711393913
+      Man_walk_transparent_10: -612408547511714064
+      Man_walk_transparent_11: 9123151075820536466
+      Man_walk_transparent_2: 2844277224064213897
+      Man_walk_transparent_3: -7603869767059130199
+      Man_walk_transparent_4: -6835822523870311069
+      Man_walk_transparent_5: -7829788507853818034
+      Man_walk_transparent_6: -4941547952482976717
+      Man_walk_transparent_7: -3079229183741901698
+      Man_walk_transparent_8: 6122675969838540622
+      Man_walk_transparent_9: 1930761731230281587
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
