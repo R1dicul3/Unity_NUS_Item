@@ -5,26 +5,26 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Collider2D))]
 public class TutorialMessageTrigger : MonoBehaviour {
-    [Header("UI 引用")]
-    [Tooltip("指向专属的教程文本组件（不要和门提示UI共用同一个UI对象）")]
+    [Header("UI Reference")]
+    [Tooltip("Dedicated tutorial text component. Do not share the same UI object with the door prompt UI.")]
     [SerializeField] private TextMeshProUGUI tutorialTextUI;
 
-    [Header("教程设置")]
+    [Header("Tutorial Settings")]
     [TextArea(3, 5)]
-    [Tooltip("在这个区域要显示的教程文字")]
+    [Tooltip("Tutorial text shown when the player uses this trigger.")]
     [SerializeField] private string messageToShow;
 
-    [Tooltip("文字显示的最短时间（秒）")]
+    [Tooltip("Minimum time that the text stays visible, in seconds.")]
     [SerializeField] private float minDisplayDuration = 2f;
 
-    [Tooltip("是否需要按下交互键才显示文字 (设为 false 则碰到立刻显示)")]
+    [Tooltip("If true, the player must press Interact while inside the trigger. If false, entering the trigger shows the text immediately.")]
     [SerializeField] private bool requireInteraction = true;
 
-    [Header("位置设置")]
-    [Tooltip("是否将文字动态显示在这个物体上方？")]
+    [Header("Position Settings")]
+    [Tooltip("If true, dynamically positions the tutorial text above this object.")]
     [SerializeField] private bool showAboveObject = true;
 
-    [Tooltip("文字在物体上方的偏移量 (X, Y, Z)")]
+    [Tooltip("World-space offset used when placing the text above this object.")]
     [SerializeField] private Vector3 textOffset = new Vector3(0f, 2.5f, 0f);
 
     private PlayerInputActions inputActions;
@@ -40,10 +40,12 @@ public class TutorialMessageTrigger : MonoBehaviour {
     }
 
     private void OnEnable() => inputActions.Enable();
+
     private void OnDisable() {
         inputActions.Disable();
         ResetState();
     }
+
     private void OnDestroy() => inputActions.Dispose();
 
     private void Start() {
@@ -72,8 +74,7 @@ public class TutorialMessageTrigger : MonoBehaviour {
         if (other.CompareTag("Player")) {
             isPlayerInZone = true;
 
-            // 注意：这里我们移除了全局 InteractPromptController 的调用，
-            // 这样就不会污染 RoomDoor 的按键提示了。
+            // Keep this separate from the global InteractPromptController so tutorial text does not overwrite door prompts.
             if (!requireInteraction) {
                 ShowTutorialMessage();
             }

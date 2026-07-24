@@ -2,15 +2,15 @@ using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider2D))]
 public class CameraArea : MonoBehaviour {
-    [Header("视野大小")]
+    [Header("View Size")]
     [SerializeField] private float cameraSize = 5f;
 
-    [Header("出生房间（可选）")]
+    [Header("Starting Area (Optional)")]
     [SerializeField] private bool isStartingArea = false;
 
     public bool IsStartingArea => isStartingArea;
 
-    [Header("自动触发（可选）")]
+    [Header("Auto Trigger (Optional)")]
     [SerializeField] private bool enableAutoTrigger = false;
     [SerializeField] private bool autoTriggerSnapImmediate = false;
     [SerializeField] private float autoTriggerTransitionDuration = 0.35f;

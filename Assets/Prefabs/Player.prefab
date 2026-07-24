@@ -114,10 +114,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 567789ea5864fc84799ea8c5f9e1c222, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlatformerPlayerController
-  moveSpeed: 8
+  moveSpeed: 9
   acceleration: 70
   deceleration: 85
-  jumpVelocity: 14
+  jumpVelocity: 15
   maxJumpCount: 2
   canDoubleJump: 1
   coyoteTime: 0.1
@@ -125,7 +125,7 @@ MonoBehaviour:
   fallGravityMultiplier: 1.55
   shortHopGravityMultiplier: 2.2
   canDash: 1
-  dashSpeed: 18
+  dashSpeed: 19
   dashDuration: 0.16
   dashCooldown: 0.55
   groundMask:

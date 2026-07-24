@@ -19,16 +19,16 @@ public class RoomDoor : MonoBehaviour {
     [SerializeField] private CameraArea targetCameraArea;
 
     [Header("Camera Transition")]
-    [Tooltip("过门后摄像机移动到新房间的时长（秒）。设为 0 则和以前一样瞬间硬切。")]
+    [Tooltip("Camera transition duration after entering this door. Set to 0 for an instant camera snap.")]
     [SerializeField] private float cameraTransitionDuration = 0.35f;
 
-    [Tooltip("摄像机过渡的缓动曲线。留空则使用默认的平滑缓入缓出。")]
+    [Tooltip("Camera transition easing curve. Leave empty to use the default smooth easing.")]
     [SerializeField]
     private AnimationCurve cameraTransitionCurve =
         AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Audio")]
-    [Tooltip("过门后切换的 BGM。设为 None 则保持当前音乐不变。")]
+    [Tooltip("BGM to play after entering this door. Set to None to keep current music.")]
     [SerializeField] private SoundType transitionMusic = SoundType.None;
 
     private static float nextAllowedTeleportTime;
@@ -183,7 +183,7 @@ public class RoomDoor : MonoBehaviour {
         isPlayerInZone = false;
         currentPlayer = null;
 
-        // 核心修复：把当前过门的玩家（无论是Player1还是Player2）传进去，确保摄像机目标正确绑定
+        // Pass the active player through so the camera remains bound to the character that used the door.
         UpdateCamera(player);
 
         SchedulePromptHide(promptDisplayDuration);
@@ -201,7 +201,7 @@ public class RoomDoor : MonoBehaviour {
             return;
         }
 
-        // 无论何时过门，先强制把摄像机的 Target 设为当前过门的玩家！
+        // Always bind the camera to the player that entered the door.
         if (player != null) {
             camera.SetTarget(player.transform);
         }

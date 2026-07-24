@@ -24,6 +24,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     [SerializeField] private float dashSpeed = 18f;
     [SerializeField] private float dashDuration = 0.16f;
     [SerializeField] private float dashCooldown = 0.55f;
+    [SerializeField] private bool createDashTrailIfMissing = true;
 
     [Header("Ground Check")]
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.78f, 0.12f);
@@ -44,6 +45,13 @@ public class PlatformerPlayerController : MonoBehaviour {
     [Header("Animation")]
     [SerializeField] private float walkAnimationThreshold = 0.05f;
 
+    [Header("Visual Feedback")]
+    [SerializeField] private bool enableVisualScaleFeedback = true;
+    [SerializeField] private Vector2 landingSquashScale = new Vector2(1.08f, 0.92f);
+    [SerializeField] private float landingSquashDuration = 0.09f;
+    [SerializeField] private Vector2 dashStretchScale = new Vector2(1.12f, 0.94f);
+    [SerializeField] private float dashStretchDuration = 0.08f;
+
     [Header("Audio")]
     [Tooltip("走路音效的步进间隔（秒）。")]
     [SerializeField] private float walkSoundInterval = 0.35f;
@@ -52,6 +60,12 @@ public class PlatformerPlayerController : MonoBehaviour {
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
+    private Transform visualTransform;
+    private bool hasIsWalkingParameter;
+    private bool hasIsInDialogueParameter;
+    private bool hasIsGroundedParameter;
+    private bool hasIsDashingParameter;
+    private bool hasVerticalSpeedParameter;
     private TrailRenderer dashTrail;
     private PhysicsMaterial2D frictionlessMaterial;
 
@@ -70,11 +84,16 @@ public class PlatformerPlayerController : MonoBehaviour {
     private float defaultGravityScale;
     private float walkSoundTimer;
     private bool wasWalking;
+    private Vector3 defaultVisualScale = Vector3.one;
+    private Coroutine visualScaleRoutine;
 
     private PlayerInputActions inputActions;
 
     private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
     private static readonly int IsInDialogueHash = Animator.StringToHash("IsInDialogue");
+    private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
+    private static readonly int IsDashingHash = Animator.StringToHash("IsDashing");
+    private static readonly int VerticalSpeedHash = Animator.StringToHash("VerticalSpeed");
 
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
@@ -109,6 +128,10 @@ public class PlatformerPlayerController : MonoBehaviour {
         canDash = allowDash;
         maxJumpCount = canDoubleJump ? 2 : 1;
 
+        if (canDash) {
+            EnsureDashTrail();
+        }
+
         if (!canDash && isDashing) {
             isDashing = false;
             rb.gravityScale = defaultGravityScale;
@@ -142,7 +165,11 @@ public class PlatformerPlayerController : MonoBehaviour {
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
+        visualTransform = spriteRenderer != null ? spriteRenderer.transform : transform;
+        defaultVisualScale = visualTransform.localScale;
+        CacheAnimatorParameters();
         dashTrail = GetComponent<TrailRenderer>();
+        EnsureDashTrail();
         defaultGravityScale = rb.gravityScale;
         AlignCollider();
         ApplyFrictionlessMaterial();
@@ -154,9 +181,11 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private void OnDisable() {
         inputActions?.Disable();
+        ResetVisualScaleFeedback();
     }
 
     private void OnDestroy() {
+        ResetVisualScaleFeedback();
         inputActions?.Dispose();
     }
 
@@ -227,6 +256,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (!wasGrounded && isGrounded) {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Min(rb.linearVelocity.y, 0f));
             AudioManager.Instance?.PlayOneShot(SoundType.Land);
+            PlayVisualScaleFeedback(landingSquashScale, landingSquashDuration);
         }
     }
 
@@ -288,6 +318,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         rb.linearVelocity = new Vector2(facingDirection * dashSpeed, 0f);
 
         AudioManager.Instance?.PlayOneShot(SoundType.Dash);
+        PlayVisualScaleFeedback(dashStretchScale, dashStretchDuration);
 
         if (dashTrail != null) {
             dashTrail.Clear();
@@ -330,10 +361,121 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (animator == null) {
             return;
         }
-        bool isWalking = !isInDialogue && Mathf.Abs(moveInput) > 0.01f;
+        bool isWalking = isGrounded && !isInDialogue && Mathf.Abs(rb.linearVelocity.x) > walkAnimationThreshold;
 
-        animator.SetBool(IsWalkingHash, isWalking);
-        animator.SetBool(IsInDialogueHash, isInDialogue);
+        if (hasIsWalkingParameter) {
+            animator.SetBool(IsWalkingHash, isWalking);
+        }
+
+        if (hasIsInDialogueParameter) {
+            animator.SetBool(IsInDialogueHash, isInDialogue);
+        }
+
+        if (hasIsGroundedParameter) {
+            animator.SetBool(IsGroundedHash, isGrounded);
+        }
+
+        if (hasIsDashingParameter) {
+            animator.SetBool(IsDashingHash, isDashing);
+        }
+
+        if (hasVerticalSpeedParameter) {
+            animator.SetFloat(VerticalSpeedHash, rb.linearVelocity.y);
+        }
+    }
+
+    private void CacheAnimatorParameters() {
+        if (animator == null) {
+            return;
+        }
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters) {
+            if (parameter.nameHash == IsWalkingHash) {
+                hasIsWalkingParameter = true;
+            }
+            else if (parameter.nameHash == IsInDialogueHash) {
+                hasIsInDialogueParameter = true;
+            }
+            else if (parameter.nameHash == IsGroundedHash) {
+                hasIsGroundedParameter = true;
+            }
+            else if (parameter.nameHash == IsDashingHash) {
+                hasIsDashingParameter = true;
+            }
+            else if (parameter.nameHash == VerticalSpeedHash) {
+                hasVerticalSpeedParameter = true;
+            }
+        }
+    }
+
+    private void EnsureDashTrail() {
+        if (!createDashTrailIfMissing || !canDash || dashTrail != null) {
+            return;
+        }
+
+        dashTrail = gameObject.AddComponent<TrailRenderer>();
+        dashTrail.time = 0.18f;
+        dashTrail.startWidth = 0.55f;
+        dashTrail.endWidth = 0f;
+        dashTrail.emitting = false;
+        Shader trailShader = Shader.Find("Sprites/Default");
+        if (trailShader != null) {
+            dashTrail.material = new Material(trailShader);
+        }
+        dashTrail.startColor = new Color(0.25f, 0.88f, 1f, 0.7f);
+        dashTrail.endColor = new Color(0.25f, 0.88f, 1f, 0f);
+    }
+
+    private void PlayVisualScaleFeedback(Vector2 scale, float duration) {
+        if (!enableVisualScaleFeedback || visualTransform == null || duration <= 0f) {
+            return;
+        }
+
+        if (visualScaleRoutine != null) {
+            StopCoroutine(visualScaleRoutine);
+        }
+
+        visualScaleRoutine = StartCoroutine(VisualScaleRoutine(scale, duration));
+    }
+
+    private void ResetVisualScaleFeedback() {
+        if (visualScaleRoutine != null) {
+            StopCoroutine(visualScaleRoutine);
+            visualScaleRoutine = null;
+        }
+
+        if (visualTransform != null) {
+            visualTransform.localScale = defaultVisualScale;
+        }
+    }
+
+    private System.Collections.IEnumerator VisualScaleRoutine(Vector2 scale, float duration) {
+        Vector3 targetScale = new Vector3(
+            defaultVisualScale.x * scale.x,
+            defaultVisualScale.y * scale.y,
+            defaultVisualScale.z
+        );
+
+        float halfDuration = duration * 0.5f;
+        float elapsed = 0f;
+
+        while (elapsed < halfDuration) {
+            elapsed += Time.deltaTime;
+            float t = halfDuration > 0f ? Mathf.Clamp01(elapsed / halfDuration) : 1f;
+            visualTransform.localScale = Vector3.Lerp(defaultVisualScale, targetScale, t);
+            yield return null;
+        }
+
+        elapsed = 0f;
+        while (elapsed < halfDuration) {
+            elapsed += Time.deltaTime;
+            float t = halfDuration > 0f ? Mathf.Clamp01(elapsed / halfDuration) : 1f;
+            visualTransform.localScale = Vector3.Lerp(targetScale, defaultVisualScale, t);
+            yield return null;
+        }
+
+        visualTransform.localScale = defaultVisualScale;
+        visualScaleRoutine = null;
     }
 
     private void UpdateWalkSound() {

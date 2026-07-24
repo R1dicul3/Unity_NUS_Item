@@ -275,7 +275,7 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
     public void RefreshCameraBoundsToTarget(float transitionDuration = 0f, AnimationCurve curve = null) {
         if (target == null) return;
 
-        // 强制同步物理，确保新激活的角色碰撞体能被正确检测
+        // Force physics transforms to sync before checking which CameraArea contains the active target.
         Physics2D.SyncTransforms();
 
         Collider2D[] hits = Physics2D.OverlapPointAll(target.position);
@@ -298,7 +298,7 @@ public class PixelPerfectFollowCamera : MonoBehaviour {
             return;
         }
 
-        // 清空旧边界，防止被锁死在旧房间
+        // Clear old bounds so the camera does not stay locked to the previous room.
         ClearCameraBounds();
         SnapImmediate();
     }

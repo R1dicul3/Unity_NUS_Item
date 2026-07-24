@@ -11,7 +11,7 @@ public class SceneTransitionDoor : MonoBehaviour
     [SerializeField] private float teleportCooldown = 0.5f;
 
     [Header("Audio")]
-    [Tooltip("切换场景前播放的 BGM。设为 None 则保持当前音乐不变（由目标场景的默认 BGM 接管）。")]
+    [Tooltip("BGM to play before switching scenes. Set to None to keep the current music and let the target scene take over if needed.")]
     [SerializeField] private SoundType transitionMusic = SoundType.None;
 
     private PlayerInputActions inputActions;

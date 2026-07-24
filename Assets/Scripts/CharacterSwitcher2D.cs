@@ -11,7 +11,7 @@ public class CharacterSwitcher2D : MonoBehaviour {
     [SerializeField] private bool startInPoweredMode = true;
 
     [Header("Camera Transition")]
-    [Tooltip("切换角色时摄像机移动到新角色的时长（秒）。设为 0 则瞬间硬切。")]
+    [Tooltip("切换角色时摄像机移动到新角色的时长（秒）。设为 0 则瞬间切换。")]
     [SerializeField] private float cameraTransitionDuration = 0.35f;
     [Tooltip("摄像机过渡的缓动曲线。留空则使用默认平滑。")]
     [SerializeField] private AnimationCurve cameraTransitionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -72,12 +72,12 @@ public class CharacterSwitcher2D : MonoBehaviour {
     }
 
     private void ApplyCurrentMode(bool syncPhysics) {
-        // 明确分清谁是激活角色，谁是未激活角色
+        // 明确区分当前激活角色和未激活角色。
         PlatformerPlayerController activeChar = isPoweredMode ? poweredCharacter : basicCharacter;
         PlatformerPlayerController inactiveChar = isPoweredMode ? basicCharacter : poweredCharacter;
 
         if (activeChar == null) {
-            Debug.LogError("【Switcher】当前激活的角色 (Active Character) 为空！请检查 Inspector 赋值！");
+            Debug.LogError("[Switcher] 当前激活的角色为空，请检查 Inspector 赋值。");
             return;
         }
 
@@ -93,11 +93,11 @@ public class CharacterSwitcher2D : MonoBehaviour {
             activeChar.SyncStateFrom(inactiveChar);
         }
 
-        // 核心修复顺序：先开启要切过去的角色，把摄像机挂上去，再关闭旧角色
+        // 先开启要切换过去的角色并更新摄像机，再关闭旧角色。
         activeChar.gameObject.SetActive(true);
         activeChar.SetAbilities(isPoweredMode, isPoweredMode);
 
-        Debug.Log($"【Switcher】正在切换：激活 [{activeChar.gameObject.name}]，关闭 [{inactiveChar.gameObject.name}]");
+        Debug.Log($"[Switcher] 切换角色：激活 [{activeChar.gameObject.name}]，关闭 [{inactiveChar.gameObject.name}]");
         RetargetCamera(activeChar);
 
         inactiveChar.gameObject.SetActive(false);
@@ -107,16 +107,16 @@ public class CharacterSwitcher2D : MonoBehaviour {
         if (activeChar == null) return;
 
         PixelPerfectFollowCamera followCamera = Object.FindAnyObjectByType<PixelPerfectFollowCamera>();
-        if (followCamera == null) followCamera = Object.FindObjectOfType<PixelPerfectFollowCamera>();
+        if (followCamera == null) followCamera = Object.FindFirstObjectByType<PixelPerfectFollowCamera>();
 
         if (followCamera != null) {
-            // 强行把摄像机 Target 设为新角色的 Transform
+            // 将摄像机目标更新为当前激活角色。
             followCamera.SetTarget(activeChar.transform);
             followCamera.RefreshCameraBoundsToTarget(cameraTransitionDuration, cameraTransitionCurve);
-            Debug.Log($"【Camera】成功将摄像机目标绑定到：{activeChar.transform.name}");
+            Debug.Log($"[Camera] 已将摄像机目标绑定到：{activeChar.transform.name}");
         }
         else {
-            Debug.LogError("【Camera】找不到 PixelPerfectFollowCamera 脚本！");
+            Debug.LogError("[Camera] 找不到 PixelPerfectFollowCamera 脚本。");
         }
     }
 }

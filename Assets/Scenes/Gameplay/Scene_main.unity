@@ -6395,7 +6395,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialMessageTrigger
   tutorialTextUI: {fileID: 465746562}
-  messageToShow: Press space/A to jump
+  messageToShow: Press Space/A to jump
   minDisplayDuration: 2
   requireInteraction: 0
   showAboveObject: 1
@@ -6600,7 +6600,7 @@ MonoBehaviour:
   followOffset: {x: 0, y: 0}
   positionSmoothTime: 0.12
   orthoSizeSmoothTime: 0.2
-  pixelsPerUnit: 128
+  pixelsPerUnit: 16
   snapToPixelGrid: 1
   clampToBounds: 1
   clampToRoomMarkers: 1
@@ -6898,10 +6898,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 567789ea5864fc84799ea8c5f9e1c222, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlatformerPlayerController
-  moveSpeed: 8
+  moveSpeed: 9
   acceleration: 70
   deceleration: 85
-  jumpVelocity: 12
+  jumpVelocity: 15
   maxJumpCount: 2
   canDoubleJump: 1
   coyoteTime: 0.1
@@ -6909,7 +6909,7 @@ MonoBehaviour:
   fallGravityMultiplier: 1.55
   shortHopGravityMultiplier: 2.2
   canDash: 1
-  dashSpeed: 18
+  dashSpeed: 19
   dashDuration: 0.16
   dashCooldown: 0.55
   groundCheckSize: {x: 1.2, y: 0.1}
@@ -7281,7 +7281,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialMessageTrigger
   tutorialTextUI: {fileID: 1845221899}
-  messageToShow: Just a normal vending machine
+  messageToShow: A vending machine. Try interacting with it.
   minDisplayDuration: 2
   requireInteraction: 1
   showAboveObject: 1
@@ -9021,7 +9021,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialMessageTrigger
   tutorialTextUI: {fileID: 465746562}
-  messageToShow: You can interact to some objects
+  messageToShow: Some objects can be interacted with.
   minDisplayDuration: 2
   requireInteraction: 0
   showAboveObject: 1

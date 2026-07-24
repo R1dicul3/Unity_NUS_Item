@@ -57,9 +57,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     [Tooltip("解开后传送到的目标区域 CameraArea。如果不填则只绑定玩家位置不做边界过渡。")]
     [SerializeField] private CameraArea targetCameraArea;
 
-    [Header("Restart")]
-    [SerializeField] private string restartPlatformName = "Shared_Platform_01 (2)";
-
     private readonly List<SinkingPillar2D> registeredPillars = new List<SinkingPillar2D>();
     private static Sprite fallbackSprite;
     private bool isSolved;
@@ -246,7 +243,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             ("Segment_2_Pink",   new Vector3(-39.44f, -41.15f, -0.18f))
         };
 
-        const float tolerance = 0.5f;
+        float tolerance = Mathf.Max(0.01f, alignmentTolerance);
         bool allPassed = true;
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
 

@@ -1909,7 +1909,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialMessageTrigger
   tutorialTextUI: {fileID: 76451324}
-  messageToShow: 'Press J/LB to change charactor
+  messageToShow: Press J/LB to change character
 
     Press K/RB to change world '
   minDisplayDuration: 2
@@ -5119,7 +5119,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 567789ea5864fc84799ea8c5f9e1c222, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlatformerPlayerController
-  moveSpeed: 10
+  moveSpeed: 9
   acceleration: 70
   deceleration: 85
   jumpVelocity: 16
@@ -5130,7 +5130,7 @@ MonoBehaviour:
   fallGravityMultiplier: 1.55
   shortHopGravityMultiplier: 2.2
   canDash: 0
-  dashSpeed: 20
+  dashSpeed: 19
   dashDuration: 0.16
   dashCooldown: 1
   groundCheckSize: {x: 1.2, y: 0.1}
@@ -32554,7 +32554,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialMessageTrigger
   tutorialTextUI: {fileID: 76451324}
-  messageToShow: 'The office worker can drink drinks to change states of some platforms '
+  messageToShow: The office worker can drink coffee to change some platforms.
   minDisplayDuration: 2
   requireInteraction: 0
   showAboveObject: 1
@@ -39486,7 +39486,7 @@ MonoBehaviour:
   followOffset: {x: 0, y: 0}
   positionSmoothTime: 0.12
   orthoSizeSmoothTime: 0.2
-  pixelsPerUnit: 128
+  pixelsPerUnit: 16
   snapToPixelGrid: 1
   clampToBounds: 1
 --- !u!1 &9200000750
@@ -39870,7 +39870,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 567789ea5864fc84799ea8c5f9e1c222, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlatformerPlayerController
-  moveSpeed: 10
+  moveSpeed: 9
   acceleration: 70
   deceleration: 85
   jumpVelocity: 17
@@ -39881,7 +39881,7 @@ MonoBehaviour:
   fallGravityMultiplier: 1.55
   shortHopGravityMultiplier: 2.2
   canDash: 1
-  dashSpeed: 20
+  dashSpeed: 19
   dashDuration: 0.16
   dashCooldown: 1
   groundCheckSize: {x: 1.2, y: 0.1}
