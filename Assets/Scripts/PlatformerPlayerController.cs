@@ -417,7 +417,9 @@ public class PlatformerPlayerController : MonoBehaviour {
         this.jumpsUsed = oldPlayer.jumpsUsed;
         this.coyoteTimer = oldPlayer.coyoteTimer;
         this.isGrounded = oldPlayer.isGrounded;
-        this.jumpBufferTimer = oldPlayer.jumpBufferTimer;
+        // 不同步 jumpBufferTimer：输入缓冲只属于当前激活的角色，
+        // 否则快速切换时未消耗的跳跃输入会在新角色上重复触发。
+        this.jumpBufferTimer = 0f;
         this.dashCooldownTimer = oldPlayer.dashCooldownTimer;
 
         if (this.rb != null && oldPlayer.rb != null) {

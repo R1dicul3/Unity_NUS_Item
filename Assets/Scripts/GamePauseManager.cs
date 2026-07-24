@@ -480,7 +480,8 @@ public class GamePauseManager : MonoBehaviour
         var cameraFollow = FindFirstObjectByType<PixelPerfectFollowCamera>();
         if (cameraFollow != null)
         {
-            cameraFollow.ForceSnapToTarget();
+            // 根据玩家新位置重新检测 CameraArea，同步更新 Bounds、Size 和位置
+            cameraFollow.RefreshCameraBoundsToTarget();
         }
 
         Debug.Log("[GamePauseManager] Save data applied to scene.");
