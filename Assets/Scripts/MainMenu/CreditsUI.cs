@@ -56,6 +56,9 @@ namespace MainMenu
         [Range(0, 60)]
         public float entrySpacing = 30f;
 
+        [Header("Prefab UI")]
+        [SerializeField] private GameObject canvasPrefab;
+
         private Font EffectiveFont => overrideFont ?? MenuUIHelper.GetDefaultFont();
 
         void Awake()
@@ -65,7 +68,13 @@ namespace MainMenu
 
         void BuildUI()
         {
+            if (TryBuildPrefabUI())
+            {
+                return;
+            }
+
             Canvas canvas = MenuUIHelper.CreateCanvas();
+            MenuUIHelper.EnsureCamera();
             MenuUIHelper.EnsureEventSystem();
             MenuUIHelper.CreateFullScreenBackground(canvas.transform, backgroundColor);
             RectTransform content = MenuUIHelper.CreateCenteredContent(canvas.transform, contentWidth, entrySpacing);
@@ -88,7 +97,50 @@ namespace MainMenu
 
             // 返回按钮
             MenuUIHelper.CreateButton(content, "< Back", backButtonFontSize, 50f,
-                MenuUIHelper.DefaultButtonColor, () => SceneManager.LoadScene("MainMenu"), EffectiveFont, true);
+                MenuUIHelper.DefaultButtonColor, OnBackClicked, EffectiveFont, true);
+        }
+
+        bool TryBuildPrefabUI()
+        {
+            GameObject prefab = canvasPrefab != null
+                ? canvasPrefab
+                : Resources.Load<GameObject>("UI/CreditsCanvas");
+
+            if (prefab == null)
+            {
+                return false;
+            }
+
+            GameObject canvas = Instantiate(prefab);
+            canvas.name = prefab.name;
+            MenuUIHelper.EnsureCamera();
+            MenuUIHelper.EnsureEventSystem();
+
+            bool hasRequiredControls = MenuUIHelper.TryBindButton(canvas.transform, "BackButton", OnBackClicked, out _);
+
+            // 查找内容容器，动态生成 credits 条目
+            Transform content = MenuUIHelper.FindChildRecursive(canvas.transform, "CreditsContent");
+            if (content != null)
+            {
+                foreach (var entry in credits)
+                {
+                    CreateCreditEntry(content.GetComponent<RectTransform>(), entry);
+                }
+            }
+
+            if (!hasRequiredControls)
+            {
+                Debug.LogWarning("[CreditsUI] Credits prefab is missing expected controls. Falling back to generated UI.");
+                Destroy(canvas);
+                return false;
+            }
+
+            return true;
+        }
+
+        void OnBackClicked()
+        {
+            SceneManager.LoadScene("MainMenu");
         }
 
         void CreateCreditEntry(RectTransform parent, CreditEntry entry)
