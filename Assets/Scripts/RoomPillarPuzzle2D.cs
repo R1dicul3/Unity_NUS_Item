@@ -49,6 +49,14 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         new ColorTarget { kind = SinkingPillar2D.SegmentKind.Pink, pillarIndex = 3 }
     };
 
+    [Header("Camera Transition")]
+    [Tooltip("Puzzle 解开后摄像机移动到新区域的时长（秒）。设为 0 则瞬间硬切。")]
+    [SerializeField] private float cameraTransitionDuration = 0.35f;
+    [Tooltip("摄像机过渡的缓动曲线。留空则使用默认平滑。")]
+    [SerializeField] private AnimationCurve cameraTransitionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("解开后传送到的目标区域 CameraArea。如果不填则只绑定玩家位置不做边界过渡。")]
+    [SerializeField] private CameraArea targetCameraArea;
+
     [Header("Restart")]
     [SerializeField] private string restartPlatformName = "Shared_Platform_01 (2)";
 
@@ -232,10 +240,10 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     {
         (string name, Vector3 target)[] checks = new (string, Vector3)[]
         {
-            ("Segment_1_Yellow", new Vector3(-63.69f, -35.95f, -0.18f)),
-            ("Segment_3_Gray",   new Vector3(-53.07f, -52.47f, -0.18f)),
-            ("Segment_2_Green",  new Vector3(-41.99f, -46.82f, -0.18f)),
-            ("Segment_2_Pink",   new Vector3(-31.14f, -41.83f, -0.18f))
+            ("Segment_1_Yellow", new Vector3(-68.81f, -35.81f, -0.18f)),
+            ("Segment_3_Gray",   new Vector3(-59.28f, -52.44f, -0.18f)),
+            ("Segment_2_Green",  new Vector3(-49.67f, -46.85f, -0.18f)),
+            ("Segment_2_Pink",   new Vector3(-39.44f, -41.15f, -0.18f))
         };
 
         const float tolerance = 0.5f;
@@ -325,6 +333,31 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         {
             playerRb.linearVelocity = Vector2.zero;
         }
+
+        UpdateCamera(player);
+    }
+
+    private void UpdateCamera(PlatformerPlayerController player)
+    {
+        PixelPerfectFollowCamera camera = FindFirstObjectByType<PixelPerfectFollowCamera>();
+        if (camera == null)
+        {
+            return;
+        }
+
+        camera.SetTarget(player.transform);
+
+        if (targetCameraArea == null)
+        {
+            return;
+        }
+
+        camera.TransitionTo(
+            targetCameraArea.CameraBounds,
+            targetCameraArea.CameraSize,
+            cameraTransitionDuration,
+            cameraTransitionCurve
+        );
     }
 
     private void HidePlatforms()

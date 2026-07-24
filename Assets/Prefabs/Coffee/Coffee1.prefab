@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b2814b6898b45c4ca5318e199b04b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coffee
-  emotion: 2
+  emotion: 0
   saveId: Coffee/Coffee1
 --- !u!58 &826981748917897774
 CircleCollider2D:
