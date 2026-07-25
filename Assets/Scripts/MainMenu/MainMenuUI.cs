@@ -195,12 +195,12 @@ namespace MainMenu
             if (SaveSystem.SaveSystem.IsFull())
             {
                 ConfirmDialogUI.Show(
-                    "Save slots are full. Starting a new game will overwrite the oldest save slot. Continue?",
+                    "Save slots are full. Starting a new game will overwrite a save slot. Continue?",
                     onConfirm: () =>
                     {
                         GamePauseManager.Instance?.StartNewGame();
                     },
-                    onCancel: () => SceneManager.LoadScene("LoadGame"),
+                    onCancel: () => SceneManager.LoadScene("MainMenu"),
                     dialogSound: SoundType.UIAlert);
             }
             else

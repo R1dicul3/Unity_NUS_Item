@@ -553,7 +553,7 @@ namespace MainMenu
     /// <summary>
     /// 菜单 Cancel 输入辅助组件。
     /// 监听 InputSystem 的 UI/Cancel 动作（手柄 B 键 / Escape），
-    /// 在宿主销毁时自动清理 InputActions。
+    /// 在宿主激活状态变化时自动启停 InputActions，销毁时自动清理。
     /// </summary>
     public class MenuCancelInput : MonoBehaviour
     {
@@ -574,6 +574,16 @@ namespace MainMenu
             inputActions = new PlayerInputActions();
             inputActions.UI.Cancel.performed += OnCancelPerformed;
             inputActions.UI.Enable();
+        }
+
+        private void OnEnable()
+        {
+            inputActions?.UI.Enable();
+        }
+
+        private void OnDisable()
+        {
+            inputActions?.UI.Disable();
         }
 
         private void OnCancelPerformed(UnityEngine.InputSystem.InputAction.CallbackContext context)

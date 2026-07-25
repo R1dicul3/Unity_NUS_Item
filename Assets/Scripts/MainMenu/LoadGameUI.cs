@@ -57,6 +57,9 @@ namespace MainMenu
         private Image[] slotButtonImages;
         private Button loadButton;
         private Button deleteButton;
+        private GameObject messageObject;
+        private Transform messageRoot;
+        private Graphic messageGraphic;
 
         void Awake()
         {
@@ -195,6 +198,7 @@ namespace MainMenu
                 MenuUIHelper.SetFirstSelected(slotButtons[targetSlot].gameObject);
             }
 
+            CreateMessageArea(canvas.transform);
             MenuUIHelper.AddCancelHandler(this, OnBackClicked);
         }
 
@@ -244,6 +248,11 @@ namespace MainMenu
                 return false;
             }
 
+            BindMessage(canvas.transform);
+            if (messageRoot == null)
+            {
+                CreateMessageArea(canvas.transform);
+            }
             RefreshUI();
             MenuUIHelper.AddCancelHandler(this, OnBackClicked);
             return true;
@@ -338,14 +347,97 @@ namespace MainMenu
                 {
                     SaveSystem.SaveSystem.Delete(selectedSlot);
                     selectedSlot = -1;
+                    ShowMessage("Deleted.", Color.green);
                     RefreshUI();
+                    Invoke(nameof(Close), 1.5f);
                 },
                 onCancel: null,
                 dialogSound: SoundType.UIAlert);
         }
 
+        private void CreateMessageArea(Transform canvasTransform)
+        {
+            GameObject message = new GameObject("MessageText");
+            message.transform.SetParent(canvasTransform, false);
+
+            Text text = message.AddComponent<Text>();
+            text.text = "";
+            text.font = EffectiveFont;
+            text.fontSize = 26;
+            text.color = Color.green;
+            text.alignment = TextAnchor.MiddleCenter;
+
+            RectTransform rect = message.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.15f);
+            rect.anchorMax = new Vector2(0.5f, 0.15f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(800f, 50f);
+
+            messageRoot = message.transform;
+            messageObject = message;
+            messageGraphic = text;
+            SetMessageVisible(false);
+        }
+
+        private void BindMessage(Transform root)
+        {
+            Transform message = MenuUIHelper.FindChildRecursive(root, "MessageText");
+            if (message == null)
+            {
+                return;
+            }
+
+            messageRoot = message;
+            messageObject = message.gameObject;
+            messageGraphic = message.GetComponent<Graphic>() ?? message.GetComponentInChildren<Graphic>(true);
+            SetMessageVisible(false);
+        }
+
+        private void ShowMessage(string message, Color color)
+        {
+            if (messageRoot == null)
+            {
+                return;
+            }
+
+            MenuUIHelper.TrySetText(messageRoot, message);
+            if (messageGraphic != null)
+            {
+                messageGraphic.color = color;
+            }
+
+            SetMessageVisible(true);
+        }
+
+        private void SetMessageVisible(bool value)
+        {
+            if (messageObject != null)
+            {
+                messageObject.SetActive(value);
+            }
+        }
+
         void OnBackClicked()
         {
+            CancelInvoke(nameof(Close));
+            if (GamePauseManager.Instance != null && GamePauseManager.Instance.CameFromPauseMenu)
+            {
+                GamePauseManager.Instance.ReturnToGameFromLoadGame();
+            }
+            else
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
+        }
+
+        private void Close()
+        {
+            if (this == null || gameObject == null)
+            {
+                return;
+            }
+
             if (GamePauseManager.Instance != null && GamePauseManager.Instance.CameFromPauseMenu)
             {
                 GamePauseManager.Instance.ReturnToGameFromLoadGame();
