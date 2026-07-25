@@ -178,6 +178,24 @@ namespace MainMenu
             backRect.sizeDelta = new Vector2(170f, 55f);
 
             RefreshSlotHighlight();
+
+            // 手柄默认选中第一个有存档的槽位按钮，如果没有则选中第一个
+            int firstSlotWithSave = -1;
+            for (int i = 0; i < saveSlotCount; i++)
+            {
+                if (SaveSystem.SaveSystem.HasSave(i + 1))
+                {
+                    firstSlotWithSave = i;
+                    break;
+                }
+            }
+            int targetSlot = firstSlotWithSave >= 0 ? firstSlotWithSave : 0;
+            if (slotButtons != null && targetSlot < slotButtons.Length && slotButtons[targetSlot] != null)
+            {
+                MenuUIHelper.SetFirstSelected(slotButtons[targetSlot].gameObject);
+            }
+
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
         }
 
         bool TryBuildPrefabUI()
@@ -227,6 +245,7 @@ namespace MainMenu
             }
 
             RefreshUI();
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
             return true;
         }
 

@@ -116,6 +116,15 @@ namespace MainMenu
             cancelRect.pivot = new Vector2(1f, 0.5f);
             cancelRect.anchoredPosition = Vector2.zero;
             cancelRect.sizeDelta = new Vector2(220f, 55f);
+
+            // 手柄默认选中 Confirm 按钮
+            MenuUIHelper.SetFirstSelected(confirmButton.gameObject);
+
+            MenuUIHelper.AddCancelHandler(this, () =>
+            {
+                onCancel?.Invoke();
+                Destroy(gameObject);
+            });
         }
 
         private bool TryBuildPrefabUI(string message, UnityAction onConfirm, UnityAction onCancel)

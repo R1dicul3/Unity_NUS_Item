@@ -98,6 +98,11 @@ namespace MainMenu
             // 返回按钮
             MenuUIHelper.CreateButton(content, "< Back", backButtonFontSize, 50f,
                 MenuUIHelper.DefaultButtonColor, OnBackClicked, EffectiveFont, true);
+
+            // 手柄默认选中 Back 按钮
+            MenuUIHelper.SetFirstSelected(content.GetChild(content.childCount - 1).gameObject);
+
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
         }
 
         bool TryBuildPrefabUI()
@@ -134,6 +139,15 @@ namespace MainMenu
                 Destroy(canvas);
                 return false;
             }
+
+            // 手柄默认选中 BackButton
+            var backButton = MenuUIHelper.FindChildRecursive(canvas.transform, "BackButton");
+            if (backButton != null)
+            {
+                MenuUIHelper.SetFirstSelected(backButton.gameObject);
+            }
+
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
 
             return true;
         }
