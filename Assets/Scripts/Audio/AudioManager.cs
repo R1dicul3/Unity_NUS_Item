@@ -31,16 +31,29 @@ public class AudioManager : MonoBehaviour
     [Tooltip("暂停时低通滤波器的截止频率（Hz），越低越闷。")]
     [SerializeField] [Range(100f, 8000f)] private float pauseLowPassCutoff = 2500f;
 
+    [Header("Red World Effect")]
+    [Tooltip("红世界BGM音效效果的渐变过渡时长（秒）。")]
+    [SerializeField] [Range(0.05f, 2f)] private float redWorldEffectDuration = 0.5f;
+    [Tooltip("红世界时BGM音量降到正常音量的比例。")]
+    [SerializeField] [Range(0f, 1f)] private float redWorldVolumeRatio = 0.85f;
+    [Tooltip("红世界时BGM的音高倍率。")]
+    [SerializeField] [Range(0.5f, 1f)] private float redWorldPitch = 0.97f;
+    [Tooltip("红世界时低通滤波器的截止频率（Hz），越低越闷。")]
+    [SerializeField] [Range(100f, 8000f)] private float redWorldLowPassCutoff = 4500f;
+
     private AudioSource _musicSource;
     private AudioSource[] _sfxSources;
     private int _sfxIndex;
     private SoundType _currentMusicType = SoundType.None;
 
-    // 暂停音效效果（变远变闷）的原始状态缓存
+    // 音效效果（变远变闷）的原始状态缓存
     private AudioLowPassFilter _musicLowPassFilter;
     private float _originalMusicPitch = 1f;
     private float _originalLowPassCutoff = 22000f;
-    private Coroutine _pauseEffectCoroutine;
+    private bool _originalValuesCaptured = false;
+    private bool _isPauseEffectActive = false;
+    private bool _isRedWorldEffectActive = false;
+    private Coroutine _audioEffectCoroutine;
 
     private float _masterVolume = 1f;
     private float _musicVolume = 1f;
@@ -279,30 +292,48 @@ public class AudioManager : MonoBehaviour
     /// <param name="transitionDuration">渐变过渡时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
     public void ApplyPauseEffect(float transitionDuration = -1f)
     {
-        if (_pauseEffectCoroutine != null)
-        {
-            StopCoroutine(_pauseEffectCoroutine);
-        }
-        float duration = transitionDuration >= 0f ? transitionDuration : pauseEffectDuration;
-        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(true, duration));
+        _isPauseEffectActive = true;
+        UpdateAudioEffect(transitionDuration >= 0f ? transitionDuration : pauseEffectDuration);
     }
 
     /// <summary>
-    /// 移除暂停音效效果，将 BGM 恢复到正常状态。
+    /// 移除暂停音效效果，将 BGM 恢复到正常状态（或红世界状态，如果在红世界）。
     /// </summary>
     /// <param name="transitionDuration">渐变恢复时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
     public void RemovePauseEffect(float transitionDuration = -1f)
     {
-        if (_pauseEffectCoroutine != null)
-        {
-            StopCoroutine(_pauseEffectCoroutine);
-        }
-        float duration = transitionDuration >= 0f ? transitionDuration : pauseEffectDuration;
-        _pauseEffectCoroutine = StartCoroutine(PauseEffectTransition(false, duration));
+        _isPauseEffectActive = false;
+        UpdateAudioEffect(transitionDuration >= 0f ? transitionDuration : pauseEffectDuration);
     }
 
-    private IEnumerator PauseEffectTransition(bool apply, float duration)
+    /// <summary>
+    /// 应用红世界音效效果：BGM 音量轻微降低、音高轻微下降、低通滤波让声音略微变闷。
+    /// 效果比暂停效果弱。
+    /// </summary>
+    /// <param name="transitionDuration">渐变过渡时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
+    public void ApplyRedWorldEffect(float transitionDuration = -1f)
     {
+        _isRedWorldEffectActive = true;
+        UpdateAudioEffect(transitionDuration >= 0f ? transitionDuration : redWorldEffectDuration);
+    }
+
+    /// <summary>
+    /// 移除红世界音效效果，将 BGM 恢复到正常状态（或暂停状态，如果处于暂停）。
+    /// </summary>
+    /// <param name="transitionDuration">渐变恢复时长（秒）。使用 unscaled time，不受游戏暂停影响。</param>
+    public void RemoveRedWorldEffect(float transitionDuration = -1f)
+    {
+        _isRedWorldEffectActive = false;
+        UpdateAudioEffect(transitionDuration >= 0f ? transitionDuration : redWorldEffectDuration);
+    }
+
+    private void UpdateAudioEffect(float duration)
+    {
+        if (_audioEffectCoroutine != null)
+        {
+            StopCoroutine(_audioEffectCoroutine);
+        }
+
         // 确保低通滤波器组件存在
         if (_musicLowPassFilter == null)
         {
@@ -314,19 +345,25 @@ public class AudioManager : MonoBehaviour
             _musicLowPassFilter.cutoffFrequency = 22000f;
         }
 
-        if (apply)
+        if (!_originalValuesCaptured)
         {
-            // 进入暂停：记录原始值（仅在首次应用时记录）
             _originalMusicPitch = _musicSource.pitch;
             _originalLowPassCutoff = _musicLowPassFilter.cutoffFrequency;
+            _originalValuesCaptured = true;
         }
 
-        float targetVolume = apply
-            ? _masterVolume * _musicVolume * pauseVolumeRatio
-            : _masterVolume * _musicVolume;
-        float targetPitch = apply ? pausePitch : _originalMusicPitch;
-        float targetCutoff = apply ? pauseLowPassCutoff : _originalLowPassCutoff;
+        // 暂停效果优先于红世界效果
+        float targetVolumeRatio = _isPauseEffectActive ? pauseVolumeRatio : (_isRedWorldEffectActive ? redWorldVolumeRatio : 1f);
+        float targetPitch = _isPauseEffectActive ? pausePitch : (_isRedWorldEffectActive ? redWorldPitch : _originalMusicPitch);
+        float targetCutoff = _isPauseEffectActive ? pauseLowPassCutoff : (_isRedWorldEffectActive ? redWorldLowPassCutoff : _originalLowPassCutoff);
 
+        float targetVolume = _masterVolume * _musicVolume * targetVolumeRatio;
+
+        _audioEffectCoroutine = StartCoroutine(AudioEffectTransition(targetVolume, targetPitch, targetCutoff, duration));
+    }
+
+    private IEnumerator AudioEffectTransition(float targetVolume, float targetPitch, float targetCutoff, float duration)
+    {
         float startVolume = _musicSource.volume;
         float startPitch = _musicSource.pitch;
         float startCutoff = _musicLowPassFilter.cutoffFrequency;
@@ -345,7 +382,7 @@ public class AudioManager : MonoBehaviour
         _musicSource.volume = targetVolume;
         _musicSource.pitch = targetPitch;
         _musicLowPassFilter.cutoffFrequency = targetCutoff;
-        _pauseEffectCoroutine = null;
+        _audioEffectCoroutine = null;
     }
 
     #endregion

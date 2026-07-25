@@ -252,6 +252,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.GameTimer.Instance?.StartTimer();
         AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.RemovePauseEffect();
+        AudioManager.Instance?.RemoveRedWorldEffect();
         AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
         SceneManager.LoadScene("Scene_main");
     }
@@ -303,6 +304,7 @@ public class GamePauseManager : MonoBehaviour
         Time.timeScale = 1f;
         SuppressDialogueUi(false);
         AudioManager.Instance?.RemovePauseEffect();
+        AudioManager.Instance?.RemoveRedWorldEffect();
         pauseMenuObject = null;
 
         pendingLoadData = data;
@@ -344,6 +346,7 @@ public class GamePauseManager : MonoBehaviour
         SuppressDialogueUi(false);
         AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.RemovePauseEffect();
+        AudioManager.Instance?.RemoveRedWorldEffect();
         SceneManager.LoadScene("MainMenu");
     }
 
