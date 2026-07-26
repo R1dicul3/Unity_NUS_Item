@@ -2,9 +2,16 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class CharacterSwitcher2D : MonoBehaviour {
-    [Header("Characters")]
-    [SerializeField] private PlatformerPlayerController poweredCharacter;
-    [SerializeField] private PlatformerPlayerController basicCharacter;
+    [Header("Character")]
+    [SerializeField] private PlatformerPlayerController character;
+
+    [Header("Modes")]
+    [SerializeField] private RuntimeAnimatorController poweredAnimatorController;
+    [SerializeField] private RuntimeAnimatorController basicAnimatorController;
+    [SerializeField] private bool poweredCanDoubleJump = true;
+    [SerializeField] private bool poweredCanDash = true;
+    [SerializeField] private bool basicCanDoubleJump;
+    [SerializeField] private bool basicCanDash;
 
     [Header("Input")]
     [SerializeField] private bool allowDirectInput = true;
@@ -14,20 +21,17 @@ public class CharacterSwitcher2D : MonoBehaviour {
     private PlayerInputActions inputActions;
 
     public bool IsPoweredMode => isPoweredMode;
-    public PlatformerPlayerController CurrentCharacter => isPoweredMode || basicCharacter == null ? poweredCharacter : basicCharacter;
+    public PlatformerPlayerController CurrentCharacter => character;
 
     private void Awake() {
         inputActions = new PlayerInputActions();
         isPoweredMode = startInPoweredMode;
 
-        if (poweredCharacter != null) {
-            poweredCharacter.SetAbilities(true, true);
-        }
-        if (basicCharacter != null) {
-            basicCharacter.SetAbilities(false, false);
+        if (character == null) {
+            character = GetComponent<PlatformerPlayerController>();
         }
 
-        ApplyCurrentMode(false);
+        ApplyCurrentMode();
     }
 
     private void OnEnable() {
@@ -43,19 +47,17 @@ public class CharacterSwitcher2D : MonoBehaviour {
     }
 
     public void Initialize(PlatformerPlayerController powered, PlatformerPlayerController basic) {
-        poweredCharacter = powered;
-        basicCharacter = basic;
-        ApplyCurrentMode(false);
+        character = powered != null ? powered : basic;
+        ApplyCurrentMode();
     }
 
-    public void Initialize(PlatformerPlayerController character) {
-        poweredCharacter = character;
-        basicCharacter = null;
-        ApplyCurrentMode(false);
+    public void Initialize(PlatformerPlayerController targetCharacter) {
+        character = targetCharacter;
+        ApplyCurrentMode();
     }
 
     private void Update() {
-        if (!allowDirectInput || poweredCharacter == null) {
+        if (!allowDirectInput || character == null) {
             return;
         }
 
@@ -65,9 +67,12 @@ public class CharacterSwitcher2D : MonoBehaviour {
     }
 
     public void SetPoweredMode(bool powered) {
-        if (isPoweredMode == powered) return;
+        if (isPoweredMode == powered) {
+            return;
+        }
+
         isPoweredMode = powered;
-        ApplyCurrentMode(true);
+        ApplyCurrentMode();
         AudioManager.Instance?.PlayOneShot(SoundType.CharacterSwitch);
     }
 
@@ -75,35 +80,19 @@ public class CharacterSwitcher2D : MonoBehaviour {
         SetPoweredMode(!isPoweredMode);
     }
 
-    private void ApplyCurrentMode(bool syncPhysics) {
-        PlatformerPlayerController activeChar = isPoweredMode ? poweredCharacter : basicCharacter;
-        PlatformerPlayerController inactiveChar = isPoweredMode ? basicCharacter : poweredCharacter;
-
-        if (activeChar == null) {
+    private void ApplyCurrentMode() {
+        if (character == null) {
             return;
         }
 
-        if (inactiveChar == null || inactiveChar == activeChar) {
-            activeChar.gameObject.SetActive(true);
-            activeChar.SetAbilities(isPoweredMode, isPoweredMode);
-            RetargetCamera(activeChar);
-            return;
-        }
-
-        if (syncPhysics) {
-            activeChar.transform.position = inactiveChar.transform.position;
-            activeChar.SyncStateFrom(inactiveChar);
-        }
-
-        activeChar.gameObject.SetActive(true);
-        inactiveChar.gameObject.SetActive(false);
-
-        activeChar.SetAbilities(isPoweredMode, isPoweredMode);
-        RetargetCamera(activeChar);
+        character.gameObject.SetActive(true);
+        character.SetAbilities(
+            isPoweredMode ? poweredCanDoubleJump : basicCanDoubleJump,
+            isPoweredMode ? poweredCanDash : basicCanDash);
+        character.SetAnimatorController(isPoweredMode ? poweredAnimatorController : basicAnimatorController);
+        RetargetCamera(character);
     }
 
-    // 被切走的角色会被 SetActive(false)，摄像机必须改跟新的那个，
-    // 否则画面会停在已经禁用的角色身上。
     private void RetargetCamera(PlatformerPlayerController activeChar) {
         if (activeChar == null) {
             return;

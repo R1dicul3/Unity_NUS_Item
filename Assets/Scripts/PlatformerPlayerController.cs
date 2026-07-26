@@ -26,7 +26,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     [SerializeField] private float dashCooldown = 0.55f;
 
     [Header("Ground Check")]
-    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.78f, 0.12f);
+    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.9f, 0.12f);
     [SerializeField] private float groundCheckOffset = 0.53f;
     [SerializeField] private float groundCheckLockoutAfterJump = 0.08f;
 
@@ -35,7 +35,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     [Header("Collider")]
     [SerializeField] private bool autoAlignCollider = true;
-    [SerializeField] private Vector2 bodySize = new Vector2(0.75f, 1.05f);
+    [SerializeField] private Vector2 bodySize = new Vector2(0.9f, 1.05f);
     [SerializeField] private Vector2 bodyOffset;
 
     [Header("Control State")]
@@ -43,6 +43,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     [Header("Animation")]
     [SerializeField] private float walkAnimationThreshold = 0.05f;
+    [SerializeField] private bool spriteFacesRightByDefault = false;
 
     [Header("Audio")]
     [Tooltip("走路音效的步进间隔（秒）。")]
@@ -75,6 +76,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
     private static readonly int IsInDialogueHash = Animator.StringToHash("IsInDialogue");
+    private static readonly int IsJumpingHash = Animator.StringToHash("IsJumping");
 
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
@@ -116,6 +118,22 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (!canDoubleJump && jumpsUsed > 1) {
             jumpsUsed = 1;
+        }
+    }
+
+    public void SetAnimatorController(RuntimeAnimatorController controller) {
+        if (controller == null) {
+            return;
+        }
+
+        if (animator == null) {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        if (animator != null && animator.runtimeAnimatorController != controller) {
+            animator.runtimeAnimatorController = controller;
+            animator.Rebind();
+            animator.Update(0f);
         }
     }
 
@@ -316,7 +334,8 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private void UpdateVisuals() {
         if (spriteRenderer != null) {
-            spriteRenderer.flipX = facingDirection < 0f;
+            bool movingLeft = facingDirection < 0f;
+            spriteRenderer.flipX = spriteFacesRightByDefault ? movingLeft : !movingLeft;
         }
 
         if (dashTrail != null) {
@@ -330,10 +349,12 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (animator == null) {
             return;
         }
-        bool isWalking = !isInDialogue && Mathf.Abs(moveInput) > 0.01f;
+        bool isJumping = !isInDialogue && !isGrounded;
+        bool isWalking = !isInDialogue && isGrounded && Mathf.Abs(moveInput) > 0.01f;
 
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsInDialogueHash, isInDialogue);
+        animator.SetBool(IsJumpingHash, isJumping);
     }
 
     private void UpdateWalkSound() {
