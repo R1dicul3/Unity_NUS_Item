@@ -78,12 +78,12 @@ namespace MainMenu
             MenuUIHelper.CreateFullScreenBackground(canvas.transform, backgroundColor);
             RectTransform content = MenuUIHelper.CreateCenteredContent(canvas.transform, buttonWidth, spacing);
 
-            MenuUIHelper.CreateText(content, "Stopover", titleFontSize, titleColor, EffectiveFont, FontStyle.Bold, 120f);
-            CreateMenuButton(content, "Resume Game", OnResumeGame, true);
-            CreateMenuButton(content, "Load Game", OnLoadGame, true);
-            CreateMenuButton(content, "Save Game", OnSaveGame, true);
-            CreateMenuButton(content, "Settings", OnSettings, true);
-            CreateMenuButton(content, "Return to Main Menu", OnReturnToMainMenu, true);
+            MenuUIHelper.CreateText(content, LocalizationManager.Get("GameTitle"), titleFontSize, titleColor, EffectiveFont, FontStyle.Bold, 120f);
+            CreateMenuButton(content, LocalizationManager.Get("ResumeGame"), OnResumeGame, true);
+            CreateMenuButton(content, LocalizationManager.Get("LoadGame"), OnLoadGame, true);
+            CreateMenuButton(content, LocalizationManager.Get("SaveGame"), OnSaveGame, true);
+            CreateMenuButton(content, LocalizationManager.Get("Settings"), OnSettings, true);
+            CreateMenuButton(content, LocalizationManager.Get("ReturnToMainMenu"), OnReturnToMainMenu, true);
             CreateMessageArea(canvas.transform);
 
             // 手柄默认选中 Resume Game 按钮（代码生成模式下第一个按钮）
@@ -228,7 +228,7 @@ namespace MainMenu
                 return;
             }
 
-            MenuUIHelper.TrySetText(messageRoot, "Saved.");
+            MenuUIHelper.TrySetText(messageRoot, LocalizationManager.Get("SavedMessage"));
             if (messageGraphic != null)
             {
                 messageGraphic.color = Color.green;

@@ -112,7 +112,7 @@ namespace MainMenu
             RectTransform content = MenuUIHelper.CreateCenteredContent(canvas.transform, slotWidth, spacing);
 
             // 标题
-            MenuUIHelper.CreateText(content, "Select Save", titleFontSize, titleColor,
+            MenuUIHelper.CreateText(content, LocalizationManager.Get("SelectSave"), titleFontSize, titleColor,
                 EffectiveFont, FontStyle.Bold, 100f);
 
             // 存档槽
@@ -151,7 +151,7 @@ namespace MainMenu
             actionRect.sizeDelta = new Vector2(slotWidth, 55f);
 
             // Load 按钮
-            Button loadBtn = MenuUIHelper.CreateButton(actionContainer.transform, "Load", actionButtonFontSize, 55f,
+            Button loadBtn = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Load"), actionButtonFontSize, 55f,
                 new Color(0.2f, 0.55f, 0.3f, 1f), OnLoadClicked, EffectiveFont, true);
             loadButton = loadBtn;
             RectTransform loadRect = loadBtn.GetComponent<RectTransform>();
@@ -162,7 +162,7 @@ namespace MainMenu
             loadRect.sizeDelta = new Vector2(170f, 55f);
 
             // Delete 按钮
-            Button deleteBtn = MenuUIHelper.CreateButton(actionContainer.transform, "Delete", actionButtonFontSize, 55f,
+            Button deleteBtn = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Delete"), actionButtonFontSize, 55f,
                 new Color(0.55f, 0.2f, 0.2f, 1f), OnDeleteClicked, EffectiveFont, true);
             deleteButton = deleteBtn;
             RectTransform deleteRect = deleteBtn.GetComponent<RectTransform>();
@@ -173,7 +173,7 @@ namespace MainMenu
             deleteRect.sizeDelta = new Vector2(170f, 55f);
 
             // 返回按钮
-            Button backBtn = MenuUIHelper.CreateButton(actionContainer.transform, "< Back", backButtonFontSize, 55f,
+            Button backBtn = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Back"), backButtonFontSize, 55f,
                 buttonColor, OnBackClicked, EffectiveFont, true);
             RectTransform backRect = backBtn.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(1f, 0.5f);
@@ -265,10 +265,10 @@ namespace MainMenu
             var meta = SaveSystem.SaveSystem.GetMetaInfo(slot);
             if (meta == null)
             {
-                return $"Slot {slot}  (Empty)";
+                return $"Slot {slot}  {LocalizationManager.Get("SlotEmpty")}";
             }
 
-            return $"Slot {slot}  |  {meta.saveTimestamp}  |  Play Time: {meta.GetFormattedPlayTime()}";
+            return $"Slot {slot}  |  {meta.saveTimestamp}  |  {LocalizationManager.Get("PlayTime")}: {meta.GetFormattedPlayTime()}";
         }
 
         void OnSlotClicked(int slot)
@@ -344,12 +344,12 @@ namespace MainMenu
                 return;
             }
 
-            ConfirmDialogUI.Show($"Are you sure you want to delete save slot {selectedSlot}? This action cannot be undone.",
+            ConfirmDialogUI.Show(LocalizationManager.Get("DeleteConfirm", selectedSlot),
                 onConfirm: () =>
                 {
                     SaveSystem.SaveSystem.Delete(selectedSlot);
                     selectedSlot = -1;
-                    ShowMessage("Deleted.", Color.green);
+                    ShowMessage(LocalizationManager.Get("DeletedMessage"), Color.green);
                     RefreshUI();
                     Invoke(nameof(Close), 1.5f);
                 },

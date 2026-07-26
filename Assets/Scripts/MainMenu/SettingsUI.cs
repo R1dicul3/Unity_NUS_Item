@@ -44,6 +44,14 @@ namespace MainMenu
         private Text masterValueText;
         private Text bgmValueText;
         private Text sfxValueText;
+        private Text titleText;
+        private Text masterLabelText;
+        private Text bgmLabelText;
+        private Text sfxLabelText;
+        private Text backButtonText;
+        private Text languageLabelText;
+        private Button languageEnglishButton;
+        private Button languageChineseButton;
         private bool isOverlayMode = false;
         private System.Action onCloseCallback;
 
@@ -57,6 +65,7 @@ namespace MainMenu
             inputActions = new PlayerInputActions();
             inputActions.Player.Menu.performed += OnMenuPerformed;
             inputActions.Enable();
+            LocalizationManager.OnLanguageChanged += OnLanguageChanged;
         }
 
         void OnDisable()
@@ -66,6 +75,7 @@ namespace MainMenu
             inputActions.Disable();
             inputActions.Dispose();
             inputActions = null;
+            LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
         }
 
         private void OnMenuPerformed(InputAction.CallbackContext context)
@@ -110,12 +120,12 @@ namespace MainMenu
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.anchoredPosition = Vector2.zero;
-            panelRect.sizeDelta = new Vector2(panelWidth + 80f, 560f);
+            panelRect.sizeDelta = new Vector2(panelWidth + 80f, 640f);
 
             RectTransform content = CreateContent(panel.transform);
 
             // 标题
-            MenuUIHelper.CreateText(content, "Settings", titleFontSize, titleColor,
+            titleText = MenuUIHelper.CreateText(content, LocalizationManager.Get("Settings"), titleFontSize, titleColor,
                 EffectiveFont, FontStyle.Bold, 90f);
 
             // 间距
@@ -130,12 +140,12 @@ namespace MainMenu
 
             // 音量滑块
             float sliderWidth = panelWidth;
-            masterSlider = CreateVolumeSlider(content, "Master Volume", sliderWidth, sliderHeight,
-                GameSettings.Instance?.MasterVolume ?? 1f, OnMasterVolumeChanged, out masterValueText);
-            bgmSlider = CreateVolumeSlider(content, "BGM Volume", sliderWidth, sliderHeight,
-                GameSettings.Instance?.MusicVolume ?? 1f, OnBGMVolumeChanged, out bgmValueText);
-            sfxSlider = CreateVolumeSlider(content, "SFX Volume", sliderWidth, sliderHeight,
-                GameSettings.Instance?.SFXVolume ?? 1f, OnSFXVolumeChanged, out sfxValueText);
+            masterSlider = CreateVolumeSlider(content, LocalizationManager.Get("MasterVolume"), sliderWidth, sliderHeight,
+                GameSettings.Instance?.MasterVolume ?? 1f, OnMasterVolumeChanged, out masterLabelText, out masterValueText);
+            bgmSlider = CreateVolumeSlider(content, LocalizationManager.Get("BGMVolume"), sliderWidth, sliderHeight,
+                GameSettings.Instance?.MusicVolume ?? 1f, OnBGMVolumeChanged, out bgmLabelText, out bgmValueText);
+            sfxSlider = CreateVolumeSlider(content, LocalizationManager.Get("SFXVolume"), sliderWidth, sliderHeight,
+                GameSettings.Instance?.SFXVolume ?? 1f, OnSFXVolumeChanged, out sfxLabelText, out sfxValueText);
 
             // 间距
             GameObject spacer2 = new GameObject("Spacer");
@@ -147,9 +157,23 @@ namespace MainMenu
             spacer2Layout.preferredHeight = 20f;
             spacer2Layout.flexibleHeight = 0f;
 
+            // 语言选择
+            CreateLanguageSelector(content, sliderWidth);
+
+            // 间距
+            GameObject spacer3 = new GameObject("Spacer");
+            spacer3.transform.SetParent(content, false);
+            RectTransform spacer3Rect = spacer3.AddComponent<RectTransform>();
+            spacer3Rect.sizeDelta = new Vector2(panelWidth, 20f);
+            LayoutElement spacer3Layout = spacer3.AddComponent<LayoutElement>();
+            spacer3Layout.preferredWidth = panelWidth;
+            spacer3Layout.preferredHeight = 20f;
+            spacer3Layout.flexibleHeight = 0f;
+
             // 返回按钮
-            Button backButton = MenuUIHelper.CreateButton(content, "< Back", backButtonFontSize, 55f,
+            Button backButton = MenuUIHelper.CreateButton(content, LocalizationManager.Get("Back"), backButtonFontSize, 55f,
                 new Color(0.25f, 0.35f, 0.55f, 1f), OnBackClicked, EffectiveFont, true);
+            backButtonText = backButton.GetComponentInChildren<Text>(true);
             RectTransform backRect = backButton.GetComponent<RectTransform>();
             backRect.sizeDelta = new Vector2(200f, 55f);
 
@@ -190,11 +214,34 @@ namespace MainMenu
             hasRequiredControls &= TryBindSlider(canvas.transform, "SFXVolumeSlider", OnSFXVolumeChanged, out sfxSlider, out sfxValueText);
             hasRequiredControls &= MenuUIHelper.TryBindButton(canvas.transform, "BackButton", OnBackClicked, out _);
 
+            // 语言按钮为可选（prefab 可能没有）
+            TryBindLanguageButtons(canvas.transform);
+
             if (!hasRequiredControls)
             {
                 Debug.LogWarning("[SettingsUI] Settings prefab is missing expected controls. Falling back to generated UI.");
                 Destroy(canvas);
                 return false;
+            }
+
+            // 如果 prefab 没有语言按钮，动态在 Content 中创建
+            if (languageEnglishButton == null || languageChineseButton == null)
+            {
+                Transform contentTransform = MenuUIHelper.FindChildRecursive(canvas.transform, "Content");
+                if (contentTransform != null)
+                {
+                    CreateLanguageSelector(contentTransform, 560f);
+                    // 将语言选择器移到 BackButton 之前（如果存在）
+                    Transform backBtn = MenuUIHelper.FindChildRecursive(canvas.transform, "BackButton");
+                    if (backBtn != null)
+                    {
+                        Transform selector = contentTransform.Find("LanguageSelector");
+                        if (selector != null)
+                        {
+                            selector.SetSiblingIndex(backBtn.GetSiblingIndex());
+                        }
+                    }
+                }
             }
 
             // 手柄默认选中 BackButton（prefab 模式下）
@@ -244,7 +291,7 @@ namespace MainMenu
         }
 
         Slider CreateVolumeSlider(Transform parent, string label, float width, float height,
-            float defaultValue, UnityEngine.Events.UnityAction<float> onValueChanged, out Text valueText)
+            float defaultValue, UnityEngine.Events.UnityAction<float> onValueChanged, out Text labelText, out Text valueText)
         {
             GameObject rowGO = new GameObject(label + " Row");
             rowGO.transform.SetParent(parent, false);
@@ -269,12 +316,12 @@ namespace MainMenu
             // Label
             GameObject labelGO = new GameObject("Label");
             labelGO.transform.SetParent(labelRowGO.transform, false);
-            Text labelText = labelGO.AddComponent<Text>();
-            labelText.text = label;
-            labelText.font = EffectiveFont;
-            labelText.fontSize = labelFontSize;
-            labelText.color = labelColor;
-            labelText.alignment = TextAnchor.MiddleLeft;
+            Text lblText = labelGO.AddComponent<Text>();
+            lblText.text = label;
+            lblText.font = EffectiveFont;
+            lblText.fontSize = labelFontSize;
+            lblText.color = labelColor;
+            lblText.alignment = TextAnchor.MiddleLeft;
 
             RectTransform labelRect = labelGO.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;
@@ -300,6 +347,7 @@ namespace MainMenu
             valueRect.anchoredPosition = Vector2.zero;
             valueRect.sizeDelta = new Vector2(60f, 0f);
 
+            labelText = lblText;
             valueText = valText;
 
             // Slider（绝对定位在 row 底部）
@@ -406,6 +454,192 @@ namespace MainMenu
                 bgmValueText.text = Mathf.RoundToInt(bgmSlider.value * 100f) + "%";
             if (sfxValueText != null && sfxSlider != null)
                 sfxValueText.text = Mathf.RoundToInt(sfxSlider.value * 100f) + "%";
+        }
+
+        #endregion
+
+        #region Language Selector
+
+        void CreateLanguageSelector(Transform parent, float width)
+        {
+            GameObject rowGO = new GameObject("LanguageSelector");
+            rowGO.transform.SetParent(parent, false);
+            RectTransform rowRect = rowGO.AddComponent<RectTransform>();
+            rowRect.sizeDelta = new Vector2(width, 55f);
+
+            LayoutElement rowLayout = rowGO.AddComponent<LayoutElement>();
+            rowLayout.preferredWidth = width;
+            rowLayout.preferredHeight = 55f;
+            rowLayout.flexibleHeight = 0f;
+
+            // 标签
+            GameObject labelGO = new GameObject("LanguageLabel");
+            labelGO.transform.SetParent(rowGO.transform, false);
+            Text labelText = labelGO.AddComponent<Text>();
+            labelText.text = LocalizationManager.Get("Language");
+            labelText.font = EffectiveFont;
+            labelText.fontSize = labelFontSize;
+            labelText.color = labelColor;
+            labelText.alignment = TextAnchor.MiddleLeft;
+            languageLabelText = labelText;
+
+            RectTransform labelRect = labelGO.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = new Vector2(0.35f, 1f);
+            labelRect.pivot = new Vector2(0f, 0.5f);
+            labelRect.anchoredPosition = Vector2.zero;
+            labelRect.sizeDelta = Vector2.zero;
+
+            // 按钮容器
+            GameObject btnContainer = new GameObject("ButtonContainer");
+            btnContainer.transform.SetParent(rowGO.transform, false);
+            RectTransform btnRect = btnContainer.AddComponent<RectTransform>();
+            btnRect.anchorMin = new Vector2(0.38f, 0f);
+            btnRect.anchorMax = Vector2.one;
+            btnRect.pivot = new Vector2(0.5f, 0.5f);
+            btnRect.anchoredPosition = Vector2.zero;
+            btnRect.sizeDelta = Vector2.zero;
+
+            // English 按钮
+            languageEnglishButton = CreateLanguageButton(btnContainer.transform, "English",
+                () => OnLanguageSelected(Language.English), new Vector2(0f, 0.5f), new Vector2(0.48f, 0.5f));
+
+            // 中文 按钮
+            languageChineseButton = CreateLanguageButton(btnContainer.transform, "中文",
+                () => OnLanguageSelected(Language.Chinese), new Vector2(0.52f, 0.5f), new Vector2(1f, 0.5f));
+
+            RefreshLanguageButtonState();
+        }
+
+        Button CreateLanguageButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            GameObject btnGO = new GameObject(label + "Button");
+            btnGO.transform.SetParent(parent, false);
+            Button btn = btnGO.AddComponent<Button>();
+            btn.onClick.AddListener(onClick);
+
+            Image btnImage = btnGO.AddComponent<Image>();
+            btnImage.color = new Color(0.25f, 0.35f, 0.55f, 1f);
+            btn.targetGraphic = btnImage;
+
+            RectTransform btnRect = btnGO.GetComponent<RectTransform>();
+            btnRect.anchorMin = anchorMin;
+            btnRect.anchorMax = anchorMax;
+            btnRect.pivot = new Vector2(0.5f, 0.5f);
+            btnRect.anchoredPosition = Vector2.zero;
+            btnRect.sizeDelta = new Vector2(0f, 45f);
+
+            GameObject textGO = new GameObject("Text");
+            textGO.transform.SetParent(btnGO.transform, false);
+            Text btnText = textGO.AddComponent<Text>();
+            btnText.text = label;
+            btnText.font = EffectiveFont;
+            btnText.fontSize = backButtonFontSize;
+            btnText.color = Color.white;
+            btnText.alignment = TextAnchor.MiddleCenter;
+
+            RectTransform textRect = textGO.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            if (btnGO.GetComponent<UIButtonSound>() == null)
+                btnGO.AddComponent<UIButtonSound>();
+
+            MenuUIHelper.EnsureNavigationAutomatic(btn);
+            return btn;
+        }
+
+        void TryBindLanguageButtons(Transform root)
+        {
+            languageEnglishButton = TryBindButtonSilent(root, "LanguageEnglishButton",
+                () => OnLanguageSelected(Language.English));
+            languageChineseButton = TryBindButtonSilent(root, "LanguageChineseButton",
+                () => OnLanguageSelected(Language.Chinese));
+            RefreshLanguageButtonState();
+        }
+
+        static Button TryBindButtonSilent(Transform root, string buttonName, UnityEngine.Events.UnityAction onClick)
+        {
+            Transform buttonTransform = MenuUIHelper.FindChildRecursive(root, buttonName);
+            if (buttonTransform == null) return null;
+
+            Button button = buttonTransform.GetComponent<Button>();
+            if (button == null) return null;
+
+            button.onClick.RemoveAllListeners();
+            if (onClick != null)
+                button.onClick.AddListener(onClick);
+
+            if (button.GetComponent<UIButtonSound>() == null)
+                button.gameObject.AddComponent<UIButtonSound>();
+
+            MenuUIHelper.EnsureNavigationAutomatic(button);
+            return button;
+        }
+
+        void OnLanguageSelected(Language language)
+        {
+            if (GameSettings.Instance != null)
+            {
+                GameSettings.Instance.Language = language;
+            }
+            else
+            {
+                LocalizationManager.SetLanguage(language);
+            }
+            RefreshLanguageButtonState();
+        }
+
+        void RefreshLanguageButtonState()
+        {
+            Language current = GameSettings.Instance != null ? GameSettings.Instance.Language : LocalizationManager.CurrentLanguage;
+            SetLanguageButtonSelected(languageEnglishButton, current == Language.English);
+            SetLanguageButtonSelected(languageChineseButton, current == Language.Chinese);
+        }
+
+        void OnLanguageChanged()
+        {
+            RefreshLocalizedTexts();
+        }
+
+        void RefreshLocalizedTexts()
+        {
+            if (titleText != null)
+                titleText.text = LocalizationManager.Get("Settings");
+            if (masterLabelText != null)
+                masterLabelText.text = LocalizationManager.Get("MasterVolume");
+            if (bgmLabelText != null)
+                bgmLabelText.text = LocalizationManager.Get("BGMVolume");
+            if (sfxLabelText != null)
+                sfxLabelText.text = LocalizationManager.Get("SFXVolume");
+            if (languageLabelText != null)
+                languageLabelText.text = LocalizationManager.Get("Language");
+            if (backButtonText != null)
+                backButtonText.text = LocalizationManager.Get("Back");
+
+            // Prefab 模式下尝试刷新已知名称的文本对象
+            if (transform.childCount > 0)
+            {
+                Transform canvasTransform = transform.GetChild(0);
+                MenuUIHelper.TrySetText(canvasTransform, "TitleText", LocalizationManager.Get("Settings"));
+                MenuUIHelper.TrySetText(canvasTransform, "LanguageLabel", LocalizationManager.Get("Language"));
+                MenuUIHelper.TrySetText(canvasTransform, "BackButton", LocalizationManager.Get("Back"));
+            }
+        }
+
+        static void SetLanguageButtonSelected(Button btn, bool selected)
+        {
+            if (btn == null) return;
+            Image img = btn.GetComponent<Image>();
+            if (img != null)
+            {
+                img.color = selected
+                    ? new Color(0.35f, 0.55f, 0.75f, 1f)
+                    : new Color(0.25f, 0.35f, 0.55f, 1f);
+            }
+            btn.interactable = !selected;
         }
 
         #endregion
