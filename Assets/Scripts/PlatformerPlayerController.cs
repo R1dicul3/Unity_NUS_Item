@@ -52,6 +52,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
+    private Sprite lastVisibleSprite;
     private Animator animator;
     private TrailRenderer dashTrail;
     private PhysicsMaterial2D frictionlessMaterial;
@@ -161,6 +162,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
+        CacheVisibleSprite();
         defaultGravityScale = rb.gravityScale;
         AlignCollider();
         ApplyFrictionlessMaterial();
@@ -204,6 +206,10 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         ApplyHorizontalMovement();
         ApplyBetterJumpGravity();
+    }
+
+    private void LateUpdate() {
+        RestoreMissingSpriteAfterAnimation();
     }
 
     private void ReadInput() {
@@ -336,6 +342,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (spriteRenderer != null) {
             bool movingLeft = facingDirection < 0f;
             spriteRenderer.flipX = spriteFacesRightByDefault ? movingLeft : !movingLeft;
+            CacheVisibleSprite();
         }
 
         if (dashTrail != null) {
@@ -355,6 +362,27 @@ public class PlatformerPlayerController : MonoBehaviour {
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsInDialogueHash, isInDialogue);
         animator.SetBool(IsJumpingHash, isJumping);
+    }
+
+    private void CacheVisibleSprite() {
+        if (spriteRenderer != null && spriteRenderer.sprite != null) {
+            lastVisibleSprite = spriteRenderer.sprite;
+        }
+    }
+
+    private void RestoreMissingSpriteAfterAnimation() {
+        if (spriteRenderer == null) {
+            return;
+        }
+
+        if (spriteRenderer.sprite != null) {
+            lastVisibleSprite = spriteRenderer.sprite;
+            return;
+        }
+
+        if (lastVisibleSprite != null) {
+            spriteRenderer.sprite = lastVisibleSprite;
+        }
     }
 
     private void UpdateWalkSound() {
