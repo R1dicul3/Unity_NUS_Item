@@ -60,6 +60,7 @@ namespace MainMenu
         private GameObject messageObject;
         private Transform messageRoot;
         private Graphic messageGraphic;
+        private bool isNavigatingBack;
 
         void Awake()
         {
@@ -68,6 +69,7 @@ namespace MainMenu
 
         void OnEnable()
         {
+            isNavigatingBack = false;
             inputActions = new PlayerInputActions();
             inputActions.Player.Menu.performed += OnMenuPerformed;
             inputActions.Enable();
@@ -420,6 +422,12 @@ namespace MainMenu
 
         void OnBackClicked()
         {
+            if (isNavigatingBack)
+            {
+                return;
+            }
+
+            isNavigatingBack = true;
             CancelInvoke(nameof(Close));
             if (GamePauseManager.Instance != null && GamePauseManager.Instance.CameFromPauseMenu)
             {
