@@ -4484,7 +4484,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -3688013381631142444, guid: bb3e963e9befca14fa4dfdf9f285b99b, type: 3}
+  m_Sprite: {fileID: 4726522335782357095, guid: 22c26288ca7962040bbc2d16feea6b94, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -4503,8 +4503,8 @@ Transform:
   m_GameObject: {fileID: 290378481}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -141.67549, y: 13.027569, z: 0}
-  m_LocalScale: {x: 1.3, y: 1.5, z: 1}
+  m_LocalPosition: {x: -141.67549, y: 11.1, z: 0}
+  m_LocalScale: {x: 5.3299994, y: 5.1899405, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 176270596}
@@ -8040,7 +8040,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -3357150378641938726, guid: 606fe3186a42ff34bb94983b0533ab09, type: 3}
+  m_Sprite: {fileID: -347295746977513345, guid: dcdcae36b9d51aa4e80c556eeb994694, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -8059,8 +8059,8 @@ Transform:
   m_GameObject: {fileID: 729331015}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -18.875488, y: 65.32757, z: 0}
-  m_LocalScale: {x: 1.2, y: 1.3, z: 1}
+  m_LocalPosition: {x: -18.875488, y: 63.2, z: 0}
+  m_LocalScale: {x: 4.83996, y: 4.2543907, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 176270596}
@@ -30270,7 +30270,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.7, y: 0.38}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 15.999939, y: -377}
+  m_AnchoredPosition: {x: 15.999939, y: -377.00003}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1024824640
@@ -41881,7 +41881,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 8, y: 8}
+    oldSize: {x: 2.375, y: 4.5}
     newSize: {x: 0.38, y: 0.72}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
