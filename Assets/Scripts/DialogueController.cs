@@ -4,24 +4,32 @@ using UnityEngine.UI;
 
 [ExecuteAlways]
 public class DialogueController : MonoBehaviour {
+
+    public enum SpeakerSide { None, Left, Right }
+
     [System.Serializable]
     public struct DialogueLine {
         public string speaker;
         [TextArea(2, 4)] public string text;
+
+        [Header("Portraits")]
+        public Sprite leftPortrait;
+        public Sprite rightPortrait;
+        [Tooltip("当前说话的一方。非说话方的立绘会自动变暗。")]
+        public SpeakerSide activeSide;
     }
 
     [Header("Dialogue")]
     [SerializeField] private DialogueLine[] dialogueLines;
     [SerializeField] private bool showOnStart = true;
 
-    [Header("Portrait")]
-    [SerializeField] private Sprite portraitSprite;
-
     [Header("Hierarchy UI")]
     [SerializeField] private Canvas dialogueCanvas;
     [SerializeField] private CinematicLetterbox cinematicLetterbox;
-    [SerializeField] private Image portraitImage;
-    [SerializeField] private Text portraitLabel;
+    [SerializeField] private Image leftPortraitImage;
+    [SerializeField] private Text leftPortraitLabel;
+    [SerializeField] private Image rightPortraitImage;
+    [SerializeField] private Text rightPortraitLabel;
     [SerializeField] private Text speakerText;
     [SerializeField] private Text bodyText;
     [SerializeField] private bool createFallbackUiIfMissing;
@@ -29,12 +37,9 @@ public class DialogueController : MonoBehaviour {
     [Header("Editor Preview")]
     [SerializeField] private bool previewInEditMode = true;
 
-    [Header("Portrait Layout")]
-    [SerializeField] private Vector2 portraitAnchorMin = new Vector2(0f, 0.38f);
-    [SerializeField] private Vector2 portraitAnchorMax = new Vector2(0.5f, 1f);
-    [SerializeField] private Vector2 portraitOffsetMin = Vector2.zero;
-    [SerializeField] private Vector2 portraitOffsetMax = Vector2.zero;
+    [Header("Portrait Settings")]
     [SerializeField] private bool preservePortraitAspect = true;
+    [SerializeField] private int portraitLabelFontSize = 42;
 
     [Header("Dialogue Box Layout")]
     [SerializeField] private Vector2 dialogueBoxAnchorMin = new Vector2(0.04f, 0.04f);
@@ -59,11 +64,9 @@ public class DialogueController : MonoBehaviour {
     [SerializeField] private Vector2 bodyOffsetMax = Vector2.zero;
     [SerializeField] private int bodyFontSize = 34;
 
-    [Header("Portrait Label Layout")]
-    [SerializeField] private int portraitLabelFontSize = 42;
-
-    [Header("Placeholder Colors")]
-    [SerializeField] private Color portraitColor = new Color(0.12f, 0.18f, 0.24f, 0.88f);
+    [Header("Colors")]
+    [SerializeField] private Color activePortraitColor = Color.white;
+    [SerializeField] private Color inactivePortraitColor = new Color(0.4f, 0.4f, 0.4f, 1f); // 未说话时变暗
     [SerializeField] private Color dialogueBoxColor = new Color(0.03f, 0.04f, 0.06f, 0.88f);
     [SerializeField] private Color textColor = new Color(0.94f, 0.96f, 1f);
 
@@ -71,6 +74,9 @@ public class DialogueController : MonoBehaviour {
     private bool isShowing;
     private bool uiSuppressed;
     private PlayerInputActions inputActions;
+
+    // 【新增变量】记录对话框被打开的帧数，用于防止同一帧双重触发
+    private int openedFrame = -1;
 
     public bool IsShowing => isShowing;
 
@@ -139,7 +145,10 @@ public class DialogueController : MonoBehaviour {
         }
 
         if (ShouldAdvanceDialogue()) {
-            Advance();
+            // 【核心修复】：只有当当前帧大于打开对话的那一帧时，才允许翻页
+            if (Time.frameCount > openedFrame) {
+                Advance();
+            }
         }
     }
 
@@ -156,15 +165,17 @@ public class DialogueController : MonoBehaviour {
         dialogueLines = lines;
     }
 
-    public void SetPortrait(Sprite sprite) {
-        portraitSprite = sprite;
-        ApplyPortrait();
+    public void StartStoredDialogue() {
+        StartDialogue(dialogueLines);
     }
 
     public void StartDialogue(DialogueLine[] lines) {
         dialogueLines = lines;
         currentLineIndex = 0;
         isShowing = dialogueLines != null && dialogueLines.Length > 0;
+
+        // 【核心修复】：记录对话框在此帧被打开
+        openedFrame = Time.frameCount;
 
         if (dialogueCanvas != null) {
             dialogueCanvas.gameObject.SetActive(isShowing && !uiSuppressed);
@@ -179,7 +190,7 @@ public class DialogueController : MonoBehaviour {
     public void StartDialogue(params string[] lines) {
         DialogueLine[] convertedLines = new DialogueLine[lines.Length];
         for (int i = 0; i < lines.Length; i++) {
-            convertedLines[i] = new DialogueLine { speaker = "Character", text = lines[i] };
+            convertedLines[i] = new DialogueLine { speaker = "Character", text = lines[i], activeSide = SpeakerSide.Left };
         }
 
         StartDialogue(convertedLines);
@@ -232,6 +243,35 @@ public class DialogueController : MonoBehaviour {
         DialogueLine line = dialogueLines[currentLineIndex];
         speakerText.text = string.IsNullOrWhiteSpace(line.speaker) ? "Character" : line.speaker;
         bodyText.text = line.text;
+
+        UpdatePortraits(line);
+    }
+
+    private void UpdatePortraits(DialogueLine line) {
+        ApplySinglePortrait(leftPortraitImage, leftPortraitLabel, line.leftPortrait, line.activeSide == SpeakerSide.Left || line.activeSide == SpeakerSide.None);
+        ApplySinglePortrait(rightPortraitImage, rightPortraitLabel, line.rightPortrait, line.activeSide == SpeakerSide.Right || line.activeSide == SpeakerSide.None);
+    }
+
+    private void ApplySinglePortrait(Image img, Text label, Sprite sprite, bool isActiveSpeaker) {
+        if (img == null) return;
+
+        bool hasPortrait = sprite != null;
+        img.sprite = sprite;
+
+        if (hasPortrait) {
+            img.color = isActiveSpeaker ? activePortraitColor : inactivePortraitColor;
+        }
+        else {
+            img.color = Color.clear;
+        }
+
+        img.type = Image.Type.Simple;
+        img.preserveAspect = preservePortraitAspect;
+
+        if (label != null) {
+            label.gameObject.SetActive(!hasPortrait);
+            label.fontSize = portraitLabelFontSize;
+        }
     }
 
     private void ResolveHierarchyReferences() {
@@ -241,22 +281,16 @@ public class DialogueController : MonoBehaviour {
 
         Text[] texts = GetComponentsInChildren<Text>(true);
         foreach (Text text in texts) {
-            if (speakerText == null && text.name == "SpeakerText") {
-                speakerText = text;
-            }
-            else if (bodyText == null && text.name == "DialogueText") {
-                bodyText = text;
-            }
-            else if (portraitLabel == null && text.name == "PortraitLabel") {
-                portraitLabel = text;
-            }
+            if (speakerText == null && text.name == "SpeakerText") speakerText = text;
+            else if (bodyText == null && text.name == "DialogueText") bodyText = text;
+            else if (leftPortraitLabel == null && text.name == "LeftPortraitLabel") leftPortraitLabel = text;
+            else if (rightPortraitLabel == null && text.name == "RightPortraitLabel") rightPortraitLabel = text;
         }
 
         Image[] images = GetComponentsInChildren<Image>(true);
         foreach (Image image in images) {
-            if (portraitImage == null && image.name == "PortraitImage") {
-                portraitImage = image;
-            }
+            if (leftPortraitImage == null && image.name == "LeftPortraitImage") leftPortraitImage = image;
+            else if (rightPortraitImage == null && image.name == "RightPortraitImage") rightPortraitImage = image;
         }
 
         if (cinematicLetterbox == null && dialogueCanvas != null) {
@@ -277,7 +311,10 @@ public class DialogueController : MonoBehaviour {
 
         EnsureLetterbox();
         ApplyLayout();
-        ApplyPortrait();
+
+        if (!Application.isPlaying && dialogueLines != null && dialogueLines.Length > 0) {
+            UpdatePortraits(dialogueLines[Mathf.Clamp(currentLineIndex, 0, dialogueLines.Length - 1)]);
+        }
     }
 
     private void RefreshEditorPreview() {
@@ -298,10 +335,13 @@ public class DialogueController : MonoBehaviour {
         else {
             speakerText.text = "Character";
             bodyText.text = "Dialogue preview text";
+
+            ApplySinglePortrait(leftPortraitImage, leftPortraitLabel, null, true);
+            ApplySinglePortrait(rightPortraitImage, rightPortraitLabel, null, true);
         }
 
         ApplyLayout();
-        ApplyPortrait();
+
         if (previewInEditMode && useCinematicLetterbox) {
             ShowLetterboxImmediate();
         }
@@ -322,27 +362,27 @@ public class DialogueController : MonoBehaviour {
         scaler.matchWidthOrHeight = 0.5f;
         dialogueCanvas.gameObject.AddComponent<GraphicRaycaster>();
 
-        EnsureLetterbox();
+        RectTransform leftPortrait = CreatePanel("LeftPortraitImage", dialogueCanvas.transform, new Vector2(0f, 0.38f), new Vector2(0.3f, 1f), Color.clear);
+        leftPortraitImage = leftPortrait.GetComponent<Image>();
+        leftPortraitImage.preserveAspect = preservePortraitAspect;
+        leftPortraitLabel = CreateText("LeftPortraitLabel", leftPortrait, "Left Portrait", portraitLabelFontSize, TextAnchor.MiddleCenter);
+        leftPortraitLabel.color = new Color(0.72f, 0.82f, 0.92f, 0.9f);
 
-        RectTransform portrait = CreatePanel("PortraitImage", dialogueCanvas.transform, portraitAnchorMin, portraitAnchorMax, portraitColor);
-        portraitImage = portrait.GetComponent<Image>();
-        portraitImage.preserveAspect = preservePortraitAspect;
-        portraitLabel = CreateText("PortraitLabel", portrait, "Portrait Placeholder", portraitLabelFontSize, TextAnchor.MiddleCenter);
-        portraitLabel.color = new Color(0.72f, 0.82f, 0.92f, 0.9f);
-        ApplyPortrait();
+        RectTransform rightPortrait = CreatePanel("RightPortraitImage", dialogueCanvas.transform, new Vector2(0.7f, 0.38f), new Vector2(1f, 1f), Color.clear);
+        rightPortraitImage = rightPortrait.GetComponent<Image>();
+        rightPortraitImage.preserveAspect = preservePortraitAspect;
+        rightPortraitLabel = CreateText("RightPortraitLabel", rightPortrait, "Right Portrait", portraitLabelFontSize, TextAnchor.MiddleCenter);
+        rightPortraitLabel.color = new Color(0.72f, 0.82f, 0.92f, 0.9f);
 
         RectTransform dialogueBox = CreatePanel("DialogueBox", dialogueCanvas.transform, dialogueBoxAnchorMin, dialogueBoxAnchorMax, dialogueBoxColor);
         speakerText = CreateText("SpeakerText", dialogueBox, "Character", speakerFontSize, TextAnchor.UpperLeft);
         bodyText = CreateText("DialogueText", dialogueBox, "", bodyFontSize, TextAnchor.UpperLeft);
+
+        EnsureLetterbox();
         ApplyLayout();
     }
 
     private void ApplyLayout() {
-        if (portraitImage != null) {
-            ApplyRect(portraitImage.rectTransform, portraitAnchorMin, portraitAnchorMax, portraitOffsetMin, portraitOffsetMax);
-            portraitImage.preserveAspect = preservePortraitAspect;
-        }
-
         if (speakerText != null) {
             ApplyRect(speakerText.rectTransform, speakerAnchorMin, speakerAnchorMax, speakerOffsetMin, speakerOffsetMax);
             speakerText.fontSize = speakerFontSize;
@@ -351,10 +391,6 @@ public class DialogueController : MonoBehaviour {
         if (bodyText != null) {
             ApplyRect(bodyText.rectTransform, bodyAnchorMin, bodyAnchorMax, bodyOffsetMin, bodyOffsetMax);
             bodyText.fontSize = bodyFontSize;
-        }
-
-        if (portraitLabel != null) {
-            portraitLabel.fontSize = portraitLabelFontSize;
         }
 
         Transform dialogueBox = dialogueCanvas != null ? dialogueCanvas.transform.Find("DialogueBox") : null;
@@ -368,21 +404,6 @@ public class DialogueController : MonoBehaviour {
         rect.anchorMax = anchorMax;
         rect.offsetMin = offsetMin;
         rect.offsetMax = offsetMax;
-    }
-
-    private void ApplyPortrait() {
-        if (portraitImage == null) {
-            return;
-        }
-
-        bool hasPortrait = portraitSprite != null;
-        portraitImage.sprite = portraitSprite;
-        portraitImage.color = hasPortrait ? Color.white : portraitColor;
-        portraitImage.type = Image.Type.Simple;
-
-        if (portraitLabel != null) {
-            portraitLabel.gameObject.SetActive(!hasPortrait);
-        }
     }
 
     private void EnsureLetterbox() {
@@ -408,7 +429,14 @@ public class DialogueController : MonoBehaviour {
             cinematicLetterbox = letterboxObject.AddComponent<CinematicLetterbox>();
         }
 
-        cinematicLetterbox.transform.SetAsFirstSibling();
+        Transform dialogueBoxObj = dialogueCanvas.transform.Find("DialogueBox");
+        if (dialogueBoxObj != null) {
+            cinematicLetterbox.transform.SetSiblingIndex(dialogueBoxObj.GetSiblingIndex());
+        }
+        else {
+            cinematicLetterbox.transform.SetAsLastSibling();
+        }
+
         cinematicLetterbox.EnsureBars();
         cinematicLetterbox.ApplyLayout();
     }
@@ -419,24 +447,16 @@ public class DialogueController : MonoBehaviour {
 
     private void ShowLetterbox() {
         EnsureLetterbox();
-
-        if (HasLetterbox()) {
-            cinematicLetterbox.Show();
-        }
+        if (HasLetterbox()) cinematicLetterbox.Show();
     }
 
     private void ShowLetterboxImmediate() {
         EnsureLetterbox();
-
-        if (HasLetterbox()) {
-            cinematicLetterbox.SetVisibleImmediate(true);
-        }
+        if (HasLetterbox()) cinematicLetterbox.SetVisibleImmediate(true);
     }
 
     private void HideLetterboxImmediate() {
-        if (cinematicLetterbox != null) {
-            cinematicLetterbox.SetVisibleImmediate(false);
-        }
+        if (cinematicLetterbox != null) cinematicLetterbox.SetVisibleImmediate(false);
     }
 
     private void DeactivateCanvasIfDialogueStillHidden() {

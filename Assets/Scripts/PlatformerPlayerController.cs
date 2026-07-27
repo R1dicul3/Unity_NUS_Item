@@ -71,6 +71,10 @@ public class PlatformerPlayerController : MonoBehaviour {
     private float walkSoundTimer;
     private bool wasWalking;
 
+    // 用于暂存同步过来的速度，确保 OnEnable 后物理引擎初始化时能正确赋予
+    private Vector2 pendingVelocity;
+    private bool hasPendingVelocity;
+
     private PlayerInputActions inputActions;
 
     private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
@@ -113,10 +117,6 @@ public class PlatformerPlayerController : MonoBehaviour {
             isDashing = false;
             rb.gravityScale = defaultGravityScale;
         }
-
-        if (!canDoubleJump && jumpsUsed > 1) {
-            jumpsUsed = 1;
-        }
     }
 
     public void SetControlled(bool value) {
@@ -144,12 +144,21 @@ public class PlatformerPlayerController : MonoBehaviour {
         animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
         defaultGravityScale = rb.gravityScale;
-        AlignCollider();
+
+        // 只有当勾选了 autoAlignCollider 且你想在初始化时应用默认合辑时才对齐
+        // 如果你想完全手动在面板调，可以把下面这行注释掉
+        // AlignCollider(); 
+
         ApplyFrictionlessMaterial();
     }
 
     private void OnEnable() {
         inputActions?.Enable();
+
+        if (hasPendingVelocity && rb != null) {
+            rb.linearVelocity = pendingVelocity;
+            hasPendingVelocity = false;
+        }
     }
 
     private void OnDisable() {
@@ -233,6 +242,10 @@ public class PlatformerPlayerController : MonoBehaviour {
     private void UpdateTimers() {
         if (!isGrounded) {
             coyoteTimer -= Time.deltaTime;
+
+            if (coyoteTimer <= 0f && jumpsUsed == 0) {
+                jumpsUsed = 1;
+            }
         }
 
         jumpBufferTimer -= Time.deltaTime;
@@ -341,7 +354,6 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (isWalking) {
             if (!wasWalking) {
-                // 刚开始走路，立即播放第一声
                 AudioManager.Instance?.PlayOneShot(SoundType.Walk);
                 walkSoundTimer = 0f;
             }
@@ -383,7 +395,9 @@ public class PlatformerPlayerController : MonoBehaviour {
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
-        AlignCollider();
+
+        // 移除了这里对 AlignCollider() 的自动调用，
+        // 这样你在 Inspector 里面修改 BoxCollider2D 的 Size 和 Offset 时就不会被强制重置了！
     }
 
     private void ApplyFrictionlessMaterial() {
@@ -417,13 +431,16 @@ public class PlatformerPlayerController : MonoBehaviour {
         this.jumpsUsed = oldPlayer.jumpsUsed;
         this.coyoteTimer = oldPlayer.coyoteTimer;
         this.isGrounded = oldPlayer.isGrounded;
-        // 不同步 jumpBufferTimer：输入缓冲只属于当前激活的角色，
-        // 否则快速切换时未消耗的跳跃输入会在新角色上重复触发。
         this.jumpBufferTimer = 0f;
         this.dashCooldownTimer = oldPlayer.dashCooldownTimer;
 
-        if (this.rb != null && oldPlayer.rb != null) {
-            this.rb.linearVelocity = oldPlayer.rb.linearVelocity;
+        if (oldPlayer.rb != null) {
+            this.pendingVelocity = oldPlayer.rb.linearVelocity;
+            this.hasPendingVelocity = true;
+
+            if (this.rb != null) {
+                this.rb.linearVelocity = oldPlayer.rb.linearVelocity;
+            }
         }
     }
 }
