@@ -85,6 +85,14 @@ namespace MainMenu
             CreateMenuButton(content, "Settings", OnSettings, true);
             CreateMenuButton(content, "Return to Main Menu", OnReturnToMainMenu, true);
             CreateMessageArea(canvas.transform);
+
+            // 手柄默认选中 Resume Game 按钮（代码生成模式下第一个按钮）
+            if (content.childCount > 1)
+            {
+                MenuUIHelper.SetFirstSelected(content.GetChild(1).gameObject);
+            }
+
+            MenuUIHelper.AddCancelHandler(this, OnResumeGame);
         }
 
         private bool TryBuildPrefabUI()
@@ -113,10 +121,19 @@ namespace MainMenu
                 MenuUIHelper.TryBindButton(canvas.transform, "ResumeButton", OnResumeGame, out _)
                 & MenuUIHelper.TryBindButton(canvas.transform, "LoadButton", OnLoadGame, out _)
                 & MenuUIHelper.TryBindButton(canvas.transform, "SaveButton", OnSaveGame, out _)
-                & MenuUIHelper.TryBindButton(canvas.transform, "SettingsButton", OnSettings, out _)
                 & MenuUIHelper.TryBindButton(canvas.transform, "MainMenuButton", OnReturnToMainMenu, out _);
 
+            // Settings 按钮在 prefab 中为可选
+            MenuUIHelper.TryBindButton(canvas.transform, "SettingsButton", OnSettings, out _);
+
             BindMessage(canvas.transform);
+
+            // 手柄默认选中 Resume Game 按钮
+            var resumeButton = MenuUIHelper.FindChildRecursive(canvas.transform, "ResumeButton");
+            if (resumeButton != null)
+            {
+                MenuUIHelper.SetFirstSelected(resumeButton.gameObject);
+            }
 
             if (!hasRequiredControls)
             {
@@ -125,6 +142,7 @@ namespace MainMenu
                 return false;
             }
 
+            MenuUIHelper.AddCancelHandler(this, OnResumeGame);
             return true;
         }
 

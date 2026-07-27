@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
@@ -78,3 +79,4 @@ namespace MainMenu
         }
     }
 }
+#endif

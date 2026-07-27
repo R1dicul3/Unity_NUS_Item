@@ -1,15 +1,9 @@
-using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Collider2D))]
 public class RoomDoor : MonoBehaviour {
-    public static event Action<
-        PlatformerPlayerController,
-        RoomDoor,
-        RoomDoor
-    > PlayerTeleported;
 
     [SerializeField] private bool requireInteraction = true;
     [SerializeField] private Transform targetSpawn;
@@ -197,12 +191,6 @@ public class RoomDoor : MonoBehaviour {
         if (transitionMusic != SoundType.None) {
             AudioManager.Instance?.PlayMusic(transitionMusic);
         }
-
-        PlayerTeleported?.Invoke(
-            player,
-            this,
-            targetDoor
-        );
     }
 
     private void UpdateCamera(PlatformerPlayerController player) {
@@ -258,32 +246,6 @@ public class RoomDoor : MonoBehaviour {
         InteractPromptController.Instance?.Hide();
 
         hidePromptCoroutine = null;
-    }
-
-    public string GetAreaName() {
-        const string prefix = "Door_";
-        const string separator = "_To_";
-
-        string doorName = gameObject.name;
-
-        if (!doorName.StartsWith(prefix)) {
-            return string.Empty;
-        }
-
-        int separatorIndex =
-            doorName.IndexOf(
-                separator,
-                StringComparison.Ordinal
-            );
-
-        if (separatorIndex <= prefix.Length) {
-            return string.Empty;
-        }
-
-        return doorName.Substring(
-            prefix.Length,
-            separatorIndex - prefix.Length
-        );
     }
 
     private bool TryGetAutoLinkedDestination(

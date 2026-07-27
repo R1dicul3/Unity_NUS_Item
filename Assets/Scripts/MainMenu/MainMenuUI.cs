@@ -85,6 +85,9 @@ namespace MainMenu
 
             // 按钮：Exit
             CreateMenuButton(content, "Exit", OnExit, true);
+
+            // 手柄默认选中第一个按钮（New Game）
+            MenuUIHelper.SetFirstSelected(content.GetChild(1).gameObject);
         }
 
         bool TryBuildPrefabUI()
@@ -111,6 +114,13 @@ namespace MainMenu
                 Debug.LogWarning("[MainMenuUI] Main menu prefab is missing one or more expected buttons. Falling back to generated UI.");
                 Destroy(canvas);
                 return false;
+            }
+
+            // 手柄默认选中 New Game 按钮
+            var newGameButton = FindChildRecursive(canvas.transform, "NewGameButton");
+            if (newGameButton != null)
+            {
+                MenuUIHelper.SetFirstSelected(newGameButton.gameObject);
             }
 
             return true;
@@ -185,12 +195,12 @@ namespace MainMenu
             if (SaveSystem.SaveSystem.IsFull())
             {
                 ConfirmDialogUI.Show(
-                    "Save slots are full. Starting a new game will overwrite the oldest save slot. Continue?",
+                    "Save slots are full. Starting a new game will overwrite a save slot. Continue?",
                     onConfirm: () =>
                     {
                         GamePauseManager.Instance?.StartNewGame();
                     },
-                    onCancel: () => SceneManager.LoadScene("LoadGame"),
+                    onCancel: () => SceneManager.LoadScene("MainMenu"),
                     dialogSound: SoundType.UIAlert);
             }
             else

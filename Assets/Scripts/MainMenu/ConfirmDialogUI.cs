@@ -9,6 +9,8 @@ namespace MainMenu
     {
         private PlayerInputActions inputActions;
         private UnityAction storedOnCancel;
+        public Font overrideFont;
+        private Font EffectiveFont => overrideFont ?? MenuUIHelper.GetDefaultFont();
 
         public static void Show(string message, UnityAction onConfirm, UnityAction onCancel = null, SoundType dialogSound = SoundType.None)
         {
@@ -77,7 +79,7 @@ namespace MainMenu
             panelRect.sizeDelta = new Vector2(640f, 320f);
 
             Text messageText = MenuUIHelper.CreateText(panel.transform, message, 24, Color.white,
-                MenuUIHelper.GetDefaultFont(), FontStyle.Normal, 140f);
+                EffectiveFont, FontStyle.Normal, 140f);
             RectTransform messageRect = messageText.GetComponent<RectTransform>();
             messageRect.anchorMin = new Vector2(0.5f, 0.65f);
             messageRect.anchorMax = new Vector2(0.5f, 0.65f);
@@ -94,7 +96,7 @@ namespace MainMenu
             buttonRect.anchoredPosition = Vector2.zero;
             buttonRect.sizeDelta = new Vector2(520f, 60f);
 
-            Font font = MenuUIHelper.GetDefaultFont();
+            Font font = EffectiveFont;
             Button confirmButton = MenuUIHelper.CreateButton(buttonContainer.transform, "Confirm", 22, 55f,
                 new Color(0.2f, 0.55f, 0.3f, 1f),
                 () => { onConfirm?.Invoke(); Destroy(gameObject); },
@@ -116,13 +118,68 @@ namespace MainMenu
             cancelRect.pivot = new Vector2(1f, 0.5f);
             cancelRect.anchoredPosition = Vector2.zero;
             cancelRect.sizeDelta = new Vector2(220f, 55f);
+
+            // 手柄默认选中 Confirm 按钮
+            MenuUIHelper.SetFirstSelected(confirmButton.gameObject);
+
+            MenuUIHelper.AddCancelHandler(this, () =>
+            {
+                onCancel?.Invoke();
+                Destroy(gameObject);
+            });
         }
 
         private bool TryBuildPrefabUI(string message, UnityAction onConfirm, UnityAction onCancel)
         {
-            // 暂时禁用 prefab 路径：MessageText 的 TMP 组件在运行时存在渲染问题，
-            // fallback 生成的 UI 使用 legacy Text，显示正常。
-            return false;
+            GameObject prefab = Resources.Load<GameObject>("UI/ConfirmDialogCanvas");
+            if (prefab == null)
+            {
+                return false;
+            }
+
+            GameObject canvas = Instantiate(prefab, transform);
+            canvas.name = prefab.name;
+            MenuUIHelper.EnsureCamera();
+            MenuUIHelper.EnsureEventSystem();
+
+            Canvas canvasComponent = canvas.GetComponent<Canvas>();
+            if (canvasComponent != null)
+            {
+                canvasComponent.sortingOrder = 999;
+            }
+
+            bool hasMessage = MenuUIHelper.TrySetText(canvas.transform, "MessageText", message);
+            bool hasConfirm = MenuUIHelper.TryBindButton(canvas.transform, "ConfirmButton", () =>
+            {
+                onConfirm?.Invoke();
+                Destroy(gameObject);
+            }, out _);
+            bool hasCancel = MenuUIHelper.TryBindButton(canvas.transform, "CancelButton", () =>
+            {
+                onCancel?.Invoke();
+                Destroy(gameObject);
+            }, out _);
+
+            if (!hasMessage || !hasConfirm || !hasCancel)
+            {
+                Debug.LogWarning("[ConfirmDialogUI] Confirm dialog prefab is missing expected controls. Falling back to generated UI.");
+                Destroy(canvas);
+                return false;
+            }
+
+            var confirmButton = MenuUIHelper.FindChildRecursive(canvas.transform, "ConfirmButton");
+            if (confirmButton != null)
+            {
+                MenuUIHelper.SetFirstSelected(confirmButton.gameObject);
+            }
+
+            MenuUIHelper.AddCancelHandler(this, () =>
+            {
+                onCancel?.Invoke();
+                Destroy(gameObject);
+            });
+
+            return true;
         }
     }
 }

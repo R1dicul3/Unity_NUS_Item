@@ -140,6 +140,19 @@ public class LevelVariantSwitcher : MonoBehaviour {
         }
 
         ApplyRedWorldFilter();
+        ApplyRedWorldAudioEffect();
+    }
+
+    private void ApplyRedWorldAudioEffect() {
+        if (AudioManager.Instance == null) {
+            return;
+        }
+
+        if (IsRedVariant) {
+            AudioManager.Instance.ApplyRedWorldEffect();
+        } else {
+            AudioManager.Instance.RemoveRedWorldEffect();
+        }
     }
 
     private void ApplyRedWorldFilter() {

@@ -153,6 +153,11 @@ namespace MainMenu
             RectTransform backRect = backButton.GetComponent<RectTransform>();
             backRect.sizeDelta = new Vector2(200f, 55f);
 
+            // 手柄默认选中 Back 按钮（代码生成模式下）
+            MenuUIHelper.SetFirstSelected(backButton.gameObject);
+
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
+
             SubscribeToSettings();
         }
 
@@ -191,6 +196,15 @@ namespace MainMenu
                 Destroy(canvas);
                 return false;
             }
+
+            // 手柄默认选中 BackButton（prefab 模式下）
+            var backButton = MenuUIHelper.FindChildRecursive(canvas.transform, "BackButton");
+            if (backButton != null)
+            {
+                MenuUIHelper.SetFirstSelected(backButton.gameObject);
+            }
+
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
 
             // 初始化滑块值为当前设置
             if (GameSettings.Instance != null)

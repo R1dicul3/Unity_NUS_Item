@@ -132,6 +132,14 @@ namespace MainMenu
 
             CreateMessageArea(canvas.transform);
             RefreshSlotHighlight();
+
+            // 手柄默认选中第一个存档槽位按钮
+            if (slotButtons != null && slotButtons.Length > 0 && slotButtons[0] != null)
+            {
+                MenuUIHelper.SetFirstSelected(slotButtons[0].gameObject);
+            }
+
+            MenuUIHelper.AddCancelHandler(this, OnCancelClicked);
         }
 
         private bool TryBuildPrefabUI()
@@ -182,6 +190,7 @@ namespace MainMenu
             }
 
             RefreshUI();
+            MenuUIHelper.AddCancelHandler(this, OnCancelClicked);
             return true;
         }
 
