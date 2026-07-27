@@ -97,7 +97,7 @@ namespace MainMenu
             buttonRect.sizeDelta = new Vector2(520f, 60f);
 
             Font font = EffectiveFont;
-            Button confirmButton = MenuUIHelper.CreateButton(buttonContainer.transform, "Confirm", 22, 55f,
+            Button confirmButton = MenuUIHelper.CreateButton(buttonContainer.transform, LocalizationManager.Get("Confirm"), 22, 55f,
                 new Color(0.2f, 0.55f, 0.3f, 1f),
                 () => { onConfirm?.Invoke(); Destroy(gameObject); },
                 font, true);
@@ -108,7 +108,7 @@ namespace MainMenu
             confirmRect.anchoredPosition = Vector2.zero;
             confirmRect.sizeDelta = new Vector2(220f, 55f);
 
-            Button cancelButton = MenuUIHelper.CreateButton(buttonContainer.transform, "Cancel", 22, 55f,
+            Button cancelButton = MenuUIHelper.CreateButton(buttonContainer.transform, LocalizationManager.Get("Cancel"), 22, 55f,
                 new Color(0.55f, 0.2f, 0.2f, 1f),
                 () => { onCancel?.Invoke(); Destroy(gameObject); },
                 font, true);

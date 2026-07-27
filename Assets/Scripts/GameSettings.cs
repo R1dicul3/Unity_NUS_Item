@@ -13,11 +13,13 @@ public class GameSettings : MonoBehaviour
     private const string PREF_MUSIC_VOLUME = "GameSettings_MusicVolume";
     private const string PREF_SFX_VOLUME = "GameSettings_SFXVolume";
     private const string PREF_CRT_INTENSITY = "GameSettings_CRTIntensity";
+    private const string PREF_LANGUAGE = "GameSettings_Language";
 
     private float _masterVolume = 1f;
     private float _musicVolume = 1f;
     private float _sfxVolume = 1f;
     private float _crtIntensity = 0.5f;
+    private Language _language = Language.English;
 
     /// <summary>
     /// 总音量（0–1）。AudioManager 会订阅此属性的变化事件以实时调整音频输出。
@@ -83,11 +85,30 @@ public class GameSettings : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 当前语言（默认 English）。修改后会自动持久化并触发本地化刷新。
+    /// </summary>
+    public Language Language
+    {
+        get => _language;
+        set
+        {
+            if (_language == value) return;
+            _language = value;
+            PlayerPrefs.SetInt(PREF_LANGUAGE, (int)_language);
+            PlayerPrefs.Save();
+            LocalizationManager.SetLanguage(_language);
+            OnLanguageChanged?.Invoke(_language);
+            OnAnySettingChanged?.Invoke();
+        }
+    }
+
     // 事件
     public event System.Action<float> OnMasterVolumeChanged;
     public event System.Action<float> OnMusicVolumeChanged;
     public event System.Action<float> OnSFXVolumeChanged;
     public event System.Action<float> OnCRTIntensityChanged;
+    public event System.Action<Language> OnLanguageChanged;
     public event System.Action OnAnySettingChanged;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -130,6 +151,8 @@ public class GameSettings : MonoBehaviour
         _musicVolume = PlayerPrefs.GetFloat(PREF_MUSIC_VOLUME, 1f);
         _sfxVolume = PlayerPrefs.GetFloat(PREF_SFX_VOLUME, 1f);
         _crtIntensity = PlayerPrefs.GetFloat(PREF_CRT_INTENSITY, 0.5f);
+        _language = (Language)PlayerPrefs.GetInt(PREF_LANGUAGE, (int)Language.English);
+        LocalizationManager.Initialize(_language);
     }
 
     /// <summary>
@@ -141,5 +164,6 @@ public class GameSettings : MonoBehaviour
         MusicVolume = 1f;
         SFXVolume = 1f;
         CRTIntensity = 0.5f;
+        Language = Language.English;
     }
 }

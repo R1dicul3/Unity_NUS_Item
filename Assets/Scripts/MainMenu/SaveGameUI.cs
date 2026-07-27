@@ -89,7 +89,7 @@ namespace MainMenu
             MenuUIHelper.CreateFullScreenBackground(canvas.transform, backgroundColor);
             RectTransform content = MenuUIHelper.CreateCenteredContent(canvas.transform, slotWidth, spacing);
 
-            MenuUIHelper.CreateText(content, "Save Game", titleFontSize, titleColor, EffectiveFont, FontStyle.Bold, 100f);
+            MenuUIHelper.CreateText(content, LocalizationManager.Get("SaveGame"), titleFontSize, titleColor, EffectiveFont, FontStyle.Bold, 100f);
 
             slotButtons = new Button[saveSlotCount];
             slotButtonImages = new Image[saveSlotCount];
@@ -112,7 +112,7 @@ namespace MainMenu
             actionContainer.transform.SetParent(content, false);
             actionContainer.AddComponent<RectTransform>().sizeDelta = new Vector2(slotWidth, 55f);
 
-            saveButton = MenuUIHelper.CreateButton(actionContainer.transform, "Save", actionButtonFontSize, 55f,
+            saveButton = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Save"), actionButtonFontSize, 55f,
                 new Color(0.2f, 0.55f, 0.3f, 1f), OnSaveClicked, EffectiveFont, true);
             RectTransform saveRect = saveButton.GetComponent<RectTransform>();
             saveRect.anchorMin = new Vector2(0f, 0.5f);
@@ -121,7 +121,7 @@ namespace MainMenu
             saveRect.anchoredPosition = Vector2.zero;
             saveRect.sizeDelta = new Vector2(260f, 55f);
 
-            Button cancelButton = MenuUIHelper.CreateButton(actionContainer.transform, "Cancel", actionButtonFontSize, 55f,
+            Button cancelButton = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Cancel"), actionButtonFontSize, 55f,
                 new Color(0.55f, 0.2f, 0.2f, 1f), OnCancelClicked, EffectiveFont, true);
             RectTransform cancelRect = cancelButton.GetComponent<RectTransform>();
             cancelRect.anchorMin = new Vector2(1f, 0.5f);
@@ -198,8 +198,8 @@ namespace MainMenu
         {
             SaveSystem.SaveMetaInfo meta = SaveSystem.SaveSystem.GetMetaInfo(slot);
             return meta == null
-                ? $"Slot {slot}  (Empty)"
-                : $"Slot {slot}  |  {meta.saveTimestamp}  |  Play Time: {meta.GetFormattedPlayTime()}";
+                ? $"Slot {slot}  {LocalizationManager.Get("SlotEmpty")}"
+                : $"Slot {slot}  |  {meta.saveTimestamp}  |  {LocalizationManager.Get("PlayTime")}: {meta.GetFormattedPlayTime()}";
         }
 
         private void OnSlotClicked(int slot)
@@ -238,13 +238,13 @@ namespace MainMenu
         {
             if (selectedSlot < 1)
             {
-                ShowMessage("Please select a save slot first.", Color.yellow);
+                ShowMessage(LocalizationManager.Get("PleaseSelectSlot"), Color.yellow);
                 return;
             }
 
             if (SaveSystem.SaveSystem.HasSave(selectedSlot))
             {
-                ConfirmDialogUI.Show($"Save slot {selectedSlot} already has data. Overwrite it?",
+                ConfirmDialogUI.Show(LocalizationManager.Get("OverwriteConfirm", selectedSlot),
                     onConfirm: () => DoSave(selectedSlot),
                     onCancel: null,
                     dialogSound: SoundType.UIAlert);
@@ -270,7 +270,7 @@ namespace MainMenu
             SaveSystem.SaveSystem.Save(slot, data);
             GamePauseManager.Instance?.MarkProgressSaved();
             AudioManager.Instance?.PlayOneShot(SoundType.UISuccess);
-            ShowMessage("Saved.", Color.green);
+            ShowMessage(LocalizationManager.Get("SavedMessage"), Color.green);
             RefreshUI();
             Invoke(nameof(Close), 1.5f);
         }

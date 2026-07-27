@@ -4,6 +4,8 @@ using UnityEngine.InputSystem;
 [SelectionBase]
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(BoxCollider2D))]
+[RequireComponent(typeof(DashEffect2D))]
+[RequireComponent(typeof(CharacterGroundShadow2D))]
 public class PlatformerPlayerController : MonoBehaviour {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8f;
@@ -43,6 +45,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     [Header("Animation")]
     [SerializeField] private float walkAnimationThreshold = 0.05f;
+    [SerializeField] private bool spriteFacesRightByDefault = false;
 
     [Header("Audio")]
     [Tooltip("走路音效的步进间隔（秒）。")]
@@ -51,8 +54,11 @@ public class PlatformerPlayerController : MonoBehaviour {
     private Rigidbody2D rb;
     private BoxCollider2D boxCollider;
     private SpriteRenderer spriteRenderer;
+    private Sprite lastVisibleSprite;
     private Animator animator;
     private TrailRenderer dashTrail;
+    private DashEffect2D dashEffect;
+    private CharacterGroundShadow2D groundShadow;
     private PhysicsMaterial2D frictionlessMaterial;
 
     private float moveInput;
@@ -71,7 +77,6 @@ public class PlatformerPlayerController : MonoBehaviour {
     private float walkSoundTimer;
     private bool wasWalking;
 
-    // 用于暂存同步过来的速度，确保 OnEnable 后物理引擎初始化时能正确赋予
     private Vector2 pendingVelocity;
     private bool hasPendingVelocity;
 
@@ -79,6 +84,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
     private static readonly int IsInDialogueHash = Animator.StringToHash("IsInDialogue");
+    private static readonly int IsJumpingHash = Animator.StringToHash("IsJumping");
 
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
@@ -115,7 +121,26 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (!canDash && isDashing) {
             isDashing = false;
+            dashEffect?.Stop();
             rb.gravityScale = defaultGravityScale;
+        }
+    }
+
+    public void SetAnimatorController(RuntimeAnimatorController controller) {
+        if (controller == null) {
+            return;
+        }
+
+        if (animator == null) {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        if (animator != null && animator.runtimeAnimatorController != controller) {
+            animator.runtimeAnimatorController = controller;
+            animator.Rebind();
+            UpdateAnimator();
+            animator.Update(0f);
+            CacheVisibleSprite();
         }
     }
 
@@ -126,6 +151,7 @@ public class PlatformerPlayerController : MonoBehaviour {
             moveInput = 0f;
             jumpBufferTimer = 0f;
             isDashing = false;
+            dashEffect?.Stop();
             rb.gravityScale = defaultGravityScale;
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
         }
@@ -143,11 +169,13 @@ public class PlatformerPlayerController : MonoBehaviour {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
-        defaultGravityScale = rb.gravityScale;
 
-        // 只有当勾选了 autoAlignCollider 且你想在初始化时应用默认合辑时才对齐
-        // 如果你想完全手动在面板调，可以把下面这行注释掉
-        // AlignCollider(); 
+        // 兼容获取组件（优先根节点，其次子节点）
+        dashEffect = GetComponent<DashEffect2D>() ?? GetComponentInChildren<DashEffect2D>();
+        groundShadow = GetComponent<CharacterGroundShadow2D>() ?? GetComponentInChildren<CharacterGroundShadow2D>();
+
+        CacheVisibleSprite();
+        defaultGravityScale = rb.gravityScale;
 
         ApplyFrictionlessMaterial();
     }
@@ -195,6 +223,10 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         ApplyHorizontalMovement();
         ApplyBetterJumpGravity();
+    }
+
+    private void LateUpdate() {
+        RestoreMissingSpriteAfterAnimation();
     }
 
     private void ReadInput() {
@@ -256,6 +288,7 @@ public class PlatformerPlayerController : MonoBehaviour {
             dashTimer -= Time.deltaTime;
             if (dashTimer <= 0f) {
                 isDashing = false;
+                dashEffect?.Stop();
                 rb.gravityScale = defaultGravityScale;
             }
         }
@@ -305,6 +338,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (dashTrail != null) {
             dashTrail.Clear();
         }
+
+        dashEffect?.Play(facingDirection, dashDuration);
     }
 
     private void ApplyHorizontalMovement() {
@@ -329,7 +364,9 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private void UpdateVisuals() {
         if (spriteRenderer != null) {
-            spriteRenderer.flipX = facingDirection < 0f;
+            bool movingLeft = facingDirection < 0f;
+            spriteRenderer.flipX = spriteFacesRightByDefault ? movingLeft : !movingLeft;
+            CacheVisibleSprite();
         }
 
         if (dashTrail != null) {
@@ -343,10 +380,33 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (animator == null) {
             return;
         }
-        bool isWalking = !isInDialogue && Mathf.Abs(moveInput) > 0.01f;
+        bool isJumping = !isInDialogue && !isGrounded;
+        bool isWalking = !isInDialogue && isGrounded && Mathf.Abs(moveInput) > walkAnimationThreshold;
 
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsInDialogueHash, isInDialogue);
+        animator.SetBool(IsJumpingHash, isJumping);
+    }
+
+    private void CacheVisibleSprite() {
+        if (spriteRenderer != null && spriteRenderer.sprite != null) {
+            lastVisibleSprite = spriteRenderer.sprite;
+        }
+    }
+
+    private void RestoreMissingSpriteAfterAnimation() {
+        if (spriteRenderer == null) {
+            return;
+        }
+
+        if (spriteRenderer.sprite != null) {
+            lastVisibleSprite = spriteRenderer.sprite;
+            return;
+        }
+
+        if (lastVisibleSprite != null) {
+            spriteRenderer.sprite = lastVisibleSprite;
+        }
     }
 
     private void UpdateWalkSound() {
@@ -395,9 +455,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
-
-        // 移除了这里对 AlignCollider() 的自动调用，
-        // 这样你在 Inspector 里面修改 BoxCollider2D 的 Size 和 Offset 时就不会被强制重置了！
+        dashEffect = GetComponent<DashEffect2D>() ?? GetComponentInChildren<DashEffect2D>();
+        groundShadow = GetComponent<CharacterGroundShadow2D>() ?? GetComponentInChildren<CharacterGroundShadow2D>();
     }
 
     private void ApplyFrictionlessMaterial() {

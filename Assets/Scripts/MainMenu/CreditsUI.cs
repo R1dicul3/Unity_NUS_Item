@@ -80,7 +80,7 @@ namespace MainMenu
             RectTransform content = MenuUIHelper.CreateCenteredContent(canvas.transform, contentWidth, entrySpacing);
 
             // 标题
-            MenuUIHelper.CreateText(content, "Credits", titleFontSize, titleColor,
+            MenuUIHelper.CreateText(content, LocalizationManager.Get("CreditsTitle"), titleFontSize, titleColor,
                 EffectiveFont, FontStyle.Bold, 100f);
 
             // 人员名单
@@ -96,7 +96,7 @@ namespace MainMenu
             spacerRect.sizeDelta = new Vector2(contentWidth, 30f);
 
             // 返回按钮
-            MenuUIHelper.CreateButton(content, "< Back", backButtonFontSize, 50f,
+            MenuUIHelper.CreateButton(content, LocalizationManager.Get("Back"), backButtonFontSize, 50f,
                 MenuUIHelper.DefaultButtonColor, OnBackClicked, EffectiveFont, true);
 
             // 手柄默认选中 Back 按钮
