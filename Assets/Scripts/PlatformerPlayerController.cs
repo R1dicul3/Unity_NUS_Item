@@ -26,6 +26,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     [SerializeField] private float dashCooldown = 0.55f;
 
     [Header("Ground Check")]
+    [SerializeField] private LayerMask groundMask = ~0;
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.9f, 0.12f);
     [SerializeField] private float groundCheckOffset = 0.53f;
     [SerializeField] private float groundCheckLockoutAfterJump = 0.08f;
@@ -46,7 +47,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     [SerializeField] private bool spriteFacesRightByDefault = false;
 
     [Header("Audio")]
-    [Tooltip("走路音效的步进间隔（秒）。")]
+    [Tooltip("Interval between walk sound effects in seconds.")]
     [SerializeField] private float walkSoundInterval = 0.35f;
 
     private Rigidbody2D rb;
@@ -55,6 +56,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     private Sprite lastVisibleSprite;
     private Animator animator;
     private TrailRenderer dashTrail;
+    private DashEffect2D dashEffect;
     private PhysicsMaterial2D frictionlessMaterial;
 
     private float moveInput;
@@ -89,13 +91,16 @@ public class PlatformerPlayerController : MonoBehaviour {
     public Collider2D BodyCollider => boxCollider;
 
     public void Initialize(LayerMask platformMask) {
+        SetGroundMask(platformMask);
     }
 
     public void Initialize(LayerMask platformMask, bool allowDoubleJump, bool allowDash) {
+        SetGroundMask(platformMask);
         SetAbilities(allowDoubleJump, allowDash);
     }
 
     public void Initialize(LayerMask platformMask, Color activeColor, Color inactiveColor, bool allowDoubleJump, bool allowDash) {
+        SetGroundMask(platformMask);
         SetAbilities(allowDoubleJump, allowDash);
 
         if (spriteRenderer == null) {
@@ -134,7 +139,9 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (animator != null && animator.runtimeAnimatorController != controller) {
             animator.runtimeAnimatorController = controller;
             animator.Rebind();
+            UpdateAnimator();
             animator.Update(0f);
+            CacheVisibleSprite();
         }
     }
 
@@ -145,6 +152,7 @@ public class PlatformerPlayerController : MonoBehaviour {
             moveInput = 0f;
             jumpBufferTimer = 0f;
             isDashing = false;
+            dashEffect?.Stop();
             rb.gravityScale = defaultGravityScale;
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
         }
@@ -162,6 +170,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
+        dashEffect = GetComponent<DashEffect2D>();
+        EnsureGroundMask();
         CacheVisibleSprite();
         defaultGravityScale = rb.gravityScale;
         AlignCollider();
@@ -232,10 +242,12 @@ public class PlatformerPlayerController : MonoBehaviour {
             return;
         }
 
-        Vector2 checkCenter = (Vector2)transform.position + Vector2.down * groundCheckOffset;
+        Vector2 checkSize = GetScaledGroundCheckSize();
+        Vector2 checkCenter = GetGroundCheckCenter(checkSize);
         isGrounded = false;
 
-        Collider2D[] hits = Physics2D.OverlapBoxAll(checkCenter, groundCheckSize, 0f);
+        EnsureGroundMask();
+        Collider2D[] hits = Physics2D.OverlapBoxAll(checkCenter, checkSize, 0f, groundMask);
         foreach (Collider2D hit in hits) {
             if (IsGroundCollider(hit)) {
                 isGrounded = true;
@@ -316,6 +328,8 @@ public class PlatformerPlayerController : MonoBehaviour {
         if (dashTrail != null) {
             dashTrail.Clear();
         }
+
+        dashEffect?.Play(facingDirection, dashDuration);
     }
 
     private void ApplyHorizontalMovement() {
@@ -357,7 +371,7 @@ public class PlatformerPlayerController : MonoBehaviour {
             return;
         }
         bool isJumping = !isInDialogue && !isGrounded;
-        bool isWalking = !isInDialogue && isGrounded && Mathf.Abs(moveInput) > 0.01f;
+        bool isWalking = !isInDialogue && isGrounded && Mathf.Abs(moveInput) > walkAnimationThreshold;
 
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsInDialogueHash, isInDialogue);
@@ -386,7 +400,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     }
 
     private void UpdateWalkSound() {
-        bool isWalking = isGrounded && Mathf.Abs(moveInput) > 0.01f && !isInDialogue;
+        bool isWalking = isGrounded && Mathf.Abs(moveInput) > walkAnimationThreshold && !isInDialogue;
 
         if (isWalking) {
             if (!wasWalking) {
@@ -423,8 +437,8 @@ public class PlatformerPlayerController : MonoBehaviour {
 
     private void OnDrawGizmosSelected() {
         Gizmos.color = Color.green;
-        Vector2 checkCenter = (Vector2)transform.position + Vector2.down * groundCheckOffset;
-        Gizmos.DrawWireCube(checkCenter, groundCheckSize);
+        Vector2 checkSize = GetScaledGroundCheckSize();
+        Gizmos.DrawWireCube(GetGroundCheckCenter(checkSize), checkSize);
     }
 
     private void OnValidate() {
@@ -432,6 +446,7 @@ public class PlatformerPlayerController : MonoBehaviour {
         boxCollider = GetComponent<BoxCollider2D>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         animator = GetComponentInChildren<Animator>();
+        EnsureGroundMask();
         AlignCollider();
     }
 
@@ -457,6 +472,33 @@ public class PlatformerPlayerController : MonoBehaviour {
         }
 
         return true;
+    }
+
+    private void SetGroundMask(LayerMask platformMask) {
+        groundMask = platformMask.value == 0 ? Physics2D.AllLayers : platformMask;
+    }
+
+    private void EnsureGroundMask() {
+        if (groundMask.value == 0) {
+            groundMask = Physics2D.AllLayers;
+        }
+    }
+
+    private Vector2 GetScaledGroundCheckSize() {
+        Vector3 scale = transform.lossyScale;
+        return new Vector2(
+            groundCheckSize.x * Mathf.Max(0.01f, Mathf.Abs(scale.x)),
+            groundCheckSize.y * Mathf.Max(0.01f, Mathf.Abs(scale.y)));
+    }
+
+    private Vector2 GetGroundCheckCenter(Vector2 checkSize) {
+        if (boxCollider == null) {
+            float scaledOffset = groundCheckOffset * Mathf.Max(0.01f, Mathf.Abs(transform.lossyScale.y));
+            return (Vector2)transform.position + Vector2.down * scaledOffset;
+        }
+
+        Bounds bounds = boxCollider.bounds;
+        return new Vector2(bounds.center.x, bounds.min.y - checkSize.y * 0.5f);
     }
 
     public void SyncStateFrom(PlatformerPlayerController oldPlayer) {

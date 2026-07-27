@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 120003}
   - component: {fileID: 120004}
   - component: {fileID: 120008}
+  - component: {fileID: 120009}
+  - component: {fileID: 120010}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -135,6 +137,9 @@ MonoBehaviour:
   dashSpeed: 18
   dashDuration: 0.16
   dashCooldown: 0.55
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   groundCheckSize: {x: 0.55, y: 0.1}
   groundCheckOffset: 0.35
   groundCheckLockoutAfterJump: 0.08
@@ -167,6 +172,52 @@ MonoBehaviour:
   basicCanDash: 0
   allowDirectInput: 1
   startInPoweredMode: 1
+--- !u!114 &120009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 120000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fd11fd27c154cf8898f29d999c4c84f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterGroundShadow2D
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxProjectionDistance: 8
+  groundInset: 0.02
+  groundedSize: {x: 0.85, y: 0.18}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.32}
+  airborneFadeHeight: 4
+  minAirborneAlpha: 0.08
+  minAirborneScale: 0.55
+  sortingOrderOffset: -1
+--- !u!114 &120010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 120000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65321dfb98714fbba1f7178e6096b1d4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DashEffect2D
+  afterimageInterval: 0.035
+  afterimageLifetime: 0.18
+  afterimageColor: {r: 0.35, g: 0.95, b: 1, a: 0.42}
+  afterimageSortingOffset: -1
+  burstLineCount: 5
+  lineLifetime: 0.14
+  lineLength: 0.65
+  lineWidth: 0.045
+  lineSpread: 0.55
+  lineColor: {r: 0.65, g: 1, b: 1, a: 0.75}
+  lineSortingOffset: 1
 --- !u!1 &120005
 GameObject:
   m_ObjectHideFlags: 0

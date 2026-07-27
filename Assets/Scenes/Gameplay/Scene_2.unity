@@ -33225,6 +33225,10 @@ PrefabInstance:
       propertyPath: dashCooldown
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 120004, guid: 2314c987c9b94d13ab0c65713137067f, type: 3}
+      propertyPath: groundMask.m_Bits
+      value: 4294967295
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
