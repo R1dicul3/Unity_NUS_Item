@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class DialogueTrigger : MonoBehaviour {
     [Header("Dialogue Reference")]
@@ -18,6 +19,22 @@ public class DialogueTrigger : MonoBehaviour {
     [Tooltip("是否只能触发一次。")]
     [SerializeField]
     private bool triggerOnce = false;
+
+    // ==========================================
+    // 【新增】自动翻页配置
+    // ==========================================
+    [Header("Auto Advance Settings")]
+    [Tooltip("开启后，由当前触发器发起的对话会自动翻页。")]
+    [SerializeField]
+    private bool autoAdvance = false;
+
+    [Tooltip("每句对话停留的时间（秒）。")]
+    [SerializeField]
+    private float autoAdvanceInterval = 2.0f;
+
+    private float autoAdvanceTimer;
+    private bool isExecutingDialogue; // 记录当前对话是否正由本触发器掌控
+    // ==========================================
 
     [Header("Optional Interaction Prompt")]
     [Tooltip("是否显示交互提示。")]
@@ -68,6 +85,9 @@ public class DialogueTrigger : MonoBehaviour {
     }
 
     private void Update() {
+        // 1. 处理本触发器发起的对话自动翻页逻辑
+        HandleAutoAdvance();
+
         if (!playerInside) {
             return;
         }
@@ -84,7 +104,7 @@ public class DialogueTrigger : MonoBehaviour {
             return;
         }
 
-        // 【新增逻辑】：如果提示正在显示，且需要自动定位，则实时更新位置（防止相机移动时 UI 错位）
+        // 如果提示正在显示，且需要自动定位，则实时更新位置
         if (showInteractionPrompt && !promptConsumed && interactionPrompt != null && interactionPrompt.activeSelf && autoPositionPrompt) {
             UpdatePromptPosition();
         }
@@ -144,6 +164,8 @@ public class DialogueTrigger : MonoBehaviour {
 
         dialogueTriggered = true;
         promptConsumed = true;
+        isExecutingDialogue = true; // 标记本触发器正在控制对话
+        autoAdvanceTimer = 0f;      // 重置计时器
         HideInteractionPrompt();
 
         if (lines != null && lines.Length > 0) {
@@ -152,6 +174,41 @@ public class DialogueTrigger : MonoBehaviour {
         else {
             dialogueController.StartStoredDialogue();
         }
+    }
+
+    // 处理自动翻页核心逻辑
+    private void HandleAutoAdvance() {
+        // 如果对话 Controller 已经关闭，清理本触发器的对话执行状态
+        if (dialogueController == null || !dialogueController.IsShowing) {
+            isExecutingDialogue = false;
+            autoAdvanceTimer = 0f;
+            return;
+        }
+
+        // 只有当前对话是由本触发器发起，且勾选了 autoAdvance 时才执行
+        if (isExecutingDialogue && autoAdvance) {
+            // 如果检测到玩家手动按了按键/鼠标，重置计时器，重新倒计时
+            if (IsManualAdvancePressed()) {
+                autoAdvanceTimer = 0f;
+            }
+            else {
+                autoAdvanceTimer += Time.deltaTime;
+                if (autoAdvanceTimer >= autoAdvanceInterval) {
+                    autoAdvanceTimer = 0f;
+                    dialogueController.Advance(); // 触发下一句
+                }
+            }
+        }
+    }
+
+    // 检查玩家是否进行了手动翻页操作
+    private bool IsManualAdvancePressed() {
+        Keyboard keyboard = Keyboard.current;
+        Mouse mouse = Mouse.current;
+
+        return (inputActions != null && inputActions.Player.NextDialogue.WasPressedThisFrame())
+            || (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            || (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame));
     }
 
     private void ShowInteractionPrompt() {
@@ -169,7 +226,6 @@ public class DialogueTrigger : MonoBehaviour {
         }
     }
 
-    // 【新增方法】：处理世界坐标到屏幕坐标的正确转换
     private void UpdatePromptPosition() {
         if (mainCamera == null) {
             mainCamera = Camera.main;
@@ -178,16 +234,13 @@ public class DialogueTrigger : MonoBehaviour {
 
         Vector3 targetWorldPos = transform.position + promptOffset;
 
-        // 检查这个交互提示是不是 UI Canvas 里的元素
         Canvas parentCanvas = interactionPrompt.GetComponentInParent<Canvas>();
 
         if (parentCanvas != null && parentCanvas.renderMode != RenderMode.WorldSpace) {
-            // 如果是屏幕空间的 UI (Screen Space - Overlay / Camera)
             Vector3 screenPos = mainCamera.WorldToScreenPoint(targetWorldPos);
             interactionPrompt.transform.position = screenPos;
         }
         else {
-            // 如果是世界空间的物体 (比如场景里直接放的 Sprite、3D TextMeshPro)
             interactionPrompt.transform.position = targetWorldPos;
         }
     }

@@ -46,6 +46,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     [Header("Animation")]
     [SerializeField] private float walkAnimationThreshold = 0.05f;
     [SerializeField] private bool spriteFacesRightByDefault = false;
+    [SerializeField] private bool autoDetectSpriteFacing = true;
 
     [Header("Audio")]
     [Tooltip("走路音效的步进间隔（秒）。")]
@@ -85,6 +86,7 @@ public class PlatformerPlayerController : MonoBehaviour {
     private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
     private static readonly int IsInDialogueHash = Animator.StringToHash("IsInDialogue");
     private static readonly int IsJumpingHash = Animator.StringToHash("IsJumping");
+    private static readonly int PlayIdleActionHash = Animator.StringToHash("PlayIdleAction");
 
     public bool IsGrounded => isGrounded;
     public bool IsDashing => isDashing;
@@ -94,6 +96,17 @@ public class PlatformerPlayerController : MonoBehaviour {
     public bool CanDash => canDash;
     public bool IsWeakerCharacter => !canDoubleJump && !canDash;
     public Collider2D BodyCollider => boxCollider;
+
+    public void PlayWorkerIdleAction() {
+        if (animator == null) {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        if (animator != null && HasAnimatorParameter(PlayIdleActionHash)) {
+            animator.ResetTrigger(PlayIdleActionHash);
+            animator.SetTrigger(PlayIdleActionHash);
+        }
+    }
 
     public void Initialize(LayerMask platformMask) {
     }
@@ -137,6 +150,7 @@ public class PlatformerPlayerController : MonoBehaviour {
 
         if (animator != null && animator.runtimeAnimatorController != controller) {
             animator.runtimeAnimatorController = controller;
+            ConfigureSpriteFacingForController(controller);
             animator.Rebind();
             UpdateAnimator();
             animator.Update(0f);
@@ -170,10 +184,10 @@ public class PlatformerPlayerController : MonoBehaviour {
         animator = GetComponentInChildren<Animator>();
         dashTrail = GetComponent<TrailRenderer>();
 
-        // 兼容获取组件（优先根节点，其次子节点）
         dashEffect = GetComponent<DashEffect2D>() ?? GetComponentInChildren<DashEffect2D>();
         groundShadow = GetComponent<CharacterGroundShadow2D>() ?? GetComponentInChildren<CharacterGroundShadow2D>();
 
+        ConfigureSpriteFacingForController(animator != null ? animator.runtimeAnimatorController : null);
         CacheVisibleSprite();
         defaultGravityScale = rb.gravityScale;
 
@@ -365,7 +379,15 @@ public class PlatformerPlayerController : MonoBehaviour {
     private void UpdateVisuals() {
         if (spriteRenderer != null) {
             bool movingLeft = facingDirection < 0f;
-            spriteRenderer.flipX = spriteFacesRightByDefault ? movingLeft : !movingLeft;
+            bool shouldFlip = spriteFacesRightByDefault ? movingLeft : !movingLeft;
+
+            // 保留 OfficeWorker 硬编码的前提下，针对其 Idle 状态方向相反的问题进行单独修正
+            bool isIdle = isGrounded && Mathf.Abs(moveInput) <= walkAnimationThreshold && !isInDialogue;
+            if (isIdle && animator != null && animator.runtimeAnimatorController != null && animator.runtimeAnimatorController.name == "OfficeWorker") {
+                shouldFlip = !shouldFlip;
+            }
+
+            spriteRenderer.flipX = shouldFlip;
             CacheVisibleSprite();
         }
 
@@ -386,6 +408,24 @@ public class PlatformerPlayerController : MonoBehaviour {
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsInDialogueHash, isInDialogue);
         animator.SetBool(IsJumpingHash, isJumping);
+    }
+
+    private void ConfigureSpriteFacingForController(RuntimeAnimatorController controller) {
+        if (!autoDetectSpriteFacing || controller == null) {
+            return;
+        }
+
+        // 保留原有的 OfficeWorker 硬编码判断
+        spriteFacesRightByDefault = controller.name == "OfficeWorker";
+    }
+
+    private bool HasAnimatorParameter(int nameHash) {
+        foreach (AnimatorControllerParameter parameter in animator.parameters) {
+            if (parameter.nameHash == nameHash) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void CacheVisibleSprite() {
