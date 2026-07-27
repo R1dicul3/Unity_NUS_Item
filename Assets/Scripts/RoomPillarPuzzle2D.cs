@@ -38,7 +38,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
     [SerializeField] private Color gray = new Color(0.55f, 0.58f, 0.62f, 1f);
 
     [Header("Completion")]
-    [SerializeField] private float alignmentTolerance = 1.125f;
+    [SerializeField] private float alignmentTolerance = 5f;
     [SerializeField] private float targetLineWidth = 3.825f;
     [SerializeField] private float targetLineThickness = 0.27f;
     [SerializeField] private ColorTarget[] colorTargets =
@@ -48,6 +48,14 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         new ColorTarget { kind = SinkingPillar2D.SegmentKind.Green, pillarIndex = 2 },
         new ColorTarget { kind = SinkingPillar2D.SegmentKind.Pink, pillarIndex = 3 }
     };
+
+    [Header("Camera Transition")]
+    [Tooltip("Puzzle 解开后摄像机移动到新区域的时长（秒）。设为 0 则瞬间硬切。")]
+    [SerializeField] private float cameraTransitionDuration = 0.35f;
+    [Tooltip("摄像机过渡的缓动曲线。留空则使用默认平滑。")]
+    [SerializeField] private AnimationCurve cameraTransitionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [Tooltip("解开后传送到的目标区域 CameraArea。如果不填则只绑定玩家位置不做边界过渡。")]
+    [SerializeField] private CameraArea targetCameraArea;
 
     [Header("Restart")]
     [SerializeField] private string restartPlatformName = "Shared_Platform_01 (2)";
@@ -154,6 +162,13 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             return;
         }
 
+        if (IsPlayerOnFailureFloor())
+        {
+            Debug.Log("Room 1 puzzle failed! Player fell to the floor.");
+            RestartPuzzle();
+            return;
+        }
+
         if (!AreAllPillarsStationary())
         {
             return;
@@ -209,41 +224,53 @@ public class RoomPillarPuzzle2D : MonoBehaviour
         return false;
     }
 
+    private bool IsPlayerOnFailureFloor()
+    {
+        PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>();
+        if (player == null)
+        {
+            return false;
+        }
+
+        Vector3 pos = player.transform.position;
+        return pos.x >= -83.8f && pos.x <= -24.3f && pos.y <= -53f;
+    }
+
     private bool CheckCompletion()
     {
-        float lineY = GetTargetLineWorldY();
-        foreach (SinkingPillar2D.SegmentKind color in GetRequiredTargetColors())
+        (string name, Vector3 target)[] checks = new (string, Vector3)[]
         {
-            bool found = false;
-            foreach (SinkingPillar2D pillar in registeredPillars)
+            ("Segment_1_Yellow", new Vector3(-68.81f, -35.81f, -0.18f)),
+            ("Segment_3_Gray",   new Vector3(-59.28f, -52.44f, -0.18f)),
+            ("Segment_2_Green",  new Vector3(-49.67f, -46.85f, -0.18f)),
+            ("Segment_2_Pink",   new Vector3(-39.44f, -41.15f, -0.18f))
+        };
+
+        const float tolerance = 0.5f;
+        bool allPassed = true;
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+        foreach ((string name, Vector3 target) in checks)
+        {
+            GameObject segment = GameObject.Find(name);
+            if (segment == null)
             {
-                if (pillar == null)
-                {
-                    continue;
-                }
-
-                foreach ((SinkingPillar2D.SegmentKind kind, float worldY) in pillar.GetVisibleSegments())
-                {
-                    if (kind == color && Mathf.Abs(worldY - lineY) <= alignmentTolerance)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (found)
-                {
-                    break;
-                }
+                sb.AppendLine($"  {name}: NOT FOUND");
+                allPassed = false;
+                continue;
             }
 
-            if (!found)
+            float dist = Vector3.Distance(segment.transform.position, target);
+            bool pass = dist <= tolerance;
+            sb.AppendLine($"  {name}: pos={segment.transform.position}, dist={dist:F3}, pass={pass}");
+            if (!pass)
             {
-                return false;
+                allPassed = false;
             }
         }
 
-        return true;
+        Debug.Log($"Room 1 Puzzle Check (result={allPassed}):\n{sb}");
+        return allPassed;
     }
 
     public void RestartPuzzle()
@@ -260,13 +287,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             }
         }
 
-        GameObject platform = GameObject.Find(restartPlatformName);
-        if (platform == null)
-        {
-            Debug.LogWarning($"Restart platform '{restartPlatformName}' not found.");
-            return;
-        }
-
         PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>();
         if (player == null)
         {
@@ -274,15 +294,7 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             return;
         }
 
-        Vector3 platformPos = platform.transform.position;
-        Vector3 platformScale = platform.transform.lossyScale;
-        float platformTop = platformPos.y + platformScale.y * 0.5f;
-
-        BoxCollider2D playerCollider = player.GetComponent<BoxCollider2D>();
-        float playerHeight = playerCollider != null ? playerCollider.size.y * player.transform.lossyScale.y : 1f;
-        float teleportY = platformTop + playerHeight * 0.5f + 0.05f;
-
-        player.transform.position = new Vector3(platformPos.x, teleportY, player.transform.position.z);
+        player.transform.position = new Vector3(-53.8f, -28.9f, 0f);
 
         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
         if (playerRb != null)
@@ -307,13 +319,6 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             reveal.Reveal();
         }
 
-        GameObject targetPlatform = GameObject.Find("Shared_Platform_01 (2)");
-        if (targetPlatform == null)
-        {
-            Debug.LogWarning("Target platform 'Shared_Platform_01 (2)' not found for teleport.");
-            return;
-        }
-
         PlatformerPlayerController player = FindFirstObjectByType<PlatformerPlayerController>();
         if (player == null)
         {
@@ -321,21 +326,38 @@ public class RoomPillarPuzzle2D : MonoBehaviour
             return;
         }
 
-        Vector3 platformPos = targetPlatform.transform.position;
-        Vector3 platformScale = targetPlatform.transform.lossyScale;
-        float platformTop = platformPos.y + platformScale.y * 0.5f;
-
-        BoxCollider2D playerCollider = player.GetComponent<BoxCollider2D>();
-        float playerHeight = playerCollider != null ? playerCollider.size.y * player.transform.lossyScale.y : 1f;
-        float teleportY = platformTop + playerHeight * 0.5f + 0.05f;
-
-        player.transform.position = new Vector3(platformPos.x, teleportY, player.transform.position.z);
+        player.transform.position = new Vector3(-75.9f, -10.5f, 0f);
 
         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
         if (playerRb != null)
         {
             playerRb.linearVelocity = Vector2.zero;
         }
+
+        UpdateCamera(player);
+    }
+
+    private void UpdateCamera(PlatformerPlayerController player)
+    {
+        PixelPerfectFollowCamera camera = FindFirstObjectByType<PixelPerfectFollowCamera>();
+        if (camera == null)
+        {
+            return;
+        }
+
+        camera.SetTarget(player.transform);
+
+        if (targetCameraArea == null)
+        {
+            return;
+        }
+
+        camera.TransitionTo(
+            targetCameraArea.CameraBounds,
+            targetCameraArea.CameraSize,
+            cameraTransitionDuration,
+            cameraTransitionCurve
+        );
     }
 
     private void HidePlatforms()

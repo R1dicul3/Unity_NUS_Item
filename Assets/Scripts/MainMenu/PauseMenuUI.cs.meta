@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: 2034a91609e8b624f8ecf8ccc2a4d816
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - overrideFont: {fileID: 12800000, guid: 7ab4b77a033872949ad2ec042efc8a11, type: 3}
+  - canvasPrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

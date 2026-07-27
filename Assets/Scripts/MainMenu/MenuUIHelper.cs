@@ -86,20 +86,47 @@ namespace MainMenu
         public static void EnsureEventSystem()
         {
 #if UNITY_2023_1_OR_NEWER
-            if (UnityEngine.Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
+            var eventSystem = UnityEngine.Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
 #else
-            if (UnityEngine.Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
+            var eventSystem = UnityEngine.Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
 #endif
+            if (eventSystem == null)
             {
-                GameObject eventSystem = new GameObject("EventSystem");
-                eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                GameObject eventSystemGO = new GameObject("EventSystem");
+                eventSystem = eventSystemGO.AddComponent<UnityEngine.EventSystems.EventSystem>();
 
 #if ENABLE_INPUT_SYSTEM
-                eventSystem.AddComponent<InputSystemUIInputModule>();
+                eventSystemGO.AddComponent<InputSystemUIInputModule>();
 #else
-                eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+                eventSystemGO.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
 #endif
             }
+        }
+
+        /// <summary>
+        /// 设置 EventSystem 的默认选中对象（手柄导航入口）。
+        /// </summary>
+        public static void SetFirstSelected(GameObject gameObject)
+        {
+            if (gameObject == null) return;
+
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            if (eventSystem == null) return;
+
+            eventSystem.firstSelectedGameObject = gameObject;
+            eventSystem.SetSelectedGameObject(gameObject);
+        }
+
+        /// <summary>
+        /// 确保 Selectable 的 Navigation 模式为 Automatic（支持方向键/摇杆自动导航）。
+        /// </summary>
+        public static void EnsureNavigationAutomatic(Selectable selectable)
+        {
+            if (selectable == null) return;
+
+            Navigation navigation = selectable.navigation;
+            navigation.mode = Navigation.Mode.Automatic;
+            selectable.navigation = navigation;
         }
 
         /// <summary>
@@ -205,8 +232,12 @@ namespace MainMenu
             colors.normalColor = interactable ? buttonColor : disabledImageColor;
             colors.highlightedColor = new Color(buttonColor.r * 1.2f, buttonColor.g * 1.2f, buttonColor.b * 1.2f, 1f);
             colors.pressedColor = new Color(buttonColor.r * 0.8f, buttonColor.g * 0.8f, buttonColor.b * 0.8f, 1f);
+            colors.selectedColor = new Color(1f, 1f, 1f, 1f);
             colors.disabledColor = new Color(buttonColor.r * 0.4f, buttonColor.g * 0.4f, buttonColor.b * 0.4f, 0.6f);
             btn.colors = colors;
+
+            // 确保手柄导航可用
+            EnsureNavigationAutomatic(btn);
 
             RectTransform btnRect = btnGO.GetComponent<RectTransform>();
             btnRect.sizeDelta = new Vector2(0f, height);
@@ -285,6 +316,14 @@ namespace MainMenu
             {
                 button.gameObject.AddComponent<UIButtonSound>();
             }
+
+            // 确保手柄导航可用
+            EnsureNavigationAutomatic(button);
+
+            // 强化手柄选中时的视觉反馈（selectedColor）
+            ColorBlock colors = button.colors;
+            colors.selectedColor = new Color(1f, 1f, 1f, 1f);
+            button.colors = colors;
 
             return true;
         }
@@ -492,5 +531,76 @@ namespace MainMenu
             Debug.LogError("[MenuUIHelper] No available font found. Please place a font file in Assets/Resources/Fonts/ or set Override Font in the UI script's Inspector.");
             return null;
         }
+
+        /// <summary>
+        /// 为菜单UI添加手柄 B 键 / Escape 键的 Cancel 监听。
+        /// 会在宿主 GameObject 上挂载一个自动清理的辅助组件。
+        /// </summary>
+        public static void AddCancelHandler(MonoBehaviour host, System.Action onCancel)
+        {
+            if (host == null || onCancel == null) return;
+
+            var handler = host.gameObject.GetComponent<MenuCancelInput>();
+            if (handler == null)
+            {
+                handler = host.gameObject.AddComponent<MenuCancelInput>();
+            }
+            handler.Setup(onCancel);
+        }
     }
+
+#if ENABLE_INPUT_SYSTEM
+    /// <summary>
+    /// 菜单 Cancel 输入辅助组件。
+    /// 监听 InputSystem 的 UI/Cancel 动作（手柄 B 键 / Escape），
+    /// 在宿主激活状态变化时自动启停 InputActions，销毁时自动清理。
+    /// </summary>
+    public class MenuCancelInput : MonoBehaviour
+    {
+        private PlayerInputActions inputActions;
+        private System.Action onCancel;
+
+        public void Setup(System.Action cancelCallback)
+        {
+            onCancel = cancelCallback;
+
+            if (inputActions != null)
+            {
+                inputActions.UI.Cancel.performed -= OnCancelPerformed;
+                inputActions.UI.Disable();
+                inputActions.Dispose();
+            }
+
+            inputActions = new PlayerInputActions();
+            inputActions.UI.Cancel.performed += OnCancelPerformed;
+            inputActions.UI.Enable();
+        }
+
+        private void OnEnable()
+        {
+            inputActions?.UI.Enable();
+        }
+
+        private void OnDisable()
+        {
+            inputActions?.UI.Disable();
+        }
+
+        private void OnCancelPerformed(UnityEngine.InputSystem.InputAction.CallbackContext context)
+        {
+            onCancel?.Invoke();
+        }
+
+        private void OnDestroy()
+        {
+            if (inputActions != null)
+            {
+                inputActions.UI.Cancel.performed -= OnCancelPerformed;
+                inputActions.UI.Disable();
+                inputActions.Dispose();
+                inputActions = null;
+            }
+        }
+    }
+#endif
 }

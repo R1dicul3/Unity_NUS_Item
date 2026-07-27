@@ -57,6 +57,10 @@ namespace MainMenu
         private Image[] slotButtonImages;
         private Button loadButton;
         private Button deleteButton;
+        private GameObject messageObject;
+        private Transform messageRoot;
+        private Graphic messageGraphic;
+        private bool isNavigatingBack;
 
         void Awake()
         {
@@ -65,6 +69,7 @@ namespace MainMenu
 
         void OnEnable()
         {
+            isNavigatingBack = false;
             inputActions = new PlayerInputActions();
             inputActions.Player.Menu.performed += OnMenuPerformed;
             inputActions.Enable();
@@ -107,7 +112,7 @@ namespace MainMenu
             RectTransform content = MenuUIHelper.CreateCenteredContent(canvas.transform, slotWidth, spacing);
 
             // 标题
-            MenuUIHelper.CreateText(content, "Select Save", titleFontSize, titleColor,
+            MenuUIHelper.CreateText(content, LocalizationManager.Get("SelectSave"), titleFontSize, titleColor,
                 EffectiveFont, FontStyle.Bold, 100f);
 
             // 存档槽
@@ -146,7 +151,7 @@ namespace MainMenu
             actionRect.sizeDelta = new Vector2(slotWidth, 55f);
 
             // Load 按钮
-            Button loadBtn = MenuUIHelper.CreateButton(actionContainer.transform, "Load", actionButtonFontSize, 55f,
+            Button loadBtn = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Load"), actionButtonFontSize, 55f,
                 new Color(0.2f, 0.55f, 0.3f, 1f), OnLoadClicked, EffectiveFont, true);
             loadButton = loadBtn;
             RectTransform loadRect = loadBtn.GetComponent<RectTransform>();
@@ -157,7 +162,7 @@ namespace MainMenu
             loadRect.sizeDelta = new Vector2(170f, 55f);
 
             // Delete 按钮
-            Button deleteBtn = MenuUIHelper.CreateButton(actionContainer.transform, "Delete", actionButtonFontSize, 55f,
+            Button deleteBtn = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Delete"), actionButtonFontSize, 55f,
                 new Color(0.55f, 0.2f, 0.2f, 1f), OnDeleteClicked, EffectiveFont, true);
             deleteButton = deleteBtn;
             RectTransform deleteRect = deleteBtn.GetComponent<RectTransform>();
@@ -168,7 +173,7 @@ namespace MainMenu
             deleteRect.sizeDelta = new Vector2(170f, 55f);
 
             // 返回按钮
-            Button backBtn = MenuUIHelper.CreateButton(actionContainer.transform, "< Back", backButtonFontSize, 55f,
+            Button backBtn = MenuUIHelper.CreateButton(actionContainer.transform, LocalizationManager.Get("Back"), backButtonFontSize, 55f,
                 buttonColor, OnBackClicked, EffectiveFont, true);
             RectTransform backRect = backBtn.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(1f, 0.5f);
@@ -178,6 +183,25 @@ namespace MainMenu
             backRect.sizeDelta = new Vector2(170f, 55f);
 
             RefreshSlotHighlight();
+
+            // 手柄默认选中第一个有存档的槽位按钮，如果没有则选中第一个
+            int firstSlotWithSave = -1;
+            for (int i = 0; i < saveSlotCount; i++)
+            {
+                if (SaveSystem.SaveSystem.HasSave(i + 1))
+                {
+                    firstSlotWithSave = i;
+                    break;
+                }
+            }
+            int targetSlot = firstSlotWithSave >= 0 ? firstSlotWithSave : 0;
+            if (slotButtons != null && targetSlot < slotButtons.Length && slotButtons[targetSlot] != null)
+            {
+                MenuUIHelper.SetFirstSelected(slotButtons[targetSlot].gameObject);
+            }
+
+            CreateMessageArea(canvas.transform);
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
         }
 
         bool TryBuildPrefabUI()
@@ -226,7 +250,13 @@ namespace MainMenu
                 return false;
             }
 
+            BindMessage(canvas.transform);
+            if (messageRoot == null)
+            {
+                CreateMessageArea(canvas.transform);
+            }
             RefreshUI();
+            MenuUIHelper.AddCancelHandler(this, OnBackClicked);
             return true;
         }
 
@@ -235,10 +265,10 @@ namespace MainMenu
             var meta = SaveSystem.SaveSystem.GetMetaInfo(slot);
             if (meta == null)
             {
-                return $"Slot {slot}  (Empty)";
+                return $"Slot {slot}  {LocalizationManager.Get("SlotEmpty")}";
             }
 
-            return $"Slot {slot}  |  {meta.saveTimestamp}  |  Play Time: {meta.GetFormattedPlayTime()}";
+            return $"Slot {slot}  |  {meta.saveTimestamp}  |  {LocalizationManager.Get("PlayTime")}: {meta.GetFormattedPlayTime()}";
         }
 
         void OnSlotClicked(int slot)
@@ -314,19 +344,108 @@ namespace MainMenu
                 return;
             }
 
-            ConfirmDialogUI.Show($"Are you sure you want to delete save slot {selectedSlot}? This action cannot be undone.",
+            ConfirmDialogUI.Show(LocalizationManager.Get("DeleteConfirm", selectedSlot),
                 onConfirm: () =>
                 {
                     SaveSystem.SaveSystem.Delete(selectedSlot);
                     selectedSlot = -1;
+                    ShowMessage(LocalizationManager.Get("DeletedMessage"), Color.green);
                     RefreshUI();
+                    Invoke(nameof(Close), 1.5f);
                 },
                 onCancel: null,
                 dialogSound: SoundType.UIAlert);
         }
 
+        private void CreateMessageArea(Transform canvasTransform)
+        {
+            GameObject message = new GameObject("MessageText");
+            message.transform.SetParent(canvasTransform, false);
+
+            Text text = message.AddComponent<Text>();
+            text.text = "";
+            text.font = EffectiveFont;
+            text.fontSize = 26;
+            text.color = Color.green;
+            text.alignment = TextAnchor.MiddleCenter;
+
+            RectTransform rect = message.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.15f);
+            rect.anchorMax = new Vector2(0.5f, 0.15f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(800f, 50f);
+
+            messageRoot = message.transform;
+            messageObject = message;
+            messageGraphic = text;
+            SetMessageVisible(false);
+        }
+
+        private void BindMessage(Transform root)
+        {
+            Transform message = MenuUIHelper.FindChildRecursive(root, "MessageText");
+            if (message == null)
+            {
+                return;
+            }
+
+            messageRoot = message;
+            messageObject = message.gameObject;
+            messageGraphic = message.GetComponent<Graphic>() ?? message.GetComponentInChildren<Graphic>(true);
+            SetMessageVisible(false);
+        }
+
+        private void ShowMessage(string message, Color color)
+        {
+            if (messageRoot == null)
+            {
+                return;
+            }
+
+            MenuUIHelper.TrySetText(messageRoot, message);
+            if (messageGraphic != null)
+            {
+                messageGraphic.color = color;
+            }
+
+            SetMessageVisible(true);
+        }
+
+        private void SetMessageVisible(bool value)
+        {
+            if (messageObject != null)
+            {
+                messageObject.SetActive(value);
+            }
+        }
+
         void OnBackClicked()
         {
+            if (isNavigatingBack)
+            {
+                return;
+            }
+
+            isNavigatingBack = true;
+            CancelInvoke(nameof(Close));
+            if (GamePauseManager.Instance != null && GamePauseManager.Instance.CameFromPauseMenu)
+            {
+                GamePauseManager.Instance.ReturnToGameFromLoadGame();
+            }
+            else
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
+        }
+
+        private void Close()
+        {
+            if (this == null || gameObject == null)
+            {
+                return;
+            }
+
             if (GamePauseManager.Instance != null && GamePauseManager.Instance.CameFromPauseMenu)
             {
                 GamePauseManager.Instance.ReturnToGameFromLoadGame();

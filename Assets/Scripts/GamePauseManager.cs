@@ -25,7 +25,7 @@ public class GamePauseManager : MonoBehaviour
     public bool CameFromPauseMenu { get; private set; }
     public bool HasUnsavedProgress { get; private set; } = false;
 
-    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits", "Settings" };
+    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits", "Settings", "Ending" };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Initialize()
@@ -252,6 +252,7 @@ public class GamePauseManager : MonoBehaviour
         SaveSystem.GameTimer.Instance?.StartTimer();
         AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.RemovePauseEffect();
+        AudioManager.Instance?.RemoveRedWorldEffect();
         AudioManager.Instance?.PlayMusic(SoundType.GameplayMusic);
         SceneManager.LoadScene("Scene_main");
     }
@@ -303,6 +304,7 @@ public class GamePauseManager : MonoBehaviour
         Time.timeScale = 1f;
         SuppressDialogueUi(false);
         AudioManager.Instance?.RemovePauseEffect();
+        AudioManager.Instance?.RemoveRedWorldEffect();
         pauseMenuObject = null;
 
         pendingLoadData = data;
@@ -344,6 +346,7 @@ public class GamePauseManager : MonoBehaviour
         SuppressDialogueUi(false);
         AudioManager.Instance?.PlayOneShot(SoundType.UIClick);
         AudioManager.Instance?.RemovePauseEffect();
+        AudioManager.Instance?.RemoveRedWorldEffect();
         SceneManager.LoadScene("MainMenu");
     }
 
@@ -480,7 +483,8 @@ public class GamePauseManager : MonoBehaviour
         var cameraFollow = FindFirstObjectByType<PixelPerfectFollowCamera>();
         if (cameraFollow != null)
         {
-            cameraFollow.ForceSnapToTarget();
+            // 根据玩家新位置重新检测 CameraArea，同步更新 Bounds、Size 和位置
+            cameraFollow.RefreshCameraBoundsToTarget();
         }
 
         Debug.Log("[GamePauseManager] Save data applied to scene.");
