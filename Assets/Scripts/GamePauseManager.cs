@@ -25,7 +25,7 @@ public class GamePauseManager : MonoBehaviour
     public bool CameFromPauseMenu { get; private set; }
     public bool HasUnsavedProgress { get; private set; } = false;
 
-    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits", "Settings" };
+    private readonly string[] menuScenes = { "MainMenu", "LoadGame", "Credits", "Settings", "Ending" };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Initialize()

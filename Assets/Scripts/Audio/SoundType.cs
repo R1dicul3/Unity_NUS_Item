@@ -34,4 +34,5 @@ public enum SoundType
     InnMusic,
     Scene2Music,
     PauseMusic,
+    EndingMusic,
 }
