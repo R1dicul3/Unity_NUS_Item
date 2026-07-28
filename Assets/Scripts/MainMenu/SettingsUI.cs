@@ -262,6 +262,7 @@ namespace MainMenu
             }
 
             UpdateValueTexts();
+            RefreshLocalizedTexts();
             SubscribeToSettings();
             return true;
         }

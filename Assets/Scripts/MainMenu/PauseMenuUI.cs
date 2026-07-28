@@ -143,6 +143,14 @@ namespace MainMenu
             }
 
             MenuUIHelper.AddCancelHandler(this, OnResumeGame);
+
+            // 刷新本地化文本
+            MenuUIHelper.TrySetText(canvas.transform, "ResumeButton", LocalizationManager.Get("ResumeGame"));
+            MenuUIHelper.TrySetText(canvas.transform, "LoadButton", LocalizationManager.Get("LoadGame"));
+            MenuUIHelper.TrySetText(canvas.transform, "SaveButton", LocalizationManager.Get("SaveGame"));
+            MenuUIHelper.TrySetText(canvas.transform, "MainMenuButton", LocalizationManager.Get("ReturnToMainMenu"));
+            MenuUIHelper.TrySetText(canvas.transform, "SettingsButton", LocalizationManager.Get("Settings"));
+
             return true;
         }
 

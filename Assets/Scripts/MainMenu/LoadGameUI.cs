@@ -256,6 +256,13 @@ namespace MainMenu
                 CreateMessageArea(canvas.transform);
             }
             RefreshUI();
+
+            // 刷新本地化文本
+            MenuUIHelper.TrySetText(canvas.transform, "TitleText", LocalizationManager.Get("SelectSave"));
+            MenuUIHelper.TrySetText(canvas.transform, "LoadButton", LocalizationManager.Get("Load"));
+            MenuUIHelper.TrySetText(canvas.transform, "DeleteButton", LocalizationManager.Get("Delete"));
+            MenuUIHelper.TrySetText(canvas.transform, "BackButton", LocalizationManager.Get("Back"));
+
             MenuUIHelper.AddCancelHandler(this, OnBackClicked);
             return true;
         }

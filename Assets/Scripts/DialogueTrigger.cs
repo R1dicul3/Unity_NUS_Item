@@ -7,49 +7,53 @@ public class DialogueTrigger : MonoBehaviour {
     private DialogueController dialogueController;
 
     [Header("Dialogue Content")]
-    [Tooltip("±¾´¥·¢Æ÷×¨ÊôµÄ¶Ô»°ÄÚÈÝ£¨Ö§³ÖË«Á¢»æÓë¸ßÁÁÅäÖÃ£©¡£Èç¹ûÁô¿Õ£¬½«²¥·Å DialogueController Ä¬ÈÏµÄ¶Ô»°¡£")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¨ï¿½ï¿½ï¿½Ä¶Ô»ï¿½ï¿½ï¿½ï¿½Ý£ï¿½Ö§ï¿½ï¿½Ë«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ DialogueController Ä¬ï¿½ÏµÄ¶Ô»ï¿½ï¿½ï¿½")]
     [SerializeField]
     private DialogueController.DialogueLine[] lines;
 
+    [Header("Localization")]
+    [SerializeField]
+    private string dialogueGroupId;
+
     [Header("Trigger Behaviour")]
-    [Tooltip("Íæ¼Ò½øÈëÅö×²ÇøÓòºóÊÇ·ñÐèÒª°´ NextDialogue ²Å¿ªÊ¼¶Ô»°¡£")]
+    [Tooltip("ï¿½ï¿½Ò½ï¿½ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Òªï¿½ï¿½ NextDialogue ï¿½Å¿ï¿½Ê¼ï¿½Ô»ï¿½ï¿½ï¿½")]
     [SerializeField]
     private bool requireInteraction = true;
 
-    [Tooltip("ÊÇ·ñÖ»ÄÜ´¥·¢Ò»´Î¡£")]
+    [Tooltip("ï¿½Ç·ï¿½Ö»ï¿½Ü´ï¿½ï¿½ï¿½Ò»ï¿½Î¡ï¿½")]
     [SerializeField]
     private bool triggerOnce = false;
 
     // ==========================================
-    // ¡¾ÐÂÔö¡¿×Ô¶¯·­Ò³ÅäÖÃ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½
     // ==========================================
     [Header("Auto Advance Settings")]
-    [Tooltip("¿ªÆôºó£¬ÓÉµ±Ç°´¥·¢Æ÷·¢ÆðµÄ¶Ô»°»á×Ô¶¯·­Ò³¡£")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶Ô»ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½Ò³ï¿½ï¿½")]
     [SerializeField]
     private bool autoAdvance = false;
 
-    [Tooltip("Ã¿¾ä¶Ô»°Í£ÁôµÄÊ±¼ä£¨Ãë£©¡£")]
+    [Tooltip("Ã¿ï¿½ï¿½Ô»ï¿½Í£ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä£¨ï¿½ë£©ï¿½ï¿½")]
     [SerializeField]
     private float autoAdvanceInterval = 2.0f;
 
     private float autoAdvanceTimer;
-    private bool isExecutingDialogue; // ¼ÇÂ¼µ±Ç°¶Ô»°ÊÇ·ñÕýÓÉ±¾´¥·¢Æ÷ÕÆ¿Ø
+    private bool isExecutingDialogue; // ï¿½ï¿½Â¼ï¿½ï¿½Ç°ï¿½Ô»ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¿ï¿½
     // ==========================================
 
     [Header("Optional Interaction Prompt")]
-    [Tooltip("ÊÇ·ñÏÔÊ¾½»»¥ÌáÊ¾¡£")]
+    [Tooltip("ï¿½Ç·ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½")]
     [SerializeField]
     private bool showInteractionPrompt = true;
 
-    [Tooltip("½»»¥ÌáÊ¾ UI£¨¿ÉÒÔÊÇ Canvas ÀïµÄ UI£¬Ò²¿ÉÒÔÊÇ³¡¾°ÀïµÄ Sprite/3D Text£©¡£")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ UIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Canvas ï¿½ï¿½ï¿½ UIï¿½ï¿½Ò²ï¿½ï¿½ï¿½ï¿½ï¿½Ç³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Sprite/3D Textï¿½ï¿½ï¿½ï¿½")]
     [SerializeField]
     private GameObject interactionPrompt;
 
-    [Tooltip("¿ªÆôºó£¬Ã¿´ÎÌáÊ¾³öÏÖÊ±»á×Ô¶¯ÒÆ¶¯µ½µ±Ç°ÎïÌå£¨NPC/±¦Ïä£©µÄÉÏ·½¡£")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½å£¨NPC/ï¿½ï¿½ï¿½ä£©ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½")]
     [SerializeField]
     private bool autoPositionPrompt = true;
 
-    [Tooltip("ÌáÊ¾Í¼±êÏà¶ÔÓÚµ±Ç°ÎïÌåµÄÆ«ÒÆÁ¿¡£ÀýÈç Y=1.5 ±íÊ¾ÔÚÎïÌåÉÏ·½ 1.5 µ¥Î»´¦¡£")]
+    [Tooltip("ï¿½ï¿½Ê¾Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Y=1.5 ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ 1.5 ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½")]
     [SerializeField]
     private Vector3 promptOffset = new Vector3(0f, 1.5f, 0f);
 
@@ -58,7 +62,7 @@ public class DialogueTrigger : MonoBehaviour {
     private bool promptConsumed;
 
     private PlayerInputActions inputActions;
-    private Camera mainCamera; // »º´æÖ÷Ïà»úÒÔÌáÉýÐÔÄÜ
+    private Camera mainCamera; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     private void Awake() {
         inputActions = new PlayerInputActions();
@@ -85,7 +89,7 @@ public class DialogueTrigger : MonoBehaviour {
     }
 
     private void Update() {
-        // 1. ´¦Àí±¾´¥·¢Æ÷·¢ÆðµÄ¶Ô»°×Ô¶¯·­Ò³Âß¼­
+        // 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶Ô»ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½Ò³ï¿½ß¼ï¿½
         HandleAutoAdvance();
 
         if (!playerInside) {
@@ -104,7 +108,7 @@ public class DialogueTrigger : MonoBehaviour {
             return;
         }
 
-        // Èç¹ûÌáÊ¾ÕýÔÚÏÔÊ¾£¬ÇÒÐèÒª×Ô¶¯¶¨Î»£¬ÔòÊµÊ±¸üÐÂÎ»ÖÃ
+        // ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Ô¶ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ÊµÊ±ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
         if (showInteractionPrompt && !promptConsumed && interactionPrompt != null && interactionPrompt.activeSelf && autoPositionPrompt) {
             UpdatePromptPosition();
         }
@@ -158,36 +162,33 @@ public class DialogueTrigger : MonoBehaviour {
             return;
         }
 
-        if (dialogueController.IsShowing) {
-            return;
-        }
 
         dialogueTriggered = true;
         promptConsumed = true;
-        isExecutingDialogue = true; // ±ê¼Ç±¾´¥·¢Æ÷ÕýÔÚ¿ØÖÆ¶Ô»°
-        autoAdvanceTimer = 0f;      // ÖØÖÃ¼ÆÊ±Æ÷
+        isExecutingDialogue = true; // ï¿½ï¿½Ç±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½Æ¶Ô»ï¿½
+        autoAdvanceTimer = 0f;      // ï¿½ï¿½ï¿½Ã¼ï¿½Ê±ï¿½ï¿½
         HideInteractionPrompt();
 
         if (lines != null && lines.Length > 0) {
-            dialogueController.StartDialogue(lines);
+            dialogueController.StartDialogue(lines, dialogueGroupId);
         }
         else {
             dialogueController.StartStoredDialogue();
         }
     }
 
-    // ´¦Àí×Ô¶¯·­Ò³ºËÐÄÂß¼­
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½
     private void HandleAutoAdvance() {
-        // Èç¹û¶Ô»° Controller ÒÑ¾­¹Ø±Õ£¬ÇåÀí±¾´¥·¢Æ÷µÄ¶Ô»°Ö´ÐÐ×´Ì¬
+        // ï¿½ï¿½ï¿½ï¿½Ô»ï¿½ Controller ï¿½Ñ¾ï¿½ï¿½Ø±Õ£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶Ô»ï¿½Ö´ï¿½ï¿½×´Ì¬
         if (dialogueController == null || !dialogueController.IsShowing) {
             isExecutingDialogue = false;
             autoAdvanceTimer = 0f;
             return;
         }
 
-        // Ö»ÓÐµ±Ç°¶Ô»°ÊÇÓÉ±¾´¥·¢Æ÷·¢Æð£¬ÇÒ¹´Ñ¡ÁË autoAdvance Ê±²ÅÖ´ÐÐ
+        // Ö»ï¿½Ðµï¿½Ç°ï¿½Ô»ï¿½ï¿½ï¿½ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¹ï¿½Ñ¡ï¿½ï¿½ autoAdvance Ê±ï¿½ï¿½Ö´ï¿½ï¿½
         if (isExecutingDialogue && autoAdvance) {
-            // Èç¹û¼ì²âµ½Íæ¼ÒÊÖ¶¯°´ÁË°´¼ü/Êó±ê£¬ÖØÖÃ¼ÆÊ±Æ÷£¬ÖØÐÂµ¹¼ÆÊ±
+            // ï¿½ï¿½ï¿½ï¿½ï¿½âµ½ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½Ë°ï¿½ï¿½ï¿½/ï¿½ï¿½ê£¬ï¿½ï¿½ï¿½Ã¼ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ï¿½Ê±
             if (IsManualAdvancePressed()) {
                 autoAdvanceTimer = 0f;
             }
@@ -195,13 +196,13 @@ public class DialogueTrigger : MonoBehaviour {
                 autoAdvanceTimer += Time.deltaTime;
                 if (autoAdvanceTimer >= autoAdvanceInterval) {
                     autoAdvanceTimer = 0f;
-                    dialogueController.Advance(); // ´¥·¢ÏÂÒ»¾ä
+                    dialogueController.Advance(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
                 }
             }
         }
     }
 
-    // ¼ì²éÍæ¼ÒÊÇ·ñ½øÐÐÁËÊÖ¶¯·­Ò³²Ù×÷
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½
     private bool IsManualAdvancePressed() {
         Keyboard keyboard = Keyboard.current;
         Mouse mouse = Mouse.current;

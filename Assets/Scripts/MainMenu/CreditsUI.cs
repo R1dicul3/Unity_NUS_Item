@@ -149,6 +149,10 @@ namespace MainMenu
 
             MenuUIHelper.AddCancelHandler(this, OnBackClicked);
 
+            // 刷新本地化文本（Credits 内容本身不翻译）
+            MenuUIHelper.TrySetText(canvas.transform, "TitleText", LocalizationManager.Get("CreditsTitle"));
+            MenuUIHelper.TrySetText(canvas.transform, "BackButton", LocalizationManager.Get("Back"));
+
             return true;
         }
 

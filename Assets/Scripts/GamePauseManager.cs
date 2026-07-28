@@ -321,7 +321,7 @@ public class GamePauseManager : MonoBehaviour
         if (HasUnsavedProgress)
         {
             MainMenu.ConfirmDialogUI.Show(
-                "Returning to the main menu will lose unsaved progress. Are you sure?",
+                LocalizationManager.Get("ReturnConfirmMessage"),
                 onConfirm: () => DoReturnToMainMenu(),
                 onCancel: null,
                 dialogSound: SoundType.UIAlert);
@@ -393,14 +393,17 @@ public class GamePauseManager : MonoBehaviour
         if (!IsInMenuScene())
         {
             EnsureGameplayCamera();
-            // 根据场景名播放对应的默认 BGM
-            AudioManager.Instance?.PlayMusic(GetDefaultMusicForScene(scene.name));
         }
 
         if (pendingLoadData != null && !IsInMenuScene())
         {
             StartCoroutine(ApplySaveNextFrame(pendingLoadData));
             pendingLoadData = null;
+        }
+        else if (!IsInMenuScene())
+        {
+            // 根据场景名播放对应的默认 BGM
+            AudioManager.Instance?.PlayMusic(GetDefaultMusicForScene(scene.name));
         }
     }
 
@@ -412,6 +415,21 @@ public class GamePauseManager : MonoBehaviour
             "Scene_2" => SoundType.Scene2Music,
             _ => SoundType.GameplayMusic,
         };
+    }
+
+    private static CameraArea FindCameraAreaAtPosition(Vector3 position)
+    {
+        CameraArea[] areas = FindObjectsByType<CameraArea>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (CameraArea area in areas)
+        {
+            Bounds b = area.CameraBounds;
+            if (position.x >= b.min.x && position.x <= b.max.x &&
+                position.y >= b.min.y && position.y <= b.max.y)
+            {
+                return area;
+            }
+        }
+        return null;
     }
 
     private static void EnsureGameplayCamera()
@@ -485,6 +503,20 @@ public class GamePauseManager : MonoBehaviour
         {
             // 根据玩家新位置重新检测 CameraArea，同步更新 Bounds、Size 和位置
             cameraFollow.RefreshCameraBoundsToTarget();
+        }
+
+        // 加载后根据玩家所在房间播放对应 BGM（瞬移不会触发 OnTriggerEnter2D，需手动检测）
+        if (player != null)
+        {
+            CameraArea area = FindCameraAreaAtPosition(player.transform.position);
+            if (area != null && area.AreaMusic != SoundType.None)
+            {
+                AudioManager.Instance?.PlayMusic(area.AreaMusic);
+            }
+            else
+            {
+                AudioManager.Instance?.PlayMusic(GetDefaultMusicForScene(SceneManager.GetActiveScene().name));
+            }
         }
 
         Debug.Log("[GamePauseManager] Save data applied to scene.");

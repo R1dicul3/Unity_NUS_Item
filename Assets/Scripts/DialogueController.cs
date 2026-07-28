@@ -12,16 +12,27 @@ public class DialogueController : MonoBehaviour {
         public string speaker;
         [TextArea(2, 4)] public string text;
 
+        [Header("Localization")]
+        public string speakerKey;
+        public string textKey;
+
         [Header("Portraits")]
         public Sprite leftPortrait;
         public Sprite rightPortrait;
-        [Tooltip("��ǰ˵����һ������˵������������Զ��䰵��")]
+        [Tooltip("当前说话的一方。没说话的一方会自动变暗。")]
         public SpeakerSide activeSide;
     }
 
     [Header("Dialogue")]
     [SerializeField] private DialogueLine[] dialogueLines;
     [SerializeField] private bool showOnStart = true;
+
+    [Header("Localization")]
+    [SerializeField] private string dialogueGroupId;
+    public string CurrentDialogueGroupId => dialogueGroupId;
+
+    [Header("Font")]
+    [SerializeField] private Font chineseFont;
 
     [Header("Hierarchy UI")]
     [SerializeField] private Canvas dialogueCanvas;
@@ -66,7 +77,7 @@ public class DialogueController : MonoBehaviour {
 
     [Header("Colors")]
     [SerializeField] private Color activePortraitColor = Color.white;
-    [SerializeField] private Color inactivePortraitColor = new Color(0.4f, 0.4f, 0.4f, 1f); // δ˵��ʱ�䰵
+    [SerializeField] private Color inactivePortraitColor = new Color(0.4f, 0.4f, 0.4f, 1f); // 未说话时变暗
     [SerializeField] private Color dialogueBoxColor = new Color(0.03f, 0.04f, 0.06f, 0.88f);
     [SerializeField] private Color textColor = new Color(0.94f, 0.96f, 1f);
 
@@ -75,10 +86,11 @@ public class DialogueController : MonoBehaviour {
     private bool uiSuppressed;
     private PlayerInputActions inputActions;
 
-    // ��������������¼�Ի��򱻴򿪵�֡�������ڷ�ֹͬһ֡˫�ش���
+    // 记录对话框被打开的帧，用来防止同一帧双重触发
     private int openedFrame = -1;
 
     public bool IsShowing => isShowing;
+    public event System.Action OnDialogueEnded;
 
     private void Awake() {
         if (Application.isPlaying) {
@@ -145,7 +157,7 @@ public class DialogueController : MonoBehaviour {
         }
 
         if (ShouldAdvanceDialogue()) {
-            // �������޸�����ֻ�е���ǰ֡���ڴ򿪶Ի�����һ֡ʱ����������ҳ
+            // 修复多连发bug：只有当当前帧大于打开对话框那一帧时，才允许翻页
             if (Time.frameCount > openedFrame) {
                 Advance();
             }
@@ -169,32 +181,49 @@ public class DialogueController : MonoBehaviour {
         StartDialogue(dialogueLines);
     }
 
-    public void StartDialogue(DialogueLine[] lines) {
-        dialogueLines = lines;
-        currentLineIndex = 0;
-        isShowing = dialogueLines != null && dialogueLines.Length > 0;
+public void StartDialogue(DialogueLine[] lines, string groupId = null) {
 
-        // �������޸�������¼�Ի����ڴ�֡����
-        openedFrame = Time.frameCount;
+    // ============================
+    // 新对话直接覆盖旧对话
+    // ============================
+    if (isShowing) {
+        isShowing = false;
 
         if (dialogueCanvas != null) {
-            dialogueCanvas.gameObject.SetActive(isShowing && !uiSuppressed);
+            dialogueCanvas.gameObject.SetActive(false);
         }
 
-        if (isShowing) {
-            ShowLetterbox();
-            ShowCurrentLine();
-        }
+        HideLetterboxImmediate();
     }
 
-    public void StartDialogue(params string[] lines) {
-        DialogueLine[] convertedLines = new DialogueLine[lines.Length];
-        for (int i = 0; i < lines.Length; i++) {
-            convertedLines[i] = new DialogueLine { speaker = "Character", text = lines[i], activeSide = SpeakerSide.Left };
-        }
+    dialogueLines = lines;
 
-        StartDialogue(convertedLines);
+    if (!string.IsNullOrEmpty(groupId)) {
+        dialogueGroupId = groupId;
     }
+
+    currentLineIndex = 0;
+
+    isShowing =
+        dialogueLines != null &&
+        dialogueLines.Length > 0;
+
+    // 防止同一帧立即翻页
+    openedFrame = Time.frameCount;
+
+    if (dialogueCanvas != null) {
+        dialogueCanvas.gameObject.SetActive(
+            isShowing && !uiSuppressed
+        );
+    }
+
+    if (isShowing) {
+        ShowLetterbox();
+        ShowCurrentLine();
+    }
+}
+
+   
 
     public void Advance() {
         if (!isShowing) {
@@ -211,6 +240,9 @@ public class DialogueController : MonoBehaviour {
     }
 
     public void HideDialogue() {
+        if (isShowing && Application.isPlaying) {
+            OnDialogueEnded?.Invoke();
+        }
         isShowing = false;
 
         if (dialogueCanvas != null) {
@@ -241,8 +273,31 @@ public class DialogueController : MonoBehaviour {
         }
 
         DialogueLine line = dialogueLines[currentLineIndex];
-        speakerText.text = string.IsNullOrWhiteSpace(line.speaker) ? "Character" : line.speaker;
-        bodyText.text = line.text;
+
+        // Resolve speaker with localization fallback
+        string resolvedSpeaker = line.speaker;
+        if (!string.IsNullOrEmpty(line.speakerKey)) {
+            string localized = LocalizationManager.Get(line.speakerKey);
+            if (localized != line.speakerKey) resolvedSpeaker = localized;
+        } else if (!string.IsNullOrEmpty(dialogueGroupId)) {
+            string autoKey = $"{dialogueGroupId}_{(currentLineIndex + 1):D2}_Speaker";
+            string localized = LocalizationManager.Get(autoKey);
+            if (localized != autoKey) resolvedSpeaker = localized;
+        }
+
+        // Resolve text with localization fallback
+        string resolvedText = line.text;
+        if (!string.IsNullOrEmpty(line.textKey)) {
+            string localized = LocalizationManager.Get(line.textKey);
+            if (localized != line.textKey) resolvedText = localized;
+        } else if (!string.IsNullOrEmpty(dialogueGroupId)) {
+            string autoKey = $"{dialogueGroupId}_{(currentLineIndex + 1):D2}_Text";
+            string localized = LocalizationManager.Get(autoKey);
+            if (localized != autoKey) resolvedText = localized;
+        }
+
+        speakerText.text = string.IsNullOrWhiteSpace(resolvedSpeaker) ? "Character" : resolvedSpeaker;
+        bodyText.text = resolvedText;
 
         UpdatePortraits(line);
     }
@@ -304,6 +359,14 @@ public class DialogueController : MonoBehaviour {
 
     private void InitializeUiIfNeeded() {
         ResolveHierarchyReferences();
+
+        // 如果指定了中文字体，应用到所有已存在的文本组件
+        if (chineseFont != null) {
+            if (speakerText != null) speakerText.font = chineseFont;
+            if (bodyText != null) bodyText.font = chineseFont;
+            if (leftPortraitLabel != null) leftPortraitLabel.font = chineseFont;
+            if (rightPortraitLabel != null) rightPortraitLabel.font = chineseFont;
+        }
 
         if (!HasRequiredUi() && createFallbackUiIfMissing) {
             BuildFallbackUi();
@@ -429,13 +492,31 @@ public class DialogueController : MonoBehaviour {
             cinematicLetterbox = letterboxObject.AddComponent<CinematicLetterbox>();
         }
 
+        // ==========================================
+        // 重新调整 UI 渲染层级 (Z-Order 排序)
+        // 规则：Hierarchy 面板中越靠上（Index越小）的节点在越底层，越靠下（Index越大）的节点在最上层
+        // ==========================================
+        int siblingIndex = 0;
+
+        // 1. 立绘在最底层 (设定在 Hierarchy 排序最前)
+        if (leftPortraitImage != null && leftPortraitImage.transform.parent == dialogueCanvas.transform) {
+            leftPortraitImage.transform.SetSiblingIndex(siblingIndex++);
+        }
+        if (rightPortraitImage != null && rightPortraitImage.transform.parent == dialogueCanvas.transform) {
+            rightPortraitImage.transform.SetSiblingIndex(siblingIndex++);
+        }
+
+        // 2. 电影黑边在中间层
+        if (cinematicLetterbox != null) {
+            cinematicLetterbox.transform.SetSiblingIndex(siblingIndex++);
+        }
+
+        // 3. UI 对话框在最上层 (设定在 Hierarchy 排序最后)
         Transform dialogueBoxObj = dialogueCanvas.transform.Find("DialogueBox");
         if (dialogueBoxObj != null) {
-            cinematicLetterbox.transform.SetSiblingIndex(dialogueBoxObj.GetSiblingIndex());
+            dialogueBoxObj.SetAsLastSibling();
         }
-        else {
-            cinematicLetterbox.transform.SetAsLastSibling();
-        }
+        // ==========================================
 
         cinematicLetterbox.EnsureBars();
         cinematicLetterbox.ApplyLayout();
@@ -490,7 +571,7 @@ public class DialogueController : MonoBehaviour {
 
         Text text = textObject.AddComponent<Text>();
         text.text = value;
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = chineseFont != null ? chineseFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;

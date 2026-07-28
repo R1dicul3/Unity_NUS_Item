@@ -153,7 +153,7 @@ MonoBehaviour:
   titleColor: {r: 1, g: 1, b: 1, a: 1}
   labelColor: {r: 1, g: 1, b: 1, a: 1}
   sliderFillColor: {r: 0.25, g: 0.35, b: 0.55, a: 1}
-  overrideFont: {fileID: 0}
+  overrideFont: {fileID: 12800000, guid: 7ab4b77a033872949ad2ec042efc8a11, type: 3}
   titleFontSize: 56
   labelFontSize: 28
   valueFontSize: 24

@@ -35,4 +35,7 @@ public enum SoundType
     Scene2Music,
     PauseMusic,
     EndingMusic,
+    Scene2Music1,
+    Scene2Music2,
+    Scene3Music,
 }

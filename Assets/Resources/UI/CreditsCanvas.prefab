@@ -828,7 +828,7 @@ MonoBehaviour:
   m_text: "\u2014\u2014 Game Engine \u2014\u2014\nUnity\n\n\n\u2014\u2014 Visual
     Techniques & References \u2014\u2014\nFast Fluid Dynamics Simulation on the GPU\n(Mark
     J. Harris / NVIDIA GPU Gems)\n\n\n\u2014\u2014 Typography \u2014\u2014\nDidot
-    Font"
+    Font\n\u534E\u6587\u5B8B\u4F53"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c9fad4e3a51db374a9d24d5991c2864d, type: 2}
   m_sharedMaterial: {fileID: 8855715222960893955, guid: c9fad4e3a51db374a9d24d5991c2864d, type: 2}

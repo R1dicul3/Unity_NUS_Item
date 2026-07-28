@@ -14,6 +14,9 @@ public class TutorialMessageTrigger : MonoBehaviour {
     [Tooltip("在这个区域要显示的教程文字")]
     [SerializeField] private string messageToShow;
 
+    [Header("Localization")]
+    [SerializeField] private string messageKey;
+
     [Tooltip("文字显示的最短时间（秒）")]
     [SerializeField] private float minDisplayDuration = 2f;
 
@@ -104,7 +107,8 @@ public class TutorialMessageTrigger : MonoBehaviour {
         isMessageVisible = true;
         showStartTime = Time.time;
 
-        tutorialTextUI.text = messageToShow;
+        string resolved = string.IsNullOrEmpty(messageKey) ? messageToShow : LocalizationManager.Get(messageKey);
+        tutorialTextUI.text = resolved;
         tutorialTextUI.gameObject.SetActive(true);
 
         if (showAboveObject && mainCamera != null) {

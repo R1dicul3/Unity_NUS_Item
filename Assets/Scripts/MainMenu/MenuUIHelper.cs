@@ -505,6 +505,13 @@ namespace MainMenu
         /// </summary>
         public static Font GetDefaultFont()
         {
+            // 0. 中文语言下优先加载华文宋体
+            if (LocalizationManager.CurrentLanguage == Language.Chinese)
+            {
+                Font cnFont = Resources.Load<Font>("Fonts/STSONG");
+                if (cnFont != null) return cnFont;
+            }
+
             // 1. 加载随项目一同放置的默认字体
             Font font = Resources.Load<Font>("Fonts/Roboto-Regular");
             if (font != null) return font;

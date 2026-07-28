@@ -188,8 +188,16 @@ public class RoomDoor : MonoBehaviour {
 
         SchedulePromptHide(promptDisplayDuration);
 
+        SoundType musicToPlay = SoundType.None;
         if (transitionMusic != SoundType.None) {
-            AudioManager.Instance?.PlayMusic(transitionMusic);
+            musicToPlay = transitionMusic;
+        }
+        else if (targetCameraArea != null && targetCameraArea.AreaMusic != SoundType.None) {
+            musicToPlay = targetCameraArea.AreaMusic;
+        }
+
+        if (musicToPlay != SoundType.None) {
+            AudioManager.Instance?.PlayMusic(musicToPlay);
         }
     }
 

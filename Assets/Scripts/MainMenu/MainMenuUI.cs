@@ -123,6 +123,13 @@ namespace MainMenu
                 MenuUIHelper.SetFirstSelected(newGameButton.gameObject);
             }
 
+            // 刷新本地化文本
+            MenuUIHelper.TrySetText(canvas.transform, "NewGameButton", LocalizationManager.Get("NewGame"));
+            MenuUIHelper.TrySetText(canvas.transform, "LoadGameButton", LocalizationManager.Get("LoadGame"));
+            MenuUIHelper.TrySetText(canvas.transform, "SettingsButton", LocalizationManager.Get("Settings"));
+            MenuUIHelper.TrySetText(canvas.transform, "CreditsButton", LocalizationManager.Get("Credits"));
+            MenuUIHelper.TrySetText(canvas.transform, "ExitButton", LocalizationManager.Get("Exit"));
+
             return true;
         }
 

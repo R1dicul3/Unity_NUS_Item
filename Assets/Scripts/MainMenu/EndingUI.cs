@@ -53,13 +53,13 @@ namespace MainMenu
 
             // 创建示例 Page 1
             GameObject page1 = CreatePage(pagesContainerGO.transform, "Page 1");
-            CreateLine(page1.transform, "Thank you for playing.");
-            CreateLine(page1.transform, "Your journey has come to an end.");
+            CreateLine(page1.transform, LocalizationManager.Get("Ending_ThankYou"));
+            CreateLine(page1.transform, LocalizationManager.Get("Ending_JourneyEnd"));
 
             // 创建示例 Page 2
             GameObject page2 = CreatePage(pagesContainerGO.transform, "Page 2");
-            CreateLine(page2.transform, "But every ending is a new beginning.");
-            CreateLine(page2.transform, "We hope to see you again.");
+            CreateLine(page2.transform, LocalizationManager.Get("Ending_NewBeginning"));
+            CreateLine(page2.transform, LocalizationManager.Get("Ending_SeeYouAgain"));
 
             // SkipPrompt
             GameObject skipPromptGO = CreateSkipPrompt(canvas.transform);
@@ -104,6 +104,26 @@ namespace MainMenu
 
             carousel.OnAllPagesShown += OnAllPagesShown;
 
+            // 本地化 prefab 中的文本
+            var textMap = new System.Collections.Generic.Dictionary<string, string> {
+                { "So, at the very least", LocalizationManager.Get("EndingCanvas_SoAtLeast") },
+                { "Press any key to skip", LocalizationManager.Get("EndingCanvas_SkipPrompt") },
+                { "I still don't like the name, \"Reaper\".", LocalizationManager.Get("EndingCanvas_ReaperName") },
+                { "And walk with them through the very last part of the journey.", LocalizationManager.Get("EndingCanvas_WalkWithThem") },
+                { "I can stay.", LocalizationManager.Get("EndingCanvas_ICanStay") },
+                { "And I still hate not being able to do anything.", LocalizationManager.Get("EndingCanvas_HateHelpless") },
+                { "The End", LocalizationManager.Get("EndingCanvas_TheEnd") },
+                { "There are things I really can't change.", LocalizationManager.Get("EndingCanvas_CantChange") },
+                { "I still don't like the way people fear me.", LocalizationManager.Get("EndingCanvas_Feared") },
+            };
+
+            var allTexts = canvas.GetComponentsInChildren<TextMeshProUGUI>(true);
+            foreach (var t in allTexts) {
+                if (textMap.TryGetValue(t.text, out string localized)) {
+                    t.text = localized;
+                }
+            }
+
             return true;
         }
 
@@ -147,7 +167,7 @@ namespace MainMenu
             GameObject skipPromptGO = new GameObject("SkipPrompt", typeof(TextMeshProUGUI));
             skipPromptGO.transform.SetParent(parent, false);
             TextMeshProUGUI skipText = skipPromptGO.GetComponent<TextMeshProUGUI>();
-            skipText.text = "Press any key to skip";
+            skipText.text = LocalizationManager.Get("Ending_SkipPrompt");
             skipText.fontSize = 18;
             skipText.color = new Color(1f, 1f, 1f, 0.5f);
             skipText.alignment = TextAlignmentOptions.Center;

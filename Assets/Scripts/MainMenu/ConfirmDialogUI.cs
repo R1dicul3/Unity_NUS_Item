@@ -179,6 +179,10 @@ namespace MainMenu
                 Destroy(gameObject);
             });
 
+            // 刷新本地化文本
+            MenuUIHelper.TrySetText(canvas.transform, "ConfirmButton", LocalizationManager.Get("Confirm"));
+            MenuUIHelper.TrySetText(canvas.transform, "CancelButton", LocalizationManager.Get("Cancel"));
+
             return true;
         }
     }

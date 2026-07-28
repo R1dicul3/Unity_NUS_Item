@@ -16,10 +16,15 @@ public class CameraArea : MonoBehaviour {
     [SerializeField] private float autoTriggerTransitionDuration = 0.35f;
     [SerializeField] private AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+    [Header("房间音乐")]
+    [Tooltip("进入该房间时播放的 BGM。设为 None 则保持当前音乐不变。")]
+    [SerializeField] private SoundType areaMusic = SoundType.None;
+
     private BoxCollider2D boundsCollider;
 
     public Bounds CameraBounds => boundsCollider.bounds;
     public float CameraSize => cameraSize;
+    public SoundType AreaMusic => areaMusic;
 
     private void Awake() {
         boundsCollider = GetComponent<BoxCollider2D>();
@@ -50,6 +55,10 @@ public class CameraArea : MonoBehaviour {
         else {
             camera.SetCameraBounds(CameraBounds);
             camera.SetCameraSize(CameraSize);
+        }
+
+        if (areaMusic != SoundType.None) {
+            AudioManager.Instance?.PlayMusic(areaMusic);
         }
     }
 

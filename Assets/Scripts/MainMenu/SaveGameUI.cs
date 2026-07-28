@@ -190,6 +190,12 @@ namespace MainMenu
             }
 
             RefreshUI();
+
+            // 刷新本地化文本
+            MenuUIHelper.TrySetText(canvas.transform, "TitleText", LocalizationManager.Get("SaveGame"));
+            MenuUIHelper.TrySetText(canvas.transform, "SaveButton", LocalizationManager.Get("Save"));
+            MenuUIHelper.TrySetText(canvas.transform, "CancelButton", LocalizationManager.Get("Cancel"));
+
             MenuUIHelper.AddCancelHandler(this, OnCancelClicked);
             return true;
         }

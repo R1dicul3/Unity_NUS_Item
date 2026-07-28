@@ -607,20 +607,27 @@ MonoBehaviour:
   lines:
   - speaker: Girl
     text: It's cold.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 6120914730915384989, guid: d13bd3c67e28dff47a44f4c9e864fd57, type: 3}
     rightPortrait: {fileID: 0}
     activeSide: 1
   - speaker: Girl
     text: "Another day is over, \n...don't like saying that."
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 6120914730915384989, guid: d13bd3c67e28dff47a44f4c9e864fd57, type: 3}
     rightPortrait: {fileID: 0}
     activeSide: 1
+  dialogueGroupId: Dlg_Main_GirlIntro
   requireInteraction: 1
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 1
-  interactionPrompt: {fileID: 1845221897}
+  interactionPrompt: {fileID: 1897006926}
   autoPositionPrompt: 1
-  promptOffset: {x: 0, y: 2.5, z: 0}
+  promptOffset: {x: 0, y: 3, z: 0}
 --- !u!61 &268311797
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -871,7 +878,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 7ab4b77a033872949ad2ec042efc8a11, type: 3}
+    m_Font: {fileID: 12800000, guid: eae460a39273d4048b9766ec9adb9d85, type: 3}
     m_FontSize: 34
     m_FontStyle: 0
     m_BestFit: 0
@@ -7190,15 +7197,20 @@ MonoBehaviour:
   lines:
   - speaker: Vending Machine
     text: Just a normal coffee vending machine.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
+  dialogueGroupId: Dlg_Main_Vending
   requireInteraction: 1
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 1
   interactionPrompt: {fileID: 1845221897}
   autoPositionPrompt: 1
-  promptOffset: {x: 0, y: 2.5, z: 0}
+  promptOffset: {x: 0, y: 4.5, z: 0}
 --- !u!1 &663953661
 GameObject:
   m_ObjectHideFlags: 0
@@ -7485,6 +7497,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  areaMusic: 0
 --- !u!61 &796813322
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -7943,11 +7956,16 @@ MonoBehaviour:
   lines:
   - speaker: Room 01
     text: Empty Room
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
+  dialogueGroupId: Dlg_Main_Room01
   requireInteraction: 1
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 1
   interactionPrompt: {fileID: 1897006926}
   autoPositionPrompt: 1
@@ -8490,30 +8508,41 @@ MonoBehaviour:
   lines:
   - speaker: Reg Card
     text: "Room Number: 03\nGuest Name: Smith, John\nCheck-out: NA\n "
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 1
   - speaker: Girl
     text: Still here.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 6120914730915384989, guid: d13bd3c67e28dff47a44f4c9e864fd57, type: 3}
     rightPortrait: {fileID: 0}
     activeSide: 1
   - speaker: Girl
     text: I was already here, told him and waited.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 6120914730915384989, guid: d13bd3c67e28dff47a44f4c9e864fd57, type: 3}
     rightPortrait: {fileID: 0}
     activeSide: 1
   - speaker: Girl
     text: ...He still won't leave.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 6120914730915384989, guid: d13bd3c67e28dff47a44f4c9e864fd57, type: 3}
     rightPortrait: {fileID: 0}
     activeSide: 1
+  dialogueGroupId: Dlg_Main_RegCard
   requireInteraction: 1
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 1
-  interactionPrompt: {fileID: 1845221897}
+  interactionPrompt: {fileID: 1897006926}
   autoPositionPrompt: 1
-  promptOffset: {x: 0, y: 2.5, z: 0}
+  promptOffset: {x: 0, y: 3, z: 0}
 --- !u!1 &1143289029
 GameObject:
   m_ObjectHideFlags: 0
@@ -9173,6 +9202,7 @@ MonoBehaviour:
   isControlled: 1
   walkAnimationThreshold: 0.05
   spriteFacesRightByDefault: 0
+  autoDetectSpriteFacing: 1
   walkSoundInterval: 0.35
 --- !u!61 &1225207741
 BoxCollider2D:
@@ -9337,7 +9367,7 @@ Transform:
   m_GameObject: {fileID: 1225207739}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -20.22, y: -8.01, z: 0}
+  m_LocalPosition: {x: -20.5, y: -7.8, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9511,6 +9541,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogueLines: []
   showOnStart: 0
+  dialogueGroupId: 
+  chineseFont: {fileID: 12800000, guid: eae460a39273d4048b9766ec9adb9d85, type: 3}
   dialogueCanvas: {fileID: 1995262926}
   cinematicLetterbox: {fileID: 1799793604}
   leftPortraitImage: {fileID: 2011211061}
@@ -9746,11 +9778,16 @@ MonoBehaviour:
   lines:
   - speaker: Room 02
     text: Empty Room
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
+  dialogueGroupId: Dlg_Main_Room02
   requireInteraction: 1
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 1
   interactionPrompt: {fileID: 1897006926}
   autoPositionPrompt: 1
@@ -10712,6 +10749,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  areaMusic: 0
 --- !u!1 &1510548307
 GameObject:
   m_ObjectHideFlags: 0
@@ -10994,7 +11032,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 7ab4b77a033872949ad2ec042efc8a11, type: 3}
+    m_Font: {fileID: 12800000, guid: eae460a39273d4048b9766ec9adb9d85, type: 3}
     m_FontSize: 40
     m_FontStyle: 0
     m_BestFit: 0
@@ -11607,6 +11645,8 @@ MonoBehaviour:
   lines:
   - speaker: Road Sign
     text: Way to hotel  Black Sabbath.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
@@ -11617,20 +11657,27 @@ MonoBehaviour:
 
       Press Space/A in
       mid-air to double jump'
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
   - speaker: Road Sign
     text: You can interact to some objects like this.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
+  dialogueGroupId: Dlg_Main_RoadSign
   requireInteraction: 1
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 1
   interactionPrompt: {fileID: 1897006926}
   autoPositionPrompt: 1
-  promptOffset: {x: 0, y: 2.5, z: 0}
+  promptOffset: {x: 0, y: 4.5, z: 0}
 --- !u!1 &1653700795
 GameObject:
   m_ObjectHideFlags: 0
@@ -11921,6 +11968,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  areaMusic: 0
 --- !u!61 &1668021618
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -12295,7 +12343,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractPromptController
   promptUI: {fileID: 1897006926}
-  offset: {x: 0, y: 1.5, z: 0}
+  offset: {x: 0, y: 3, z: 0}
 --- !u!1 &1686725432
 GameObject:
   m_ObjectHideFlags: 0
@@ -12940,11 +12988,16 @@ MonoBehaviour:
   lines:
   - speaker: Tutorial
     text: Press Shift/RT to dash.
+    speakerKey: 
+    textKey: 
     leftPortrait: {fileID: 0}
     rightPortrait: {fileID: 0}
     activeSide: 0
+  dialogueGroupId: Dlg_Main_TutorialDash
   requireInteraction: 0
   triggerOnce: 0
+  autoAdvance: 0
+  autoAdvanceInterval: 2
   showInteractionPrompt: 0
   interactionPrompt: {fileID: 0}
   autoPositionPrompt: 1
@@ -13291,6 +13344,7 @@ GameObject:
   - component: {fileID: 1845221898}
   - component: {fileID: 1845221900}
   - component: {fileID: 1845221899}
+  - component: {fileID: 1845221901}
   m_Layer: 5
   m_Name: Text (TMP)Word
   m_TagString: Untagged
@@ -13417,6 +13471,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1845221897}
   m_CullTransparentMesh: 1
+--- !u!114 &1845221901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1845221897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d26adb800f5ac846a50cddbfa9f6228, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  localizationKey: Prompt_Interact
 --- !u!1 &1885649311
 GameObject:
   m_ObjectHideFlags: 0
@@ -13598,6 +13665,7 @@ GameObject:
   - component: {fileID: 1897006929}
   - component: {fileID: 1897006928}
   - component: {fileID: 1897006927}
+  - component: {fileID: 1897006930}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -13724,6 +13792,19 @@ RectTransform:
   m_AnchoredPosition: {x: -415, y: -211.5}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1897006930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1897006926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d26adb800f5ac846a50cddbfa9f6228, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizedText
+  localizationKey: Prompt_Interact
 --- !u!1 &1925971985
 GameObject:
   m_ObjectHideFlags: 0
@@ -14002,8 +14083,8 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1160446908}
   - {fileID: 2011211060}
+  - {fileID: 1160446908}
   - {fileID: 1799793603}
   - {fileID: 1422432175}
   m_Father: {fileID: 1253394427}
